@@ -1,24 +1,14 @@
-# Microservices Project - Root CMakeLists.txt
-# Author: Anton Tobolkin
-#
-# Структура проекта:
-# 1. microservice-core - библиотека интерфейсов (header-only)
-# 2. microservice-boost - библиотека реализации на Boost
-
 cmake_minimum_required(VERSION 3.14)
 project(MicroservicesProject VERSION 1.0.0 LANGUAGES CXX)
 
-# Устанавливаем стандарт C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Включаем более строгие предупреждения
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Выводим информацию о конфигурации
 message(STATUS "")
 message(STATUS "========================================")
 message(STATUS "  Microservices Project Configuration  ")
@@ -29,12 +19,13 @@ message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}
 message(STATUS "========================================")
 message(STATUS "")
 
-# ============================================================================
-# Автоматическое скачивание Boost (только нужные компоненты)
-# ============================================================================
 include(FetchContent)
 
-message(STATUS "Fetching Boost from GitHub (this may take a few minutes on first run)...")
+# ============================================================================
+# Boost
+# ============================================================================
+
+message(STATUS "Fetching Boost from GitHub...")
 
 FetchContent_Declare(
     Boost
@@ -42,18 +33,17 @@ FetchContent_Declare(
     URL_HASH SHA256=0c6049764e80aa32754acd7d4f179fd5551d8172a83b71532ae093e7384e98da
 )
 
-
-# Настройки Boost - собираем только system
 set(BOOST_INCLUDE_LIBRARIES system beast asio)
 set(BOOST_ENABLE_CMAKE ON)
 
 FetchContent_MakeAvailable(Boost)
 
-message(STATUS "Boost successfully fetched and configured")
+message(STATUS "Boost successfully fetched")
 
 # ============================================================================
-# Добавляем Boost.DI (header-only)
+# Boost.DI
 # ============================================================================
+
 message(STATUS "Fetching Boost.DI from GitHub...")
 
 FetchContent_Declare(
@@ -68,8 +58,9 @@ FetchContent_MakeAvailable(BoostDI)
 message(STATUS "Boost.DI successfully fetched")
 
 # ============================================================================
-# Добавляем nlohmann/json (header-only)
+# nlohmann/json
 # ============================================================================
+
 message(STATUS "Fetching nlohmann/json from GitHub...")
 
 FetchContent_Declare(
@@ -83,13 +74,51 @@ FetchContent_MakeAvailable(nlohmann_json)
 
 message(STATUS "nlohmann/json successfully fetched")
 
-# Добавляем подпроекты в порядке зависимостей
+# ============================================================================
+# microservice-core (header-only library)
+# ============================================================================
+
 message(STATUS "Adding microservice-core...")
-add_subdirectory(microservice-core)
-add_subdirectory(microservice-core/tests)
+
+add_library(microservice-core INTERFACE)
+
+target_include_directories(microservice-core INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-core/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# ============================================================================
+# microservice-boost
+# ============================================================================
 
 message(STATUS "Adding microservice-boost...")
-add_subdirectory(microservice-boost)
+
+add_library(microservice-boost
+    microservice-boost/src/BoostBeastApplication.cpp
+    microservice-boost/src/HttpClient.cpp
+    microservice-boost/src/settings/DbSettings.cpp
+)
+
+target_include_directories(microservice-boost PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-core/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-boost/include>
+    $<BUILD_INTERFACE:${BoostDI_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_link_libraries(microservice-boost PUBLIC
+    microservice-core
+    Boost::system
+    Boost::asio
+    Boost::beast
+    nlohmann_json::nlohmann_json
+)
+
+# ============================================================================
+# Tests (optional)
+# ============================================================================
+
+add_subdirectory(microservice-core/tests)
 add_subdirectory(microservice-boost/tests)
 
 message(STATUS "")

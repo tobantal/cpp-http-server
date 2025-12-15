@@ -14,6 +14,7 @@ add_library(microservice-boost
 target_include_directories(microservice-boost
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${BoostDI_SOURCE_DIR}/include
 )
 
 # Потоки (вместо pthread напрямую)
@@ -28,9 +29,6 @@ target_link_libraries(microservice-boost
         Boost::system
         Boost::beast
         Boost::asio
-
-        # Boost.DI
-        di
 
         # JSON
         nlohmann_json::nlohmann_json

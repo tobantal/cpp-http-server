@@ -29,8 +29,8 @@ target_link_libraries(microservice-boost
         Boost::beast
         Boost::asio
 
-        # Boost.DI (ВАЖНО)
-        boost_di
+        # Boost.DI
+        di
 
         # JSON
         nlohmann_json::nlohmann_json

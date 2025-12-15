@@ -58,6 +58,10 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(BoostDI)
 
+# Создаём INTERFACE target для Boost.DI
+add_library(boost_di INTERFACE)
+target_include_directories(boost_di INTERFACE ${BoostDI_SOURCE_DIR}/include)
+
 message(STATUS "Boost.DI successfully fetched")
 
 # ============================================================================

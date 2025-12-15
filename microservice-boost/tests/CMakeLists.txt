@@ -1,13 +1,7 @@
-# Tests for microservice-core
-# Author: Anton Tobolkin
+# Tests for microservice-boost
 
-cmake_minimum_required(VERSION 3.14)
-
-# Enable testing
-enable_testing()
-
-# Fetch GoogleTest
 include(FetchContent)
+
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -16,7 +10,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# Create test executable
 add_executable(microservice-boost-test
     BeastRequestAdapterTest.cpp
     BeastResponseAdapterTest.cpp
@@ -26,11 +19,10 @@ add_executable(microservice-boost-test
 )
 
 target_link_libraries(microservice-boost-test
-    microservice-boost
-    gtest
-    gtest_main
+    PRIVATE
+        microservice-boost
+        gtest_main
 )
 
-# Discover tests
 include(GoogleTest)
 gtest_discover_tests(microservice-boost-test)

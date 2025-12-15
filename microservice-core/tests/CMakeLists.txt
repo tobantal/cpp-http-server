@@ -1,10 +1,4 @@
 # Tests for microservice-core
-# Author: Anton Tobolkin
-
-cmake_minimum_required(VERSION 3.14)
-
-# Enable testing
-enable_testing()
 
 # Fetch GoogleTest
 include(FetchContent)

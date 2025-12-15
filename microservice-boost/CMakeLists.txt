@@ -10,19 +10,33 @@ add_library(microservice-boost
     src/HttpClient.cpp
 )
 
-# Подключаем заголовки
-target_include_directories(microservice-boost PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+# Публичные заголовки библиотеки
+target_include_directories(microservice-boost
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Линкуем с зависимостями
-target_link_libraries(microservice-boost PUBLIC
-    microservice-core
-    Boost::system
-    Boost::beast
-    Boost::asio
-    nlohmann_json::nlohmann_json
-    pthread
+# Потоки (вместо pthread напрямую)
+find_package(Threads REQUIRED)
+
+# Линкуем зависимости
+target_link_libraries(microservice-boost
+    PUBLIC
+        microservice-core
+
+        # Boost
+        Boost::system
+        Boost::beast
+        Boost::asio
+
+        # Boost.DI (ВАЖНО)
+        boost_di
+
+        # JSON
+        nlohmann_json::nlohmann_json
+
+        # Threads
+        Threads::Threads
 )
 
 # Требуем C++17

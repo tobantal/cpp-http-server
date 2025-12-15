@@ -53,14 +53,17 @@ FetchContent_Declare(
     BoostDI
     GIT_REPOSITORY https://github.com/boost-ext/di.git
     GIT_TAG v1.3.0
-    GIT_SHALLOW TRUE
 )
 
-FetchContent_MakeAvailable(BoostDI)
+FetchContent_GetProperties(BoostDI)
+if(NOT boostdi_POPULATED)
+    FetchContent_Populate(BoostDI)
+endif()
 
-# Создаём INTERFACE target для Boost.DI
 add_library(boost_di INTERFACE)
-target_include_directories(boost_di INTERFACE ${BoostDI_SOURCE_DIR}/include)
+target_include_directories(boost_di INTERFACE ${boostdi_SOURCE_DIR}/include)
+
+message(STATUS "boostdi_SOURCE_DIR=${boostdi_SOURCE_DIR}")
 
 message(STATUS "Boost.DI successfully fetched")
 

@@ -23,11 +23,11 @@ echo "Структура проекта:"
 tree
 echo
 
-# Поиск и вывод содержимого файлов .h, .hpp, .cpp с заголовками
-find . -type f \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" \) | sort | while read -r file; do
+# Поиск и вывод содержимого файлов .h, .hpp, .cpp с заголовками + CMakeLists.txt, ci.yml
+find . -type f \( -name "*.h" -o -name "*.hpp" -o -name "*.cpp" -o -name "CMakeLists.txt" -o -name "ci.yml" \) | sort | while read -r file; do
     # Убираем префикс ./ для вывода относительно проекта
     relative_path="${file#./}"
-    echo "===== $relative_path ===="
+    echo "===== $relative_path ====="
     cat "$file"
     echo
 done

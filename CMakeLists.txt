@@ -75,17 +75,12 @@ FetchContent_MakeAvailable(nlohmann_json)
 message(STATUS "nlohmann/json successfully fetched")
 
 # ============================================================================
-# microservice-core (header-only library)
+# microservice-core
 # ============================================================================
 
 message(STATUS "Adding microservice-core...")
 
-add_library(microservice-core INTERFACE)
-
-target_include_directories(microservice-core INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-core/include>
-    $<INSTALL_INTERFACE:include>
-)
+add_subdirectory(microservice-core)
 
 # ============================================================================
 # microservice-boost
@@ -93,26 +88,7 @@ target_include_directories(microservice-core INTERFACE
 
 message(STATUS "Adding microservice-boost...")
 
-add_library(microservice-boost
-    microservice-boost/src/BoostBeastApplication.cpp
-    microservice-boost/src/HttpClient.cpp
-    microservice-boost/src/settings/DbSettings.cpp
-)
-
-target_include_directories(microservice-boost PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-core/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/microservice-boost/include>
-    $<BUILD_INTERFACE:${BoostDI_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-
-target_link_libraries(microservice-boost PUBLIC
-    microservice-core
-    Boost::system
-    Boost::asio
-    Boost::beast
-    nlohmann_json::nlohmann_json
-)
+add_subdirectory(microservice-boost)
 
 # ============================================================================
 # Tests (optional)

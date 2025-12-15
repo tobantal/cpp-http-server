@@ -14,7 +14,7 @@ add_library(microservice-boost
 target_include_directories(microservice-boost
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${BoostDI_SOURCE_DIR}/include
+        $<BUILD_INTERFACE:${BoostDI_SOURCE_DIR}/include>
 )
 
 # Потоки (вместо pthread напрямую)

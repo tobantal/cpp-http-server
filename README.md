@@ -51,9 +51,10 @@ project(my_service)
 
 include(FetchContent)
 
-FetchContent_Declare(http_server
-  GIT_REPOSITORY https://github.com/YOUR_USERNAME/cpp-http-server.git
-  GIT_TAG v1.0.0
+FetchContent_Declare(
+    cpp-http-server
+    GIT_REPOSITORY https://github.com/tobantal/cpp-http-server.git
+    GIT_TAG v0.0.5
 )
 
 FetchContent_MakeAvailable(http_server)

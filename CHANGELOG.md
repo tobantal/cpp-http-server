@@ -93,6 +93,6 @@
 
 ---
 
-[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.0.5...HEAD
+[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.1.0
 [0.0.5]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.0.5

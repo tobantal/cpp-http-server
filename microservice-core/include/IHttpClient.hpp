@@ -1,4 +1,3 @@
-// BoostBeast/HttpClient.hpp
 #pragma once
 #include "IRequest.hpp"
 #include "IResponse.hpp"
@@ -11,6 +10,8 @@
 class IHttpClient
 {
 public:
+    virtual ~IHttpClient() = default;
+    
     /**
      * @brief Отправить HTTP запрос
      * @param request IRequest с методом, IP, портом, путём, телом и заголовками

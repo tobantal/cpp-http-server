@@ -9,7 +9,32 @@
 
 ## [Unreleased]
 
-### Планируется в v0.1.0
+### Планируется в v0.2.0
+
+#### Новый функционал
+- `HealthCheckHandler` — дефолтный health-check эндпоинт
+- `MetricsHandler` — эндпоинт для Prometheus метрик
+
+#### Документация
+- Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
+- TODO.md с тактическими задачами
+
+### Планируется в будущих версиях
+
+#### Технический долг
+- Кодогенерация DI из di.json
+- `HttpHandlerKey` структура вместо строкового ключа
+- Разделение hpp/cpp файлов
+- Named path parameters (`:orderId` синтаксис)
+- Trie-based routing для эффективного матчинга
+
+---
+
+## [0.1.0] - 2026-01-15
+
+### Релиз v0.1.0
+
+Расширенная версия HTTP-сервера ом опыта реальной эксплуатации: расширены базовые интерфейсы.
 
 #### Расширение IRequest
 - `getQueryParams()` — переименование из `getParams()` для ясности
@@ -35,30 +60,11 @@
 - `HANDLER_KEY_DELIMITER` — вынос разделителя в константу
 - Поддержка path parameters через `setPathPattern()`
 
-### Планируется в v0.2.0
-
-#### Новый функционал
-- `HealthCheckHandler` — дефолтный health-check эндпоинт
-- `MetricsHandler` — эндпоинт для Prometheus метрик
-
-#### Документация
-- Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
-- TODO.md с тактическими задачами
-
-### Планируется в будущих версиях
-
-#### Технический долг
-- Кодогенерация DI из di.json
-- `HttpHandlerKey` структура вместо строкового ключа
-- Разделение hpp/cpp файлов
-- Named path parameters (`:orderId` синтаксис)
-- Trie-based routing для эффективного матчинга
-
 ---
 
-## [0.0.5] - 2025-01-15
+## [0.0.5] - 2025-12-15
 
-### Текущее состояние
+### Релиз v0.0.5
 
 Стабильная версия с базовым функционалом HTTP-сервера.
 
@@ -88,4 +94,5 @@
 ---
 
 [Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.0.5...HEAD
+[0.1.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.1.0
 [0.0.5]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.0.5

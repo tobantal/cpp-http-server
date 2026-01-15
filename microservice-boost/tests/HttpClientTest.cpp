@@ -5,53 +5,12 @@
 #include <boost/beast.hpp>
 
 #include "HttpClient.hpp"
-#include "IRequest.hpp"
-#include "IResponse.hpp"
+#include "SimpleRequest.hpp"
+#include "SimpleResponse.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
 namespace beast = boost::beast;
-
-// --- Тестовые реализации IRequest/IResponse ---------------------------------
-
-class TestRequest : public IRequest {
-public:
-    std::string method = "GET";
-    std::string ip = "127.0.0.1";
-    int port = 8089;
-    std::string path = "/test";
-    std::map<std::string, std::string> headers{};
-    std::string body_;
-    std::map<std::string, std::string> params{};
-
-    std::string getMethod() const override { return method; }
-    std::string getIp() const override { return ip; }
-    int getPort() const override { return port; }
-    std::string getPath() const override { return path; }
-    std::map<std::string, std::string> getHeaders() const override { return headers; }
-    std::string getBody() const override { return body_; }
-
-    std::map<std::string, std::string> getParams() const override { return params; }
-};
-
-
-class TestResponse : public IResponse {
-public:
-    int status = 0;
-    std::string body;
-    std::map<std::string, std::string> headers{};
-
-    void setStatus(int s) override { status = s; }
-    void setBody(const std::string& b) override { body = b; }
-    void setHeader(const std::string& name, const std::string& value) override {
-        headers[name] = value;
-    }
-
-    int getStatus() const { return status; }
-    std::string getBody() const { return body; }
-    std::map<std::string, std::string> getHeaders() const { return headers; }
-};
-
 
 // -----------------------------------------------------------------------------
 //                 Лёгкий тестовый HTTP сервер (Beast)
@@ -103,8 +62,10 @@ TEST(HttpClientTest, SendRealHttpRequest)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     HttpClient client;
-    TestRequest request;
-    TestResponse response;
+    
+    // Используем SimpleRequest вместо TestRequest
+    SimpleRequest request("GET", "/test", "", "127.0.0.1", 8089);
+    SimpleResponse response;
 
     bool ok = client.send(request, response);
 
@@ -117,4 +78,29 @@ TEST(HttpClientTest, SendRealHttpRequest)
     auto headers = response.getHeaders();
     ASSERT_TRUE(headers.find("Server") != headers.end());
     ASSERT_EQ(headers["Server"], "TestServer");
+}
+
+TEST(HttpClientTest, RequestWithHeaders)
+{
+    std::atomic<bool> serverReady = false;
+
+    std::thread serverThread([&] { runTestHttpServer(serverReady); });
+
+    while (!serverReady.load())
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    HttpClient client;
+    
+    SimpleRequest request("GET", "/test", "", "127.0.0.1", 8089);
+    request.setHeader("Authorization", "Bearer test-token");
+    request.setHeader("Accept", "application/json");
+    
+    SimpleResponse response;
+
+    bool ok = client.send(request, response);
+
+    serverThread.join();
+
+    ASSERT_TRUE(ok);
+    ASSERT_EQ(response.getStatus(), 200);
 }

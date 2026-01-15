@@ -18,7 +18,7 @@ class RouteMatcher
 public:
     /**
      * @brief Проверить соответствие пути паттерну
-     * @param pattern Паттерн с wildcard (например, /r/*)
+     * @param pattern Паттерн с wildcard (например, "/r/ *")
      * @param path Путь для проверки (например, /r/promo)
      * @return true если путь соответствует паттерну
      */

@@ -4,14 +4,17 @@
 
 /**
  * @file BeastResponseAdapterTest.cpp
- * @brief Unit-тесты для BeastResponseAdapter
+ * @brief Unit-тесты для BeastResponseAdapter v2
  */
 
-// Тест: установка статус-кода
+namespace http = boost::beast::http;
+
+// =============================================================================
+// SETTERS TESTS
+// =============================================================================
+
 TEST(BeastResponseAdapterTest, SetStatus)
 {
-    namespace http = boost::beast::http;
-
     http::response<http::string_body> res;
     BeastResponseAdapter adapter(res);
 
@@ -20,11 +23,8 @@ TEST(BeastResponseAdapterTest, SetStatus)
     EXPECT_EQ(res.result_int(), 404);
 }
 
-// Тест: установка тела ответа
 TEST(BeastResponseAdapterTest, SetBody)
 {
-    namespace http = boost::beast::http;
-
     http::response<http::string_body> res;
     BeastResponseAdapter adapter(res);
 
@@ -33,11 +33,8 @@ TEST(BeastResponseAdapterTest, SetBody)
     EXPECT_EQ(res.body(), "hello");
 }
 
-// Тест: установка заголовка
 TEST(BeastResponseAdapterTest, SetHeader)
 {
-    namespace http = boost::beast::http;
-
     http::response<http::string_body> res;
     BeastResponseAdapter adapter(res);
 
@@ -48,11 +45,118 @@ TEST(BeastResponseAdapterTest, SetHeader)
     EXPECT_EQ(res["X-Test"], "42");
 }
 
-// Комбинированный тест: статус + заголовки + тело
+// =============================================================================
+// GETTERS TESTS
+// =============================================================================
+
+TEST(BeastResponseAdapterTest, GetStatus)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setStatus(201);
+
+    EXPECT_EQ(adapter.getStatus(), 201);
+}
+
+TEST(BeastResponseAdapterTest, GetBody)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setBody("test body");
+
+    EXPECT_EQ(adapter.getBody(), "test body");
+}
+
+TEST(BeastResponseAdapterTest, GetHeaders)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setHeader("Content-Type", "application/json");
+    adapter.setHeader("X-Custom", "value");
+
+    auto headers = adapter.getHeaders();
+    EXPECT_EQ(headers.size(), 2u);
+    EXPECT_EQ(headers["Content-Type"], "application/json");
+    EXPECT_EQ(headers["X-Custom"], "value");
+}
+
+TEST(BeastResponseAdapterTest, GetHeaderCaseInsensitive)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setHeader("Content-Type", "application/json");
+
+    auto ct1 = adapter.getHeader("Content-Type");
+    auto ct2 = adapter.getHeader("content-type");
+    auto ct3 = adapter.getHeader("CONTENT-TYPE");
+
+    ASSERT_TRUE(ct1.has_value());
+    ASSERT_TRUE(ct2.has_value());
+    ASSERT_TRUE(ct3.has_value());
+    EXPECT_EQ(*ct1, "application/json");
+    EXPECT_EQ(*ct2, "application/json");
+    EXPECT_EQ(*ct3, "application/json");
+}
+
+TEST(BeastResponseAdapterTest, GetHeaderNotFound)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    auto header = adapter.getHeader("X-Missing");
+    EXPECT_FALSE(header.has_value());
+}
+
+// =============================================================================
+// CONVENIENCE METHODS TESTS
+// =============================================================================
+
+TEST(BeastResponseAdapterTest, SetResult)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setResult(200, "application/json", R"({"status": "ok"})");
+
+    EXPECT_EQ(adapter.getStatus(), 200);
+    EXPECT_EQ(*adapter.getHeader("Content-Type"), "application/json");
+    EXPECT_EQ(adapter.getBody(), R"({"status": "ok"})");
+}
+
+TEST(BeastResponseAdapterTest, SetResultError)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setResult(404, "application/json", R"({"error": "Not found"})");
+
+    EXPECT_EQ(adapter.getStatus(), 404);
+    EXPECT_EQ(*adapter.getHeader("Content-Type"), "application/json");
+    EXPECT_EQ(adapter.getBody(), R"({"error": "Not found"})");
+}
+
+TEST(BeastResponseAdapterTest, SetResultPlainText)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setResult(200, "text/plain", "Hello, World!");
+
+    EXPECT_EQ(adapter.getStatus(), 200);
+    EXPECT_EQ(*adapter.getHeader("Content-Type"), "text/plain");
+    EXPECT_EQ(adapter.getBody(), "Hello, World!");
+}
+
+// =============================================================================
+// COMBINED TESTS
+// =============================================================================
+
 TEST(BeastResponseAdapterTest, Combined)
 {
-    namespace http = boost::beast::http;
-
     http::response<http::string_body> res;
     BeastResponseAdapter adapter(res);
 
@@ -63,4 +167,17 @@ TEST(BeastResponseAdapterTest, Combined)
     EXPECT_EQ(res.result_int(), 200);
     EXPECT_EQ(res["Server"], "MyServer");
     EXPECT_EQ(res.body(), "OK");
+}
+
+TEST(BeastResponseAdapterTest, OverwriteValues)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setResult(200, "application/json", "first");
+    adapter.setResult(400, "text/plain", "second");
+
+    EXPECT_EQ(adapter.getStatus(), 400);
+    EXPECT_EQ(*adapter.getHeader("Content-Type"), "text/plain");
+    EXPECT_EQ(adapter.getBody(), "second");
 }

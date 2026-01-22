@@ -12,9 +12,9 @@
 /**
  * @class IHttpHandler
  * @brief Интерфейс для обработки HTTP запросов
- * 
+ *
  * Каждый handler отвечает за обработку конкретного эндпоинта.
- * Регистрируется в IoC с именем вида "Метод:Путь", например, "GET:/api/users"
+ * Регистрируется в IoC по методу и пути, например, "GET:/api/users"
  */
 class IHttpHandler
 {
@@ -26,5 +26,5 @@ public:
      * @param req HTTP запрос
      * @param res HTTP ответ
      */
-    virtual void handle(IRequest& req, IResponse& res) = 0;
+    virtual void handle(IRequest &req, IResponse &res) = 0;
 };

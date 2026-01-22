@@ -1,98 +1,145 @@
 # Changelog
 
+
 Все значимые изменения в проекте документируются в этом файле.
+
 
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+
 ---
+
 
 ## [Unreleased]
 
-### Планируется в v0.2.0
+
+### Планируется в v0.3.0
+
 
 #### Новый функционал
-- `HealthCheckHandler` — дефолтный health-check эндпоинт
 - `MetricsHandler` — эндпоинт для Prometheus метрик
+
 
 #### Документация
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
-- TODO.md с тактическими задачами
+
 
 ### Планируется в будущих версиях
 
+
 #### Технический долг
 - Кодогенерация DI из di.json
-- `HttpHandlerKey` структура вместо строкового ключа
 - Разделение hpp/cpp файлов
 - Named path parameters (`:orderId` синтаксис)
 - Trie-based routing для эффективного матчинга
 
+
 ---
+
+
+## [0.2.0] - 2026-01-22
+
+
+### Middleware и рефакторинг роутинга
+
+
+#### Новые компоненты
+- `ChainHandler` — middleware цепочка обработчиков
+- `HealthHandler` — базовый health-check эндпоинт
+
+
+#### Изменения в IWebApplication
+- `registerEndpoint(method, pattern, handlers...)` — публичный API для регистрации middleware цепочки
+- `registerHandler()` — перенесён в protected (внутренний механизм)
+
+
+#### Изменения в BoostBeastApplication
+- **Breaking:** `handlers_` — приватная переменная
+- **Breaking:** Новая структура: `map<pattern, map<method, handler>>`
+- `HandlerMatch` — приватная вложенная структура
+- Удалён `HANDLER_KEY_DELIMITER`
+- Удалён `getHandlerKey()`
+
+
+#### Миграция с v0.1.0
+```cpp
+// Было (v0.1.0):
+handlers_[getHandlerKey("GET", "/api/orders")] = ordersHandler;
+
+
+// Стало (v0.2.0) — middleware цепочка:
+registerEndpoint("GET", "/api/orders",
+    authMiddleware,
+    loggingMiddleware,
+    ordersHandler);
+
+
+// Стало (v0.2.0) — один handler:
+registerEndpoint("GET", "/health",
+    std::make_shared<HealthHandler>());
+```
+
+
+---
+
 
 ## [0.1.0] - 2026-01-15
 
-### Релиз v0.1.0
 
-Расширенная версия HTTP-сервера ом опыта реальной эксплуатации: расширены базовые интерфейсы.
+### Расширение интерфейсов
 
-#### Расширение IRequest
-- `getQueryParams()` — переименование из `getParams()` для ясности
-- `getQueryParam(name)` — получение параметра по имени
-- `getHeader(name)` — получение заголовка по имени (case-insensitive)
-- `getBearerToken()` — извлечение Bearer токена из Authorization
-- `getPathPattern()` / `setPathPattern()` — поддержка path parameters
-- `getPathParam(index)` — получение path parameter по индексу wildcard
+
+#### IRequest
+- `getQueryParams()`, `getQueryParam(name)` — работа с query параметрами
+- `getHeader(name)` — case-insensitive получение заголовка
+- `getBearerToken()` — извлечение Bearer токена
+- `getPathPattern()`, `setPathPattern()`, `getPathParam(index)` — path parameters
 - `getPathSegments()` — разбиение пути на сегменты
-- `setAttribute()` / `getAttribute()` — передача данных между middleware
-- `isJson()` — проверка Content-Type
-- `setBody()`, `setHeader()`, `setHeaders()` — сеттеры для middleware
+- `setAttribute()`, `getAttribute()` — передача данных между middleware
+- `isJson()`, `getContentType()` — работа с Content-Type
+- `setBody()`, `setHeader()`, `setHeaders()` — сеттеры
 
-#### Расширение IResponse
-- `getStatus()` — получение HTTP статус кода
-- `getBody()` — получение тела ответа
-- `getHeaders()` — получение всех заголовков
-- `getHeader(name)` — получение заголовка по имени
+
+#### IResponse
+- `getStatus()`, `getBody()`, `getHeaders()`, `getHeader(name)` — геттеры
 - `setResult(code, contentType, body)` — convenience метод
 
-#### Изменения в BoostBeastApplication
-- `HandlerMatch` структура — возврат handler + pattern из findHandler()
-- `HANDLER_KEY_DELIMITER` — вынос разделителя в константу
+
+#### BoostBeastApplication
+- `HandlerMatch` — возврат handler + pattern из findHandler()
 - Поддержка path parameters через `setPathPattern()`
 
+
 ---
+
 
 ## [0.0.5] - 2025-12-15
 
-### Релиз v0.0.5
 
-Стабильная версия с базовым функционалом HTTP-сервера.
+### Базовый функционал
 
-#### Core Module (`http-server-core`)
-- `IRequest` — интерфейс HTTP-запроса
-- `IResponse` — интерфейс HTTP-ответа
-- `IWebApplication` — базовый класс приложения (Template Method)
-- `IHttpHandler` — интерфейс обработчика маршрутов
-- `IHttpClient` — интерфейс HTTP-клиента
-- `IEnvironment` — интерфейс конфигурации
-- `RouteMatcher` — сопоставление маршрутов с wildcards (`*`)
-- `Environment` — type-safe хранилище конфигурации
-- `SimpleRequest` / `SimpleResponse` — реализации для тестирования
 
-#### Boost Module (`http-server-boost`)
+#### Core Module
+- `IRequest`, `IResponse` — интерфейсы запроса/ответа
+- `IWebApplication` — Template Method паттерн
+- `IHttpHandler`, `IHttpClient` — интерфейсы обработчика и клиента
+- `IEnvironment`, `Environment` — конфигурация
+- `RouteMatcher` — wildcard маршрутизация
+- `SimpleRequest`, `SimpleResponse` — реализации для тестов
+
+
+#### Boost Module
 - `BoostBeastApplication` — HTTP-сервер на Boost.Beast/Asio
-- `BeastRequestAdapter` — адаптер Beast → IRequest
-- `BeastResponseAdapter` — адаптер Beast → IResponse
+- `BeastRequestAdapter`, `BeastResponseAdapter` — адаптеры
 - `HttpClient` — синхронный HTTP-клиент
-- `ServerSettings` — конфигурация хоста/порта
-- `DbSettings` — параметры подключения БД
+- `ServerSettings`, `DbSettings` — настройки
 
-#### Тесты
-- Unit-тесты для всех основных компонентов
-- Покрытие: BeastRequestAdapter, BeastResponseAdapter, RouteMatcher, Settings
 
 ---
 
-[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.1.0...HEAD
+
+[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.2.0
 [0.1.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.1.0
 [0.0.5]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.0.5

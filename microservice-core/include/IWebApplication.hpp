@@ -1,24 +1,16 @@
 #pragma once
 
 #include "IEnvironment.hpp"
+#include "IHttpHandler.hpp"
+#include "ChainHandler.hpp"
 #include <memory>
-#include <iostream>
+#include <string>
 
 /**
  * @file IWebApplication.hpp
  * @brief Базовый интерфейс веб-приложения
+ * @version 2.1
  * @author Anton Tobolkin
- */
-
-/**
- * @class IWebApplication
- * @brief Интерфейс веб-приложения с Template Method паттерном
- * 
- * Паттерн Template Method:
- * - run() - шаблонный метод (не виртуальный)
- * - loadEnvironment() - загрузка конфигурации из окружения
- * - configureInjection() - настройка DI
- * - start() - запуск сервера
  */
 class IWebApplication
 {
@@ -28,39 +20,57 @@ public:
 
     /**
      * @brief Запустить приложение (Template Method)
-     * 
-     * Вызывает последовательно:
-     * 1. loadEnvironment(argc, argv) - парсинг аргументов и загрузка конфигурации
-     * 2. configureInjection() - настройка DI контейнера
-     * 3. start() - запуск HTTP сервера
-     * 
-     * @param argc Количество аргументов командной строки
-     * @param argv Массив аргументов командной строки
      */
-    virtual void run(int argc, char* argv[])
+    virtual void run(int argc, char *argv[])
     {
         loadEnvironment(argc, argv);
         configureInjection();
         start();
     }
 
+    // =========================================================================
+    // ROUTING API (public)
+    // =========================================================================
+
+    /**
+     * @brief Зарегистрировать цепочку middleware для endpoint'а
+     * @param method HTTP метод
+     * @param pattern URL паттерн
+     * @param handlers Обработчики (выполняются последовательно)
+     *
+     * @example
+     *   registerEndpoint("GET", "/api/orders/*",
+     *       authMiddleware,
+     *       loggingMiddleware,
+     *       orderByIdHandler);
+     */
+    template <typename... Handlers>
+    void registerEndpoint(const std::string &method,
+                          const std::string &pattern,
+                          Handlers &&...handlers)
+    {
+        registerHandler(method, pattern,
+                        std::make_shared<ChainHandler>(std::forward<Handlers>(handlers)...));
+    }
+
 protected:
-    /**
-     * @brief Загрузить конфигурацию из окружения
-     * @param argc Количество аргументов командной строки
-     * @param argv Массив аргументов командной строки
-     */
-    virtual void loadEnvironment(int argc, char* argv[]) = 0;
-
-    /**
-     * @brief Настроить DI контейнер (Boost.DI injector)
-     */
+    virtual void loadEnvironment(int argc, char *argv[]) = 0;
     virtual void configureInjection() = 0;
-
-    /**
-     * @brief Запустить HTTP сервер
-     */
     virtual void start() = 0;
 
-    std::shared_ptr<IEnvironment> env_; ///< Конфигурация окружения
+    /**
+     * @brief Зарегистрировать обработчик (внутренний метод)
+     * @param method HTTP метод
+     * @param pattern URL паттерн
+     * @param handler Обработчик
+     *
+     * @note Используется из registerEndpoint().
+     *       Для регистрации handlers используйте registerEndpoint().
+     */
+    virtual void registerHandler(
+        const std::string &method,
+        const std::string &pattern,
+        std::shared_ptr<IHttpHandler> handler) = 0;
+
+    std::shared_ptr<IEnvironment> env_;
 };

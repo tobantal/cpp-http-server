@@ -26,6 +26,11 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-02: Thread-safety — handlers_ map защита от регистрации после start()
+- Добавлен `started_` флаг (`std::atomic<bool>`) в BoostBeastApplication
+- `registerHandler()` бросает `std::logic_error` если вызван после `start()`
+- Документировано: модификация handlers_ только до start()
+
 #### SRV-01: Thread-safety — running_ flag atomic
 - `running_` → `std::atomic<bool>` в BoostBeastApplication
 - `stop()` использует `exchange(false)` — атомарная проверка+сброс

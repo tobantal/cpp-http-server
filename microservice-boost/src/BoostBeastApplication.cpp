@@ -24,7 +24,7 @@ using tcp = asio::ip::tcp;
 // =============================================================================
 
 BoostBeastApplication::BoostBeastApplication()
-    : running_(false)
+    : running_(false), started_(false)
 {
     std::cout << "[App] BoostBeastApplication created" << std::endl;
 }
@@ -62,6 +62,11 @@ void BoostBeastApplication::registerHandler(
     const std::string &pattern,
     std::shared_ptr<IHttpHandler> handler)
 {
+    if (started_.load())
+    {
+        throw std::logic_error("Cannot register handler after server has started");
+    }
+
     handlers_[pattern][method] = handler;
 
     std::cout << "[BoostBeastApplication] Registered: "
@@ -180,6 +185,7 @@ void BoostBeastApplication::start()
         std::cout << "[Server] Server is ready to accept connections!" << std::endl;
 
         running_.store(true);
+        started_.store(true);
 
         while (running_.load())
         {

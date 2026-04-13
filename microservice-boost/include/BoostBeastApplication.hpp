@@ -71,6 +71,7 @@ private:
     std::unique_ptr<boost::asio::io_context> ioContext_;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
     std::atomic<bool> running_;
+    std::atomic<bool> started_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

@@ -74,12 +74,10 @@
 - **Модуль:** microservice-boost
 - **Что:** `running_` → `std::atomic<bool>`, `stop()` использует `exchange(false)`, `start()` использует `store(true)` / `load()`. Data race устранён.
 
-### SRV-02: Thread-safety — `handlers_` map без защиты
+### SRV-02: Thread-safety — `handlers_` map без защиты ✅ ВЫПОЛНЕНО
 - **SP:** 2
 - **Модуль:** microservice-boost
-- **Что:** `handlers_` (map<string, map<string, shared_ptr<IHttpHandler>>>) — доступ из detached threads без синхронизации. Сейчас безопасно, т.к. регистрация происходит до start(), но нет формальной гарантии. Варианты: (1) документировать что модификация только до start(), (2) использовать ThreadSafeMap, (3) immutable map после init. Рекомендация: вариант (1) + assert в registerHandler что start() ещё не вызван.
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`
-- **Тесты:** Unit-тест: registerHandler после start() → assert/exception
+- **Что:** Добавлен `started_` флаг. `registerHandler()` бросает `std::logic_error` если вызван после `start()`. handlers_ иммутабелен после старта.
 
 ### SRV-03: Утечка lifetime — detached threads после stop()
 - **SP:** 5

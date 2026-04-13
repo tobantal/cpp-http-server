@@ -20,18 +20,13 @@
 - **Файлы:** Анализ: `trading-platform/education/*/src/main.cpp` (3 файла), `BoostBeastApplication.hpp`
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
 
-### DRY-02: Иерархия HTTP-исключений + HttpErrorHandler
+### DRY-02: Иерархия HTTP-исключений + HttpErrorHandler ✅ ВЫПОЛНЕНО
 - **SP:** 5
-- **Модуль:** microservice-core
-- **Что:** Создать стандартную иерархию исключений и глобальный `HttpErrorHandler`, чтобы убрать try/catch в каждом Handler. Паттерн: handler бросает исключение (`throw NotFoundError("Order not found")`), HttpErrorHandler ловит его по типу и формирует HTTP-ответ. Каждое исключение несёт человекочитаемое имя + HTTP-код (приватное поле `statusCode_`). Иерархия исключений включает и стандартные HTTP-коды, и доменные (BusinessError → 400, AuthError → 401 и т.д.):
-  - `HttpError` (base: `int statusCode_`, `std::string message_`) с геттерами `statusCode()`, `message()`, `what()`
-  - `BadRequestError` → 400, `UnauthorizedError` → 401, `ForbiddenError` → 403, `NotFoundError` → 404, `ConflictError` → 409, `InternalError` → 500, `ServiceUnavailableError` → 503
-  - Доменные: `BusinessError` → 400, `AuthError` → 401 (субклассы или псевдонимы — определить при реализации)
-  - `HttpErrorHandler` ставится в конец ChainHandler или оборачивает `handleRequest()` в BoostBeastApplication. Handler-код упрощается: вместо `try { ... } catch { res.setResult(500, ...); }` → `throw NotFoundError("...");`
-  - Формат ошибки: пока `{"error": "<message>"}` с комментарием в коде TODO-low-priority — в будущем каждый тип исключения может иметь свой настраиваемый формат ответа (например, `{"error": "...", "code": "NOT_FOUND", "details": {...}}`).
-- **Файлы:** Новый `HttpError.hpp` (иерархия исключений), `HttpErrorHandler.hpp` (глобальный handler), правки в `ChainHandler.hpp` или `BoostBeastApplication.cpp` (интеграция)
-- **Тесты:** Unit-тест: каждый тип исключения → правильный HTTP-код + JSON-body; unknown exception → 500; handler без исключения → пропускается; доменные исключения → корректный код
-- **Ссылка:** trading-platform REF-13 (exception hierarchy)
+- **Модуль:** microservice-core, microservice-boost
+- **Что:** Создать стандартную иерархию исключений и переработать ChainHandler на try-catch модель. Handler бросает исключение (`throw NotFoundError("Order not found")`), ChainHandler ловит его по типу и формирует HTTP-ответ. Каждое исключение несёт человекочитаемое имя + HTTP-код (приватное поле `statusCode_`). Иерархия: HttpError (base) → BadRequestError(400), UnauthorizedError(401), ForbiddenError(403), NotFoundError(404), ConflictError(409), InternalError(500), ServiceUnavailableError(503), BusinessError(400), AuthError(401). 1 класс = 1 файл. ChainHandler: HttpError → error response + stop, std::exception → 500 + stop, no exception → continue. Формат ошибки: `{"error": "<message>"}`.
+- **Файлы:** `HttpError.hpp`, `BadRequestError.hpp`, `UnauthorizedError.hpp`, `ForbiddenError.hpp`, `NotFoundError.hpp`, `ConflictError.hpp`, `InternalError.hpp`, `ServiceUnavailableError.hpp`, `BusinessError.hpp`, `AuthError.hpp` (microservice-core/include); `ChainHandler.hpp` (переработан); `BoostBeastApplication.cpp` (HttpError catch); `HttpErrorTest.cpp`, `ChainHandlerTest.cpp` (новые)
+- **Тесты:** 18 тестов HttpError (каждый класс, catch по ссылке, catch std::exception), 8 тестов ChainHandler (нормальное завершение, 201 статус, NotFoundError, UnauthorizedError, std::exception, middleware прерывает цепочку, пустая цепочка)
+- **Ссылка:** trading-platform REF-09 (httpStatus workaround — теперь не нужен), REF-13 (exception hierarchy)
 
 ### DRY-03: Аналитика — разделение «тощего» кода библиотеки и внешних зависимостей
 - **SP:** 3

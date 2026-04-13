@@ -56,7 +56,7 @@ class ChainHandlerTest : public ::testing::Test
 {
 protected:
     SimpleRequest req{"GET", "/test", "", "127.0.0.1", 80};
-    SimpleResponse res{0, ""};
+    SimpleResponse res;
 };
 
 TEST_F(ChainHandlerTest, SingleHandler_CompletesNormally)
@@ -128,11 +128,10 @@ TEST_F(ChainHandlerTest, MiddlewareThrows_StopsChain)
     EXPECT_EQ(res.getStatus(), 401);
 }
 
-TEST_F(ChainHandlerTest, EmptyChain_StatusNotSet_Returns500)
+TEST_F(ChainHandlerTest, EmptyChain_DefaultStatus200)
 {
     ChainHandler chain;
     chain.handle(req, res);
 
-    EXPECT_EQ(res.getStatus(), 500);
-    EXPECT_EQ(res.getBody(), R"({"error": "Internal server error"})");
+    EXPECT_EQ(res.getStatus(), 200);
 }

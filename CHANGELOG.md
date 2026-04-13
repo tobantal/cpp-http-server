@@ -26,6 +26,18 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### DRY-02: Иерархия HTTP-исключений + ChainHandler try-catch модель
+- Новый базовый класс `HttpError(statusCode, message)` с геттерами
+- 9 классов исключений (1 класс = 1 файл): `BadRequestError` (400), `UnauthorizedError` (401), `ForbiddenError` (403), `NotFoundError` (404), `ConflictError` (409), `InternalError` (500), `ServiceUnavailableError` (503), `BusinessError` (400), `AuthError` (401)
+- `ChainHandler` переработан: try-catch модель вместо проверки `status==0`
+  - `HttpError` → JSON ответ с соответствующим статусом, цепочка прерывается
+  - `std::exception` → 500 Internal Server Error, цепочка прерывается
+  - Handler без исключения → цепочка продолжается, ответ не трогается
+  - Пустая цепочка без исключения → status остаётся 200 (дефолт)
+- `BoostBeastApplication::handleRequest` ловит `HttpError` отдельно от `std::exception`
+- **Backward compatible:** старый код с `res.setResult()` продолжает работать
+- 18 тестов HttpError + 8 тестов ChainHandler
+
 #### DRY-04: ServerSettings — хост/порт из ENV переменных
 - `ServerSettings` читает `SERVER_HOST` и `SERVER_PORT` из ENV переменных
 - Приоритет: ENV → config.json → дефолт (0.0.0.0:8080)

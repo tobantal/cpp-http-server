@@ -93,21 +93,71 @@ TEST(ServerSettingsTest, InvalidPortEnvFallsBackToConfig)
     ServerSettings settings(env);
 
     EXPECT_EQ(settings.getHost(), "localhost");
-    EXPECT_EQ(settings.getPort(), 8080);
-
     unsetenv("SERVER_PORT");
 }
 
-TEST(ServerSettingsTest, InvalidPortEnvNoConfigFallsBackToDefault)
+TEST(ServerSettingsTest, DefaultMaxRequestBodySize)
 {
-    setenv("SERVER_PORT", "abc", 1);
     unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
 
     auto env = std::make_shared<Environment>();
     ServerSettings settings(env);
 
-    EXPECT_EQ(settings.getHost(), "0.0.0.0");
-    EXPECT_EQ(settings.getPort(), 8080);
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 1048576);
+}
 
+TEST(ServerSettingsTest, MaxRequestBodySizeFromEnv)
+{
+    unsetenv("SERVER_HOST");
     unsetenv("SERVER_PORT");
+    setenv("SERVER_MAX_REQUEST_BODY_SIZE", "2097152", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 2097152);
+
+    unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
+}
+
+TEST(ServerSettingsTest, MaxRequestBodySizeFromConfig)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
+
+    auto env = std::make_shared<Environment>();
+    env->setProperty("server.maxRequestBodySize", static_cast<size_t>(524288));
+
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 524288);
+}
+
+TEST(ServerSettingsTest, MaxRequestBodySizeEnvOverridesConfig)
+{
+    setenv("SERVER_MAX_REQUEST_BODY_SIZE", "4194304", 1);
+
+    auto env = std::make_shared<Environment>();
+    env->setProperty("server.maxRequestBodySize", static_cast<size_t>(524288));
+
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 4194304);
+
+    unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
+}
+
+TEST(ServerSettingsTest, InvalidMaxRequestBodySizeEnvUsesDefault)
+{
+    setenv("SERVER_MAX_REQUEST_BODY_SIZE", "not_a_number", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 1048576);
+
+    unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
 }

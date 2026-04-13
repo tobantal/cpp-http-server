@@ -26,6 +26,12 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-05: Request body size limit
+- `IServerSettings::getMaxRequestBodySize()` — новый метод интерфейса
+- `ServerSettings` читает `SERVER_MAX_REQUEST_BODY_SIZE` из ENV, приоритет: ENV → config.json → дефолт (1MB)
+- `BoostBeastApplication` ограничивает `flat_buffer` и проверяет `req.body().size()` → 413 Payload Too Large
+- 5 новых тестов ServerSettings
+
 #### SRV-03: Утечка lifetime — detached threads заменены на joinable threads
 - `std::thread(...).detach()` → `std::vector<std::thread>` с `std::mutex`
 - `stop()` закрывает acceptor, затем join'ит все потоки — нет use-after-free

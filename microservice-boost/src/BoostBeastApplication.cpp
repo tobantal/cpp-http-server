@@ -24,7 +24,7 @@ using tcp = asio::ip::tcp;
 // =============================================================================
 
 BoostBeastApplication::BoostBeastApplication()
-    : running_(false), started_(false)
+    : running_(false), started_(false), maxRequestBodySize_(1048576)
 {
     std::cout << "[App] BoostBeastApplication created" << std::endl;
 }
@@ -186,6 +186,7 @@ void BoostBeastApplication::start()
         ServerSettings serverSettings(env_);
         std::string host = serverSettings.getHost();
         int port = serverSettings.getPort();
+        maxRequestBodySize_ = serverSettings.getMaxRequestBodySize();
 
         std::cout << "[App] Starting HTTP server..." << std::endl;
 
@@ -240,10 +241,23 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
             std::cerr << "[Session] Failed to get client IP: " << e.what() << std::endl;
         }
 
-        beast::flat_buffer buffer;
+        beast::flat_buffer buffer{maxRequestBodySize_};
 
         http::request<http::string_body> req;
         http::read(socket, buffer, req);
+
+        if (req.body().size() > maxRequestBodySize_)
+        {
+            std::cerr << "[Session] Request body too large: " << req.body().size()
+                      << " bytes (max: " << maxRequestBodySize_ << ")" << std::endl;
+            http::response<http::string_body> res{http::status::payload_too_large, req.version()};
+            res.set(http::field::server, "BoostBeast");
+            res.set(http::field::content_type, "application/json");
+            res.body() = R"({"error": "Payload too large"})";
+            res.prepare_payload();
+            http::write(socket, res);
+            return;
+        }
 
         std::cout << "[Session] Received request: "
                   << req.method_string() << " " << req.target() << std::endl;

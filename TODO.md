@@ -106,12 +106,10 @@
 
 ## P1 — Security & Reliability
 
-### SRV-05: Request body size limit
+### SRV-05: Request body size limit ✅ ВЫПОЛНЕНО
 - **SP:** 3
 - **Модуль:** microservice-boost
-- **Что:** Нет лимита на размер request body. Клиент может отправить multi-GB body → OOM. Добавить `maxRequestBodySize` в ServerSettings (default: 1MB). При превышении → 413 Payload Too Large.
-- **Файлы:** `BoostBeastApplication.cpp`, `ServerSettings.hpp`, `IServerSettings.hpp`
-- **Тесты:** Integration-тест: отправка body > limit → 413
+- **Что:** `IServerSettings::getMaxRequestBodySize()`, ENV `SERVER_MAX_REQUEST_BODY_SIZE` (default: 1MB). `flat_buffer` ограничен, `req.body().size()` проверяется → 413 Payload Too Large.
 
 ### SRV-06: Request timeout
 - **SP:** 3

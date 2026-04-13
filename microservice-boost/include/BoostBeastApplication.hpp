@@ -77,6 +77,7 @@ private:
     std::atomic<bool> started_;
     std::vector<std::thread> threads_;
     std::mutex threadsMutex_;
+    size_t maxRequestBodySize_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

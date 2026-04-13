@@ -6,7 +6,7 @@ C++17 библиотека HTTP-сервера и HTTP-клиента для м�
 
 Два модуля:
 - **microservice-core** — чистые интерфейсы (IRequest, IResponse, IHttpHandler, IWebApplication, IHttpClient, IEnvironment, RouteMatcher, ChainHandler, HealthHandler)
-- **microservice-boost** — production-реализация на Boost.Beast/Asio (BoostBeastApplication, BeastRequestAdapter, BeastResponseAdapter, HttpClient, ServerSettings, DbSettings)
+- **microservice-boost** — production-реализация на Boost.Beast/Asio (BoostBeastApplication, BeastRequestAdapter, BeastResponseAdapter, HttpClient, ServerSettings)
 
 **Цель:** Упростить, улучшить, сделать надёжной и быстрой библиотеку для биржевой торговой платформы (consumer-проект) и других микросервисов на C++17. Ориентироваться на production-ready качество: thread-safety, безопасность, производительность, удобство API.
 

@@ -57,12 +57,12 @@
 - **Результат:** Документ с анализом + рекомендация (пока документируем, реализация — отдельная задача)
 - **Связанные задачи:** DRY-03 (тощая поставка — после выпиливания json задача упрощается)
 
-### DRY-05: Выпилить IDbSettings / DbSettings из библиотеки
+### DRY-05: Выпилить IDbSettings / DbSettings из библиотеки ✅ ВЫПОЛНЕНО
 - **SP:** 1
 - **Модуль:** microservice-core, microservice-boost
 - **Что:** Удалить `IDbSettings.hpp`, `DbSettings.hpp`/`.cpp` из cpp-http-server. Работа с БД — не удел библиотеки HTTP-сервера. Микросервисы сами отвечают за создание настроек подключения к БД и их наполнение (как уже сделано в trading-platform — свой `common::settings::DbSettings` с ENV). Оставить IEnvironment как универсальный механизм конфигурации — потребитель может хранить любые настройки, включая DB.
-- **Файлы:** Удалить: `microservice-core/include/settings/IDbSettings.hpp`, `microservice-boost/include/settings/DbSettings.hpp`, `microservice-boost/src/settings/DbSettings.cpp`, `microservice-boost/tests/DbSettingsTest.cpp`; обновить `CMakeLists.txt`
-- **Тесты:** Удалить DbSettingsTest; остальные тесты должны пройти без изменений
+- **Файлы:** Удалено: `microservice-core/include/settings/IDbSettings.hpp`, `microservice-boost/include/settings/DbSettings.hpp`, `microservice-boost/src/settings/DbSettings.cpp`, `microservice-boost/tests/DbSettingsTest.cpp`; обновлено: `CMakeLists.txt`
+- **Тесты:** DbSettingsTest удалён; остальные тесты прошли без изменений
 
 ### DRY-06: Аналитика — оценка библиотек для возможного внедрения
 - **SP:** 2

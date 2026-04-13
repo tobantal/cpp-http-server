@@ -10,14 +10,14 @@
 │  IRequest, IResponse, IHttpHandler, IWebApplication       │
 │  IHttpClient, IEnvironment, Environment, RouteMatcher     │
 │  ChainHandler, HealthHandler, SimpleRequest, SimpleResponse│
-│  ThreadSafeMap, settings/IDbSettings, settings/IServer...│
+│  ThreadSafeMap, settings/IServer...│
 ├────────────────────────────────────────────────────────────┤
 │                  microservice-boost                         │
 │  Production-реализация на Boost.Beast/Asio                │
 │  Зависимости: Boost, Boost.DI, nlohmann/json             │
 │  BoostBeastApplication, BeastRequestAdapter                │
 │  BeastResponseAdapter, HttpClient                          │
-│  settings/ServerSettings, settings/DbSettings              │
+│  settings/ServerSettings              │
 └────────────────────────────────────────────────────────────┘
 ```
 

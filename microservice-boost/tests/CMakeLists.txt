@@ -14,7 +14,6 @@ add_executable(microservice-boost-test
     BeastRequestAdapterTest.cpp
     BeastResponseAdapterTest.cpp
     ServerSettingsTest.cpp
-    DbSettingsTest.cpp
     HttpClientTest.cpp
 )
 

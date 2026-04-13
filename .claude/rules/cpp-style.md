@@ -17,7 +17,7 @@
   - `tests/` — unit-тесты
 - **microservice-boost/** — реализация на Boost.Beast.
   - `include/` — BoostBeastApplication, BeastRequestAdapter, BeastResponseAdapter, HttpClient, settings/
-  - `src/` — BoostBeastApplication.cpp, HttpClient.cpp, settings/DbSettings.cpp
+  - `src/` — BoostBeastApplication.cpp, HttpClient.cpp
   - `tests/` — unit и integration тесты
 
 ### Правило зависимостей

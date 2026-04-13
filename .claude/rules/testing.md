@@ -29,7 +29,7 @@
 - BeastResponseAdapter — все методы IResponse
 - BoostBeastApplication — lifecycle (start/stop), routing, path params, method not allowed
 - HttpClient — connect, timeout (with mock server), error handling
-- ServerSettings/DbSettings — validation, missing keys, wrong types
+- ServerSettings — ENV приоритет, config.json fallback, дефолты
 
 ### Integration
 - Запуск реального сервера → HTTP-запрос → проверка ответа (как в HttpClientTest)

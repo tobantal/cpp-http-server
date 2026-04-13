@@ -33,6 +33,12 @@
 - Backward compatible: config.json продолжает работать
 - 7 новых тестов покрывают все комбинации
 
+#### DRY-05: Выпилить IDbSettings / DbSettings
+- Удалены: `IDbSettings.hpp`, `DbSettings.hpp`, `DbSettings.cpp`, `DbSettingsTest.cpp`
+- Работа с БД — не удел библиотеки HTTP-сервера, микросервисы сами управляют настройками БД
+- IEnvironment остаётся как универсальный механизм конфигурации
+- **Breaking change:** consumer-проекты, использующие `DbSettings` — нужно перенести в свой код. В trading-platform уже есть свой `common::settings::DbSettings`
+
 
 #### Документация
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
@@ -146,7 +152,7 @@ registerEndpoint("GET", "/health",
 - `BoostBeastApplication` — HTTP-сервер на Boost.Beast/Asio
 - `BeastRequestAdapter`, `BeastResponseAdapter` — адаптеры
 - `HttpClient` — синхронный HTTP-клиент
-- `ServerSettings`, `DbSettings` — настройки
+- `ServerSettings` — настройки
 
 
 ---

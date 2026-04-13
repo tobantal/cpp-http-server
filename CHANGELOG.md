@@ -26,6 +26,12 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-15: Duplicate code — DRY рефакторинг
+- Новый `StringUtils.hpp` (microservice-core): `toLower()`, `splitPath()` — единая реализация вместо 4 копий
+- Новый `PathParamExtractor.hpp` (microservice-core): `getByIndex()` — единая логика извлечения path params
+- SimpleRequest, SimpleResponse, BeastRequestAdapter, BeastResponseAdapter — удалены дублирующиеся `toLower()`, `splitPath()`, getPathParam логика; используются StringUtils и PathParamExtractor
+- 16 новых тестов (StringUtils: 11, PathParamExtractor: 5)
+
 #### SRV-05: Request body size limit
 - `IServerSettings::getMaxRequestBodySize()` — новый метод интерфейса
 - `ServerSettings` читает `SERVER_MAX_REQUEST_BODY_SIZE` из ENV, приоритет: ENV → config.json → дефолт (1MB)

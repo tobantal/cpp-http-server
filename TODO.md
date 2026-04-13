@@ -151,12 +151,10 @@
 - **Файлы:** `IRequest.hpp` (документация), `BeastRequestAdapter.hpp`/`.cpp` (URL decode)
 - **Тесты:** Unit-тест: `getPath()` с encoded URL → decoded result
 
-### SRV-15: Duplicate code — DRY рефакторинг
+### SRV-15: Duplicate code — DRY рефакторинг ✅ ВЫПОЛНЕНО
 - **SP:** 2
 - **Модуль:** microservice-core + microservice-boost
-- **Что:** `toLower()` дублируется в 4 файлах (SimpleRequest, SimpleResponse, BeastRequestAdapter, BeastResponseAdapter). `splitPath()` дублируется в SimpleRequest и BeastRequestAdapter. `getPathParam()` логика дублируется. Вынести в общий utility: `StringUtils.hpp` (toLower, splitPath) и `PathParamExtractor.hpp` (getPathParam логика) в microservice-core.
-- **Файлы:** Новый `microservice-core/include/StringUtils.hpp`, `PathParamExtractor.hpp`; правки в SimpleRequest, SimpleResponse, BeastRequestAdapter, BeastResponseAdapter
-- **Тесты:** Unit-тест для StringUtils и PathParamExtractor; запустить все существующие тесты
+- **Что:** `toLower()` и `splitPath()` вынесены в `StringUtils.hpp`, getPathParam логика — в `PathParamExtractor.hpp`. 4 файла обновлены.
 
 ---
 

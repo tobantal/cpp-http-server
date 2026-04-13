@@ -19,6 +19,7 @@ add_executable(microservice-core-test
     SimpleResponseTest.cpp
     HttpErrorTest.cpp
     ChainHandlerTest.cpp
+    StringUtilsTest.cpp
 )
 
 target_link_libraries(microservice-core-test

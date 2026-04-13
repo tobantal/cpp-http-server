@@ -1,30 +1,20 @@
-// BeastRequestAdapter.hpp
 #pragma once
+
 #include "IRequest.hpp"
+#include "StringUtils.hpp"
+#include "PathParamExtractor.hpp"
 #include <boost/beast/http.hpp>
 #include <map>
 #include <string>
 #include <vector>
 #include <optional>
-#include <algorithm>
-#include <cctype>
 
-/**
- * @file BeastRequestAdapter.hpp
- * @brief Адаптер для Boost.Beast HTTP запроса
- * @version 2.0
- * @author Anton Tobolkin
- */
 struct BeastRequestAdapter : IRequest
 {
     BeastRequestAdapter(
         const boost::beast::http::request<boost::beast::http::string_body>& req,
         const std::string& clientIp)
         : req_(req), ip_(clientIp), body_(req.body()) {}
-
-    // =========================================================================
-    // PATH
-    // =========================================================================
 
     std::string getPath() const override
     {
@@ -35,31 +25,8 @@ struct BeastRequestAdapter : IRequest
 
     std::vector<std::string> getPathSegments() const override
     {
-        std::string path = getPath();
-        std::vector<std::string> segments;
-        std::string segment;
-        
-        for (char ch : path) {
-            if (ch == '/') {
-                if (!segment.empty()) {
-                    segments.push_back(segment);
-                    segment.clear();
-                }
-            } else {
-                segment += ch;
-            }
-        }
-        
-        if (!segment.empty()) {
-            segments.push_back(segment);
-        }
-        
-        return segments;
+        return StringUtils::splitPath(getPath());
     }
-
-    // =========================================================================
-    // PATH PARAMETERS
-    // =========================================================================
 
     std::string getPathPattern() const override
     {
@@ -73,35 +40,13 @@ struct BeastRequestAdapter : IRequest
 
     std::optional<std::string> getPathParam(size_t index) const override
     {
-        if (pathPattern_.empty()) {
-            return std::nullopt;
-        }
-        
-        auto pathSegments = getPathSegments();
-        auto patternSegments = splitPath(pathPattern_);
-        
-        size_t wildcardIndex = 0;
-        for (size_t i = 0; i < patternSegments.size() && i < pathSegments.size(); ++i) {
-            if (patternSegments[i] == "*") {
-                if (wildcardIndex == index) {
-                    return pathSegments[i];
-                }
-                ++wildcardIndex;
-            }
-        }
-        
-        return std::nullopt;
+        return PathParamExtractor::getByIndex(getPath(), pathPattern_, index);
     }
-
-    // =========================================================================
-    // QUERY PARAMETERS
-    // =========================================================================
 
     std::map<std::string, std::string> getQueryParams() const override
     {
         std::map<std::string, std::string> params = queryParams_;
-        
-        // Парсим из URL
+
         auto target = std::string(req_.target());
         auto pos = target.find('?');
         if (pos == std::string::npos)
@@ -121,8 +66,8 @@ struct BeastRequestAdapter : IRequest
                                     ? query.substr(eq + 1)
                                     : query.substr(eq + 1, amp - eq - 1);
 
-            // Не перезаписываем установленные вручную параметры
-            if (params.find(key) == params.end()) {
+            if (params.find(key) == params.end())
+            {
                 params[key] = value;
             }
             if (amp == std::string::npos)
@@ -136,7 +81,8 @@ struct BeastRequestAdapter : IRequest
     {
         auto params = getQueryParams();
         auto it = params.find(name);
-        if (it != params.end()) {
+        if (it != params.end())
+        {
             return it->second;
         }
         return std::nullopt;
@@ -147,52 +93,48 @@ struct BeastRequestAdapter : IRequest
         queryParams_[name] = value;
     }
 
-    // Deprecated alias
     std::map<std::string, std::string> getParams() const override
     {
         return getQueryParams();
     }
 
-    // =========================================================================
-    // HEADERS
-    // =========================================================================
-
     std::map<std::string, std::string> getHeaders() const override
     {
         std::map<std::string, std::string> headers = headers_;
-        
+
         for (auto const& field : req_)
         {
             std::string name = std::string(field.name_string());
             std::string value = std::string(field.value());
-            // Не перезаписываем установленные вручную
-            if (headers.find(name) == headers.end()) {
+            if (headers.find(name) == headers.end())
+            {
                 headers[name] = value;
             }
         }
-        
+
         return headers;
     }
 
     std::optional<std::string> getHeader(const std::string& name) const override
     {
-        // Сначала проверяем установленные вручную (case-insensitive)
-        std::string nameLower = toLower(name);
-        for (const auto& [key, value] : headers_) {
-            if (toLower(key) == nameLower) {
+        std::string nameLower = StringUtils::toLower(name);
+        for (const auto& [key, value] : headers_)
+        {
+            if (StringUtils::toLower(key) == nameLower)
+            {
                 return value;
             }
         }
-        
-        // Затем в оригинальном запросе (case-insensitive)
+
         for (auto const& field : req_)
         {
             std::string fieldName = std::string(field.name_string());
-            if (toLower(fieldName) == nameLower) {
+            if (StringUtils::toLower(fieldName) == nameLower)
+            {
                 return std::string(field.value());
             }
         }
-        
+
         return std::nullopt;
     }
 
@@ -203,14 +145,11 @@ struct BeastRequestAdapter : IRequest
 
     void setHeaders(const std::map<std::string, std::string>& headers) override
     {
-        for (const auto& [name, value] : headers) {
+        for (const auto& [name, value] : headers)
+        {
             headers_[name] = value;
         }
     }
-
-    // =========================================================================
-    // BODY
-    // =========================================================================
 
     std::string getBody() const override
     {
@@ -222,18 +161,10 @@ struct BeastRequestAdapter : IRequest
         body_ = body;
     }
 
-    // =========================================================================
-    // METHOD
-    // =========================================================================
-
     std::string getMethod() const override
     {
         return std::string(req_.method_string());
     }
-
-    // =========================================================================
-    // CONNECTION INFO
-    // =========================================================================
 
     std::string getIp() const override
     {
@@ -245,23 +176,21 @@ struct BeastRequestAdapter : IRequest
         return 80;
     }
 
-    // =========================================================================
-    // CONVENIENCE METHODS
-    // =========================================================================
-
     std::optional<std::string> getBearerToken() const override
     {
         auto auth = getHeader("Authorization");
-        if (!auth) {
+        if (!auth)
+        {
             return std::nullopt;
         }
-        
+
         const std::string bearerPrefix = "Bearer ";
         if (auth->length() > bearerPrefix.length() &&
-            auth->substr(0, bearerPrefix.length()) == bearerPrefix) {
+            auth->substr(0, bearerPrefix.length()) == bearerPrefix)
+        {
             return auth->substr(bearerPrefix.length());
         }
-        
+
         return std::nullopt;
     }
 
@@ -277,10 +206,6 @@ struct BeastRequestAdapter : IRequest
         return ct.value_or("");
     }
 
-    // =========================================================================
-    // ATTRIBUTES
-    // =========================================================================
-
     void setAttribute(const std::string& name, const std::string& value) override
     {
         attributes_[name] = value;
@@ -289,7 +214,8 @@ struct BeastRequestAdapter : IRequest
     std::optional<std::string> getAttribute(const std::string& name) const override
     {
         auto it = attributes_.find(name);
-        if (it != attributes_.end()) {
+        if (it != attributes_.end())
+        {
             return it->second;
         }
         return std::nullopt;
@@ -303,35 +229,4 @@ private:
     std::map<std::string, std::string> queryParams_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> attributes_;
-
-    static std::string toLower(const std::string& str)
-    {
-        std::string result = str;
-        std::transform(result.begin(), result.end(), result.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
-        return result;
-    }
-
-    static std::vector<std::string> splitPath(const std::string& path)
-    {
-        std::vector<std::string> segments;
-        std::string segment;
-        
-        for (char ch : path) {
-            if (ch == '/') {
-                if (!segment.empty()) {
-                    segments.push_back(segment);
-                    segment.clear();
-                }
-            } else {
-                segment += ch;
-            }
-        }
-        
-        if (!segment.empty()) {
-            segments.push_back(segment);
-        }
-        
-        return segments;
-    }
 };

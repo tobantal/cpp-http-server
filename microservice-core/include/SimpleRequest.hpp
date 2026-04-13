@@ -1,19 +1,14 @@
 #pragma once
 
 #include "IRequest.hpp"
+#include "StringUtils.hpp"
+#include "PathParamExtractor.hpp"
 #include <string>
 #include <map>
 #include <vector>
 #include <optional>
-#include <algorithm>
 #include <cctype>
 
-/**
- * @file SimpleRequest.hpp
- * @brief Простая реализация IRequest для исходящих запросов и тестов
- * @version 2.0
- * @author Anton Tobolkin
- */
 struct SimpleRequest : IRequest
 {
     SimpleRequest(const std::string& method,
@@ -26,15 +21,10 @@ struct SimpleRequest : IRequest
     {
     }
 
-    // Default constructor for testing
-    SimpleRequest() 
+    SimpleRequest()
         : method_("GET"), path_("/"), body_(""), ip_("127.0.0.1"), port_(80)
     {
     }
-
-    // =========================================================================
-    // PATH
-    // =========================================================================
 
     std::string getPath() const override { return path_; }
 
@@ -42,31 +32,34 @@ struct SimpleRequest : IRequest
     {
         std::vector<std::string> segments;
         std::string segment;
-        
-        for (char ch : path_) {
-            if (ch == '/') {
-                if (!segment.empty()) {
+
+        for (char ch : path_)
+        {
+            if (ch == '/')
+            {
+                if (!segment.empty())
+                {
                     segments.push_back(segment);
                     segment.clear();
                 }
-            } else if (ch == '?') {
-                // Stop at query string
+            }
+            else if (ch == '?')
+            {
                 break;
-            } else {
+            }
+            else
+            {
                 segment += ch;
             }
         }
-        
-        if (!segment.empty()) {
+
+        if (!segment.empty())
+        {
             segments.push_back(segment);
         }
-        
+
         return segments;
     }
-
-    // =========================================================================
-    // PATH PARAMETERS
-    // =========================================================================
 
     std::string getPathPattern() const override
     {
@@ -80,29 +73,8 @@ struct SimpleRequest : IRequest
 
     std::optional<std::string> getPathParam(size_t index) const override
     {
-        if (pathPattern_.empty()) {
-            return std::nullopt;
-        }
-        
-        auto pathSegments = getPathSegments();
-        auto patternSegments = splitPath(pathPattern_);
-        
-        size_t wildcardIndex = 0;
-        for (size_t i = 0; i < patternSegments.size() && i < pathSegments.size(); ++i) {
-            if (patternSegments[i] == "*") {
-                if (wildcardIndex == index) {
-                    return pathSegments[i];
-                }
-                ++wildcardIndex;
-            }
-        }
-        
-        return std::nullopt;
+        return PathParamExtractor::getByIndex(path_, pathPattern_, index);
     }
-
-    // =========================================================================
-    // QUERY PARAMETERS
-    // =========================================================================
 
     std::map<std::string, std::string> getQueryParams() const override
     {
@@ -112,7 +84,8 @@ struct SimpleRequest : IRequest
     std::optional<std::string> getQueryParam(const std::string& name) const override
     {
         auto it = queryParams_.find(name);
-        if (it != queryParams_.end()) {
+        if (it != queryParams_.end())
+        {
             return it->second;
         }
         return std::nullopt;
@@ -123,15 +96,10 @@ struct SimpleRequest : IRequest
         queryParams_[name] = value;
     }
 
-    // Deprecated alias
     std::map<std::string, std::string> getParams() const override
     {
         return getQueryParams();
     }
-
-    // =========================================================================
-    // HEADERS
-    // =========================================================================
 
     std::map<std::string, std::string> getHeaders() const override
     {
@@ -140,9 +108,11 @@ struct SimpleRequest : IRequest
 
     std::optional<std::string> getHeader(const std::string& name) const override
     {
-        std::string nameLower = toLower(name);
-        for (const auto& [key, value] : headers_) {
-            if (toLower(key) == nameLower) {
+        std::string nameLower = StringUtils::toLower(name);
+        for (const auto& [key, value] : headers_)
+        {
+            if (StringUtils::toLower(key) == nameLower)
+            {
                 return value;
             }
         }
@@ -156,14 +126,11 @@ struct SimpleRequest : IRequest
 
     void setHeaders(const std::map<std::string, std::string>& headers) override
     {
-        for (const auto& [name, value] : headers) {
+        for (const auto& [name, value] : headers)
+        {
             headers_[name] = value;
         }
     }
-
-    // =========================================================================
-    // BODY
-    // =========================================================================
 
     std::string getBody() const override { return body_; }
 
@@ -172,36 +139,26 @@ struct SimpleRequest : IRequest
         body_ = body;
     }
 
-    // =========================================================================
-    // METHOD
-    // =========================================================================
-
     std::string getMethod() const override { return method_; }
-
-    // =========================================================================
-    // CONNECTION INFO
-    // =========================================================================
 
     std::string getIp() const override { return ip_; }
     int getPort() const override { return port_; }
 
-    // =========================================================================
-    // CONVENIENCE METHODS
-    // =========================================================================
-
     std::optional<std::string> getBearerToken() const override
     {
         auto auth = getHeader("Authorization");
-        if (!auth) {
+        if (!auth)
+        {
             return std::nullopt;
         }
-        
+
         const std::string bearerPrefix = "Bearer ";
         if (auth->length() > bearerPrefix.length() &&
-            auth->substr(0, bearerPrefix.length()) == bearerPrefix) {
+            auth->substr(0, bearerPrefix.length()) == bearerPrefix)
+        {
             return auth->substr(bearerPrefix.length());
         }
-        
+
         return std::nullopt;
     }
 
@@ -217,10 +174,6 @@ struct SimpleRequest : IRequest
         return ct.value_or("");
     }
 
-    // =========================================================================
-    // ATTRIBUTES
-    // =========================================================================
-
     void setAttribute(const std::string& name, const std::string& value) override
     {
         attributes_[name] = value;
@@ -229,15 +182,12 @@ struct SimpleRequest : IRequest
     std::optional<std::string> getAttribute(const std::string& name) const override
     {
         auto it = attributes_.find(name);
-        if (it != attributes_.end()) {
+        if (it != attributes_.end())
+        {
             return it->second;
         }
         return std::nullopt;
     }
-
-    // =========================================================================
-    // SETTERS for testing
-    // =========================================================================
 
     void setMethod(const std::string& method) { method_ = method; }
     void setPath(const std::string& path) { path_ = path; }
@@ -254,35 +204,4 @@ private:
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> queryParams_;
     std::map<std::string, std::string> attributes_;
-
-    static std::string toLower(const std::string& str)
-    {
-        std::string result = str;
-        std::transform(result.begin(), result.end(), result.begin(),
-                       [](unsigned char c) { return std::tolower(c); });
-        return result;
-    }
-
-    static std::vector<std::string> splitPath(const std::string& path)
-    {
-        std::vector<std::string> segments;
-        std::string segment;
-        
-        for (char ch : path) {
-            if (ch == '/') {
-                if (!segment.empty()) {
-                    segments.push_back(segment);
-                    segment.clear();
-                }
-            } else {
-                segment += ch;
-            }
-        }
-        
-        if (!segment.empty()) {
-            segments.push_back(segment);
-        }
-        
-        return segments;
-    }
 };

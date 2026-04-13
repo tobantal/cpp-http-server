@@ -36,7 +36,7 @@
 | `BeastRequestAdapter` | Адаптер Beast-запросов к `IRequest` с case-insensitive headers |
 | `BeastResponseAdapter` | Адаптер Beast-ответов к `IResponse` с геттерами |
 | `HttpClient` | HTTP-клиент на Beast для сервис-сервис коммуникации |
-| `ServerSettings` | Конфигурация хоста/порта сервера из Environment |
+| `ServerSettings` | Конфигурация хоста/порта сервера (ENV → config.json → дефолт) |
 | `DbSettings` | Параметры подключения БД из Environment |
 
 ---
@@ -449,12 +449,31 @@ if (client.send(request, response)) {
 
 ## ⚙️ Конфигурация
 
+### Приоритет настроек сервера
+
+`ServerSettings` определяет хост и порт с приоритетом:
+
+1. **ENV переменные** — `SERVER_HOST`, `SERVER_PORT`
+2. **config.json** — `server.host`, `server.port`
+3. **Дефолты** — `0.0.0.0:8080`
+
+Это упрощает деплой в Kubernetes: задавайте хост/порт через Deployment manifest, а остальные настройки — через config.json.
+
+```bash
+# K8s Deployment
+env:
+  - name: SERVER_HOST
+    value: "0.0.0.0"
+  - name: SERVER_PORT
+    value: "8080"
+```
+
 ### Environment-based конфигурация
 
 ```cpp
 auto settings = std::make_shared<ServerSettings>(env_);
-std::string host = settings->getHost();
-int port = settings->getPort();
+std::string host = settings->getHost();   // ENV SERVER_HOST или config.json или "0.0.0.0"
+int port = settings->getPort();            // ENV SERVER_PORT или config.json или 8080
 
 auto dbSettings = std::make_shared<DbSettings>(env_);
 std::string dbHost = dbSettings->getHost();
@@ -488,7 +507,7 @@ ctest --verbose
 - ✅ **SimpleRequest** — полная реализация IRequest v2
 - ✅ **SimpleResponse** — полная реализация IResponse v2
 - ✅ **RouteMatcher** — wildcard matching
-- ✅ **ServerSettings / DbSettings** — валидация конфигурации
+- ✅ **ServerSettings** — ENV приоритет, config.json fallback, дефолты, ошибки парсинга
 
 ### Пример теста с новым API
 

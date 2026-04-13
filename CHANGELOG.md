@@ -16,9 +16,22 @@
 
 ### Планируется в v0.3.0
 
-
 #### Новый функционал
 - `MetricsHandler` — эндпоинт для Prometheus метрик
+
+#### Документация
+- Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
+
+
+### Выполнено в v0.3.0 (feature/v0.3.0)
+
+
+#### DRY-04: ServerSettings — хост/порт из ENV переменных
+- `ServerSettings` читает `SERVER_HOST` и `SERVER_PORT` из ENV переменных
+- Приоритет: ENV → config.json → дефолт (0.0.0.0:8080)
+- Упрощает деплой в K8s: не нужен config.json для хоста/порта
+- Backward compatible: config.json продолжает работать
+- 7 новых тестов покрывают все комбинации
 
 
 #### Документация
@@ -139,7 +152,8 @@ registerEndpoint("GET", "/health",
 ---
 
 
-[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/tobantal/cpp-http-server/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.3.0
 [0.2.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.2.0
 [0.1.0]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.1.0
 [0.0.5]: https://github.com/tobantal/cpp-http-server/releases/tag/v0.0.5

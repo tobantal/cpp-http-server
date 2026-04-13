@@ -41,12 +41,12 @@
 - **Критерий успеха:** Consumer может подключить cpp-http-server через FetchContent без двойного скачивания Boost; microservice-core подключается вообще без зависимостей
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
 
-### DRY-04: Хост/порт из ENV переменных (ServerSettings)
+### DRY-04: Хост/порт из ENV переменных (ServerSettings) ✅ ВЫПОЛНЕНО
 - **SP:** 3
 - **Модуль:** microservice-boost
-- **Что:** `ServerSettings` читает хост и порт из ENV: `SERVER_HOST` (default: "0.0.0.0"), `SERVER_PORT` (default: 8080). Приоритет: ENV → config.json → дефолт. Это упростит Docker-образ (K8s управляет хост/порт через Deployment manifest), как уже сделано в trading-platform. Если ENV не задан — значения берутся из config.json (через IEnvironment), если и там нет — дефолт.
+- **Что:** `ServerSettings` читает хост и порт из ENV: `SERVER_HOST` (default: "0.0.0.0"), `SERVER_PORT` (default: 8080). Приоритет: ENV → config.json → дефолт.
 - **Файлы:** `ServerSettings.hpp`/`.cpp`, `IServerSettings.hpp`
-- **Тесты:** Unit-тест: ENV SERVER_HOST → используется; ENV + config.json → ENV приоритет; только config.json → используется; ничего → дефолт
+- **Тесты:** 7 тестов: ENV only, ENV overrides config, config only, defaults, mixed, invalid port ENV, invalid port defaults
 - **Совместимость:** Backward compatible — config.json продолжает работать
 
 ### DRY-04b: Аналитика — выпиливание nlohmann/json и config.json

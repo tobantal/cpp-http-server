@@ -10,6 +10,7 @@
 #include <string>
 #include <map>
 #include <optional>
+#include <atomic>
 
 class IRequest;
 class IResponse;
@@ -69,7 +70,7 @@ private:
 
     std::unique_ptr<boost::asio::io_context> ioContext_;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
-    bool running_;
+    std::atomic<bool> running_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

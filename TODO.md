@@ -69,12 +69,10 @@
 
 ## P0 — Critical (блокирует production)
 
-### SRV-01: Thread-safety — `running_` flag не atomic
+### SRV-01: Thread-safety — `running_` flag не atomic ✅ ВЫПОЛНЕНО
 - **SP:** 1
 - **Модуль:** microservice-boost
-- **Что:** `running_` в BoostBeastApplication — plain `bool`, читается/пишется из main thread и потенциально из signal handler. Заменить на `std::atomic<bool>`.
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`
-- **Тесты:** Unit-тест: stop() из signal handler не вызывает data race
+- **Что:** `running_` → `std::atomic<bool>`, `stop()` использует `exchange(false)`, `start()` использует `store(true)` / `load()`. Data race устранён.
 
 ### SRV-02: Thread-safety — `handlers_` map без защиты
 - **SP:** 2

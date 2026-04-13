@@ -26,6 +26,12 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-01: Thread-safety — running_ flag atomic
+- `running_` → `std::atomic<bool>` в BoostBeastApplication
+- `stop()` использует `exchange(false)` — атомарная проверка+сброс
+- `start()` использует `store(true)` / `load()` в цикле
+- Signal handler и main thread больше не имеют data race
+
 #### DRY-02: Иерархия HTTP-исключений + ChainHandler try-catch модель
 - Новый базовый класс `HttpError(statusCode, message)` с геттерами
 - 9 классов исключений (1 класс = 1 файл): `BadRequestError` (400), `UnauthorizedError` (401), `ForbiddenError` (403), `NotFoundError` (404), `ConflictError` (409), `InternalError` (500), `ServiceUnavailableError` (503), `BusinessError` (400), `AuthError` (401)

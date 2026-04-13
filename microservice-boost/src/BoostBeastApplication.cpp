@@ -37,10 +37,9 @@ BoostBeastApplication::~BoostBeastApplication()
 
 void BoostBeastApplication::stop()
 {
-    if (running_)
+    if (running_.exchange(false))
     {
         std::cout << "[App] Stopping application..." << std::endl;
-        running_ = false;
 
         if (acceptor_ && acceptor_->is_open())
         {
@@ -180,9 +179,9 @@ void BoostBeastApplication::start()
         std::cout << "[Server] Listening on " << host << ":" << port << std::endl;
         std::cout << "[Server] Server is ready to accept connections!" << std::endl;
 
-        running_ = true;
+        running_.store(true);
 
-        while (running_)
+        while (running_.load())
         {
             tcp::socket socket{*ioContext_};
             acceptor_->accept(socket);
@@ -197,7 +196,7 @@ void BoostBeastApplication::start()
     catch (const std::exception &e)
     {
         std::cerr << "[Server] Error: " << e.what() << std::endl;
-        running_ = false;
+        running_.store(false);
     }
 }
 

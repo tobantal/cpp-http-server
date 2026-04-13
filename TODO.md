@@ -20,29 +20,13 @@
 - **Файлы:** Анализ: `trading-platform/education/*/src/main.cpp` (3 файла), `BoostBeastApplication.hpp`
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
 
-### DRY-02: Иерархия HTTP-исключений + HttpErrorHandler ✅ ВЫПОЛНЕНО
-- **SP:** 5
-- **Модуль:** microservice-core, microservice-boost
-- **Что:** Создать стандартную иерархию исключений и переработать ChainHandler на try-catch модель. Handler бросает исключение (`throw NotFoundError("Order not found")`), ChainHandler ловит его по типу и формирует HTTP-ответ. Каждое исключение несёт человекочитаемое имя + HTTP-код (приватное поле `statusCode_`). Иерархия: HttpError (base) → BadRequestError(400), UnauthorizedError(401), ForbiddenError(403), NotFoundError(404), ConflictError(409), InternalError(500), ServiceUnavailableError(503), BusinessError(400), AuthError(401). 1 класс = 1 файл. ChainHandler: HttpError → error response + stop, std::exception → 500 + stop, no exception → continue. Формат ошибки: `{"error": "<message>"}`.
-- **Файлы:** `HttpError.hpp`, `BadRequestError.hpp`, `UnauthorizedError.hpp`, `ForbiddenError.hpp`, `NotFoundError.hpp`, `ConflictError.hpp`, `InternalError.hpp`, `ServiceUnavailableError.hpp`, `BusinessError.hpp`, `AuthError.hpp` (microservice-core/include); `ChainHandler.hpp` (переработан); `BoostBeastApplication.cpp` (HttpError catch); `HttpErrorTest.cpp`, `ChainHandlerTest.cpp` (новые)
-- **Тесты:** 18 тестов HttpError (каждый класс, catch по ссылке, catch std::exception), 8 тестов ChainHandler (нормальное завершение, 201 статус, NotFoundError, UnauthorizedError, std::exception, middleware прерывает цепочку, пустая цепочка)
-- **Ссылка:** trading-platform REF-09 (httpStatus workaround — теперь не нужен), REF-13 (exception hierarchy)
-
 ### DRY-03: Аналитика — разделение «тощего» кода библиотеки и внешних зависимостей
 - **SP:** 3
 - **Модуль:** CMake (корневой)
-- **Что:** Сейчас библиотека «жирная» — FetchContent в корневом CMakeLists.txt тянет: Boost 1.83.0 (весь tarball ~33MB, хотя нужны только system/beast/asio), Boost.DI v1.3.0, nlohmann/json v3.11.3. При подключении через FetchContent consumer-проект получает чужие транзитивные зависимости с захардкоженными версиями — риск конфликта. Проанализировать варианты поставки библиотеки, где в репозитории — только наш код, а зависимости подтягиваются consumer-проектом. Варианты: (а) `find_package()` — потребитель сам предоставляет зависимости через систему (apt, vcpkg, conan, свой FetchContent); (б) FetchContent как опциональный fallback (`CPP_HTTP_SERVER_FETCH_DEPS=ON`); (в) CMake PackageConfig (`cpp-http-serverConfig.cmake`) — install + find_package для consumer; (г) разделить microservice-core (нулевой зависимости) и microservice-boost (зависимости Consumer обеспечивает). microservice-core вообще не должен требовать FetchContent — у него нет сторонних зависимостей. Результат — документ с рекомендацией по варианту + задача на реализацию.
+- **Что:** Сейчас библиотека «жирная» — FetchContent в корневом CMakeLists.txt тянет: Boost 1.83.0 (весь tarball ~33MB, хотя нужны только system/beast/asio), Boost.DI v1.3.0, nlohmann/json v3.11.3. При подключении через FetchContent consumer-проект получает чужие транзитивные зависимости с захардкоженными версиями — риск конфликта. Проанализировать варианты поставки библиотеки, где в репозитории — только наш код, а зависимости подтягиваются consumer-проектом. Варианты: (а) `find_package()` — потребитель сам предоставляет зависимости через систему (apt, vcpkg, conan, свой FetchContent); (б) FetchContent как опциональный fallback (`CPP_HTTP_SERVER_FETCH_DEPS=ON`); (в) CMake PackageConfig (`cpp-http-serverConfig.cmake`) — install + find_package для consumer; (г) разделить microservice-core (нулевые зависимости) и microservice-boost (зависимости Consumer обеспечивает). microservice-core вообще не должен требовать FetchContent — у него нет сторонних зависимостей. Результат — документ с рекомендацией по варианту + задача на реализацию.
 - **Файлы:** `CMakeLists.txt` (корневой), `microservice-core/CMakeLists.txt`, `microservice-boost/CMakeLists.txt`, `README.md` (раздел Installation)
 - **Критерий успеха:** Consumer может подключить cpp-http-server через FetchContent без двойного скачивания Boost; microservice-core подключается вообще без зависимостей
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
-
-### DRY-04: Хост/порт из ENV переменных (ServerSettings) ✅ ВЫПОЛНЕНО
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** `ServerSettings` читает хост и порт из ENV: `SERVER_HOST` (default: "0.0.0.0"), `SERVER_PORT` (default: 8080). Приоритет: ENV → config.json → дефолт.
-- **Файлы:** `ServerSettings.hpp`/`.cpp`, `IServerSettings.hpp`
-- **Тесты:** 7 тестов: ENV only, ENV overrides config, config only, defaults, mixed, invalid port ENV, invalid port defaults
-- **Совместимость:** Backward compatible — config.json продолжает работать
 
 ### DRY-04b: Аналитика — выпиливание nlohmann/json и config.json
 - **SP:** 3
@@ -51,13 +35,6 @@
 - **Файлы:** Анализ: `BoostBeastApplication.cpp` (loadJsonToEnvironment), `CMakeLists.txt`
 - **Результат:** Документ с анализом + рекомендация (пока документируем, реализация — отдельная задача)
 - **Связанные задачи:** DRY-03 (тощая поставка — после выпиливания json задача упрощается)
-
-### DRY-05: Выпилить IDbSettings / DbSettings из библиотеки ✅ ВЫПОЛНЕНО
-- **SP:** 1
-- **Модуль:** microservice-core, microservice-boost
-- **Что:** Удалить `IDbSettings.hpp`, `DbSettings.hpp`/`.cpp` из cpp-http-server. Работа с БД — не удел библиотеки HTTP-сервера. Микросервисы сами отвечают за создание настроек подключения к БД и их наполнение (как уже сделано в trading-platform — свой `common::settings::DbSettings` с ENV). Оставить IEnvironment как универсальный механизм конфигурации — потребитель может хранить любые настройки, включая DB.
-- **Файлы:** Удалено: `microservice-core/include/settings/IDbSettings.hpp`, `microservice-boost/include/settings/DbSettings.hpp`, `microservice-boost/src/settings/DbSettings.cpp`, `microservice-boost/tests/DbSettingsTest.cpp`; обновлено: `CMakeLists.txt`
-- **Тесты:** DbSettingsTest удалён; остальные тесты прошли без изменений
 
 ### DRY-06: Аналитика — оценка библиотек для возможного внедрения
 - **SP:** 2
@@ -69,16 +46,6 @@
 
 ## P0 — Critical (блокирует production)
 
-### SRV-01: Thread-safety — `running_` flag не atomic ✅ ВЫПОЛНЕНО
-- **SP:** 1
-- **Модуль:** microservice-boost
-- **Что:** `running_` → `std::atomic<bool>`, `stop()` использует `exchange(false)`, `start()` использует `store(true)` / `load()`. Data race устранён.
-
-### SRV-02: Thread-safety — `handlers_` map без защиты ✅ ВЫПОЛНЕНО
-- **SP:** 2
-- **Модуль:** microservice-boost
-- **Что:** Добавлен `started_` флаг. `registerHandler()` бросает `std::logic_error` если вызван после `start()`. handlers_ иммутабелен после старта.
-
 ### SRV-02b: State enum вместо двух atomic bool
 - **SP:** 2
 - **Модуль:** microservice-boost
@@ -89,34 +56,30 @@
 - **Модуль:** microservice-core
 - **Что:** Вынести boost-независимую логику из BoostBeastApplication в BaseWebApplication: `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `started_` флаг. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволит в будущем создать вторую реализацию на другой HTTP-библиотеке без дублирования routing/error-handling логики.
 
-### SRV-03: Утечка lifetime — detached threads после stop() ✅ ВЫПОЛНЕНО
-- **SP:** 5
-- **Модуль:** microservice-boost
-- **Что:** `std::thread(...).detach()` заменён на `std::vector<std::thread>` с `std::mutex`. `stop()` закрывает acceptor, затем join'ит все потоки. Use-after-free устранён.
-
 ### SRV-04: Неограниченное создание потоков — DoS-уязвимость
 - **SP:** 5
 - **Модуль:** microservice-boost
-- **Что:** Каждый коннект создаёт новый detached thread без лимита. При flash-crowd или DoS — исчерпание ресурсов. Решение: thread pool с фиксированным размером (configurable, default = std::thread::hardware_concurrency()). Если пул полон — отклонять новые соединения (503 Service Unavailable) или ставить в очередь.
+- **Что:** Каждый коннект создаёт новый thread без лимита. При flash-crowd или DoS — исчерпание ресурсов. Решение: thread pool с фиксированным размером (configurable, default = std::thread::hardware_concurrency()). Если пул полон — отклонять новые соединения (503 Service Unavailable) или ставить в очередь.
 - **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`, новый `ThreadPool.hpp`
 - **Тесты:** Integration-тест: pool exhaustion → 503; pool recovery → новый запрос обслуживается
-- **Зависит от:** SRV-03 (сначала thread pool)
 
 ---
 
 ## P1 — Security & Reliability
 
-### SRV-05: Request body size limit ✅ ВЫПОЛНЕНО
+### SRV-06: Request timeout (read/write) — сервер
 - **SP:** 3
 - **Модуль:** microservice-boost
-- **Что:** `IServerSettings::getMaxRequestBodySize()`, ENV `SERVER_MAX_REQUEST_BODY_SIZE` (default: 1MB). `flat_buffer` ограничен, `req.body().size()` проверяется → 413 Payload Too Large.
-
-### SRV-06: Request timeout
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** `http::read()` в handleSession не имеет таймаута. Медленный клиент может блокировать поток бесконечно. Добавить `beast::tcp_stream::expires_after()` для connect/read/write. Настройки в ServerSettings: `readTimeoutMs` (default: 30000), `writeTimeoutMs` (default: 30000).
+- **Что:** `http::read()` и `http::write()` в handleSession не имеют таймаутов. Медленный клиент может блокировать поток бесконечно (slowloris DoS). Добавить `beast::tcp_stream::expires_after()` для read/write. Настройки в ServerSettings: `SERVER_READ_TIMEOUT_MS` (default: 30000), `SERVER_WRITE_TIMEOUT_MS` (default: 30000).
 - **Файлы:** `BoostBeastApplication.cpp`, `ServerSettings.hpp`, `IServerSettings.hpp`
 - **Тесты:** Integration-тест: медленный клиент → timeout → соединение закрыто
+
+### SRV-06b: Connect timeout — HttpClient
+- **SP:** 2
+- **Модуль:** microservice-boost
+- **Что:** `HttpClient::send()` вызывает `boost::asio::connect()` без таймаута. Если сервер недоступен, connect висит бесконечно. Добавить connect timeout через `beast::tcp_stream::expires_after()` перед connect. Настройка: `HTTP_CLIENT_CONNECT_TIMEOUT_MS` (default: 5000). Часть SRV-09, вынесена как отдельная задача.
+- **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`
+- **Тесты:** Unit-тест: connect к несуществующему хосту → timeout → error
 
 ### SRV-07: HTTP method not allowed — 405 ответ
 - **SP:** 2
@@ -132,10 +95,10 @@
 - **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`
 - **Тесты:** Integration-тест: SIGTERM → graceful shutdown → текущий запрос завершается
 
-### SRV-09: HttpClient timeouts и error handling
+### SRV-09: HttpClient error handling и connection pooling
 - **SP:** 5
 - **Модуль:** microservice-boost
-- **Что:** HttpClient::send() синхронный, без таймаутов, создаёт новое соединение на каждый запрос. Добавить: (1) connect timeout, read timeout, write timeout (default: 5s каждый, configurable через HttpClientSettings), (2) корректный error code enum вместо bool, (3) connection pooling или хотя бы keep-alive. В trading-platform это критично для HttpAuthClient и HttpBrokerGateway.
+- **Что:** HttpClient::send() синхронный, создаёт новое соединение на каждый запрос. Добавить: (1) read/write timeout (default: 5s, configurable через HttpClientSettings) — connect timeout в SRV-06b; (2) корректный error code enum вместо bool; (3) connection pooling или хотя бы keep-alive. В trading-platform это критично для HttpAuthClient и HttpBrokerGateway.
 - **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`, новый `IHttpClient.hpp` (расширить), `HttpClientSettings.hpp`
 - **Тесты:** Unit-тест: timeout → error code; integration-тест с mock-сервером
 - **Ссылка:** trading-platform REL-05 (Circuit Breaker), REL-06 (Retry), BUG-07a (silent exception swallowing)
@@ -227,7 +190,7 @@
 ### SRV-20: CORS middleware
 - **SP:** 2
 - **Модуль:** microservice-core
-- **Если:** Browser-based API клиенты требуют CORS headers. Добавить встроенный `CorsHandler` middleware: OPTIONS preflight → 204 + CORS headers, остальные методы → CORS headers в ответе. Настройки: `allowedOrigins`, `allowedMethods`, `allowedHeaders`.
+- **Что:** Browser-based API клиенты требуют CORS headers. Добавить встроенный `CorsHandler` middleware: OPTIONS preflight → 204 + CORS headers, остальные методы → CORS headers в ответе. Настройки: `allowedOrigins`, `allowedMethods`, `allowedHeaders`.
 - **Файлы:** Новый `CorsHandler.hpp` в microservice-core
 - **Тесты:** Unit-тест: OPTIONS preflight → 204 + CORS; GET с Origin → CORS headers
 
@@ -292,10 +255,10 @@
 ### SRV-28: Async I/O — переход на асинхронную модель
 - **SP:** 13
 - **Модуль:** microservice-boost
-- **Что:** Заменить синхронную модель (один поток на соединение) на асинхронную на Boost.Asio. `io_context.run()` с thread pool дляhandlers, async read/write через `async_read_some()` + `async_write()`. Это масштабируемое решение: 10K+ соединений на одном процессе. BREAKING CHANGE — новая архитектура, но интерфейс IRequest/IResponse остаётся.
+- **Что:** Заменить синхронную модель (один поток на соединение) на асинхронную на Boost.Asio. `io_context.run()` с thread pool для handlers, async read/write через `async_read_some()` + `async_write()`. Это масштабируемое решение: 10K+ соединений на одном процессе. BREAKING CHANGE — новая архитектура, но интерфейс IRequest/IResponse остаётся.
 - **Файлы:** `BoostBeastApplication.hpp`/`.cpp` — полная переработка
 - **Тесты:** Integration-тесты: concurrent connections, load testing (wrk/hey/ab), graceful shutdown
-- **Зависит от:** SRV-03 (thread pool), SRV-04 (connection limit)
+- **Зависит от:** SRV-04 (thread pool, connection limit)
 
 ### SRV-29: Keep-alive support
 - **SP:** 3
@@ -322,7 +285,7 @@
 ### SRV-32: Async HTTP client
 - **SP:** 8
 - **Модуль:** microservice-boost
-- **Что:** Текущий `HttpClient` синхронный (блокирует поток). Добавить `IAsyncHttpClient` с `sendAsync(request, callback)` — 基于 Boost.Asio async. Callback получает response или error. Connection pooling для keep-alive. В trading-pattern: circuit breaker (REL-05) и retry (REL-06) требуют async HTTP.
+- **Что:** Текущий `HttpClient` синхронный (блокирует поток). Добавить `IAsyncHttpClient` с `sendAsync(request, callback)` на Boost.Asio async. Callback получает response или error. Connection pooling для keep-alive. В trading-platform: circuit breaker (REL-05) и retry (REL-06) требуют async HTTP.
 - **Файлы:** Новый `IAsyncHttpClient.hpp`, `AsyncHttpClient.hpp`/`.cpp`
 - **Тесты:** Integration-тест: async request → callback; multiple concurrent requests
 
@@ -336,7 +299,7 @@
 ### SRV-34: Разделение header-only на hpp/cpp
 - **SP:** 5
 - **Модуль:** microservice-boost
-- **Что:** Вынести реализации из `.hpp` в `.cpp` для: BeastRequestAdapter, BeastResponseAdapter, ServerSettings, DbSettings. Оставить header-only только шаблоны и tiny classes. Ускорит компиляцию consumer-проектов.
+- **Что:** Вынести реализации из `.hpp` в `.cpp` для: BeastRequestAdapter, BeastResponseAdapter, ServerSettings. Оставить header-only только шаблоны и tiny classes. Ускорит компиляцию consumer-проектов.
 - **Файлы:** Все `.hpp` с inline-реализациями в microservice-boost
 - **Тесты:** Существующие тесты должны пройти без изменений
 
@@ -347,7 +310,7 @@
 ### SRV-35: API Reference документация
 - **SP:** 3
 - **Модуль:** docs
-- **Что:** Разделить README на отдельные документы: docs/api.md (IRequest/IResponse API), docs/routing.md (RouteMatcher, named params, wildcards), docs/middleware.md (ChainHandler, creating middleware), docs/configuration.md (ServerSettings, DbSettings, config.json), docs/deployment.md (CMake integration, FetchContent, Docker). README оставить как quick start.
+- **Что:** Разделить README на отдельные документы: docs/api.md (IRequest/IResponse API), docs/routing.md (RouteMatcher, named params, wildcards), docs/middleware.md (ChainHandler, creating middleware), docs/configuration.md (ServerSettings, config.json), docs/deployment.md (CMake integration, FetchContent, Docker). README оставить как quick start.
 - **Файлы:** Новый `docs/api.md`, `docs/routing.md`, `docs/middleware.md`, `docs/configuration.md`, `docs/deployment.md`
 - **Ссылка:** CHANGELOG.md v0.3.0 — "Разделение README"
 
@@ -378,12 +341,14 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 7 | 20 |
-| P0 Critical (thread-safety, lifetime, DoS) | 6 | 20 |
+| P1 DRY | 4 | 10 |
+| P0 Critical | 3 | 12 |
 | P1 Security & Reliability | 6 | 18 |
 | P1 API Improvements | 5 | 19 |
 | P2 Observability & DX | 5 | 12 |
-| P2 Code Quality & Bugs | 7 | 15 |
-| P3 Performance & Future | 7 | 45 |
+| P2 Code Quality & Bugs | 7 | 12 |
+| P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **46** | **160** |
+| **Итого** | **41** | **140** |
+
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05

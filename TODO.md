@@ -88,12 +88,18 @@
 - **Файлы:** `BoostBeastApplication.cpp` (в findHandler или handleRequest)
 - **Тесты:** Integration-тест: POST на GET-only маршрут → 405 + Allow header
 
-### SRV-08: Graceful shutdown
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** При SIGTERM/SIGINT: прекратить приём новых соединений, доработать текущие запросы (с таймаутом 5s), закрыть все соединения, остановить io_context. Добавить `gracefulShutdown()` метод и signal handler в `run()`.
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`
-- **Тесты:** Integration-тест: SIGTERM → graceful shutdown → текущий запрос завершается
+### SRV-08: Graceful shutdown (IShutdown + ShutdownManager)
+- **SP:** 5
+- **Модуль:** microservice-core + microservice-boost
+- **Что:** При SIGTERM/SIGINT: прекратить приём новых соединений, доработать текущие запросы (с таймаутом), закрыть все подсистемы в обратном порядке. Решение:
+  1. **`IShutdown` интерфейс** (microservice-core): `virtual void shutdown() = 0` + виртуальный деструктор. Все подсистемы, требующие graceful shutdown (HTTP-сервер, connection pool, background workers), реализуют этот интерфейс.
+  2. **`ShutdownManager`** (microservice-core): регистрирует `IShutdown`-объекты в порядке старта. При shutdown вызывает `shutdown()` в обратном порядке (LIFO). Таймаут на каждый `shutdown()` (default: 5s). Если таймаут истёк — логировать warning и продолжить.
+  3. **`BoostBeastApplication`**: реализует `IShutdown`. `shutdown()` = close acceptor + drain current requests + join threads + stop io_context.
+  4. **Signal handler**: SIGTERM/SIGINT → `ShutdownManager::shutdownAll()`. Wire в `run()` или `start()`.
+  5. Consumer-проекты регистрируют свои подсистемы (RabbitMQAdapter, ConnectionPool, BackgroundTicker) в тот же ShutdownManager — единая точка graceful shutdown для всего приложения.
+- **Файлы:** Новый `IShutdown.hpp`, `ShutdownManager.hpp` в microservice-core; `BoostBeastApplication.hpp`/`.cpp` (реализует IShutdown, signal handler)
+- **Тесты:** Unit-тест: ShutdownManager LIFO order + timeout; Integration-тест: SIGTERM → graceful shutdown → текущий запрос завершается
+- **Ссылка:** trading-platform REL-08 (ICloseable + ShutdownManager — будет использовать IShutdown из библиотеки)
 
 ### SRV-09: HttpClient error handling и connection pooling
 - **SP:** 5
@@ -193,6 +199,18 @@
 - **Что:** Browser-based API клиенты требуют CORS headers. Добавить встроенный `CorsHandler` middleware: OPTIONS preflight → 204 + CORS headers, остальные методы → CORS headers в ответе. Настройки: `allowedOrigins`, `allowedMethods`, `allowedHeaders`.
 - **Файлы:** Новый `CorsHandler.hpp` в microservice-core
 - **Тесты:** Unit-тест: OPTIONS preflight → 204 + CORS; GET с Origin → CORS headers
+
+---
+
+## P1 — API Improvements (from trading-platform: REF-11)
+
+### SRV-39: JSON request validation middleware
+- **SP:** 5
+- **Модуль:** microservice-core
+- **Что:** Добавить `IRequestValidator` интерфейс и middleware для JSON-валидации request body перед маршрутизацией в handler. Валидатор проверяет: JSON parse, required fields, type constraints, size limit. Ошибки → 400 JSON response. Аналог: Spring `@Valid` / Jakarta Bean Validation. В trading-platform каждый handler дублирует `nlohmann::json::parse()` + ручные проверки. Схемы валидации определяются consumer-проектом.
+- **Файлы:** Новый `IRequestValidator.hpp`, `JsonValidationMiddleware.hpp` в microservice-core
+- **Тесты:** Unit-тест: invalid JSON → 400, missing required field → 400, valid JSON → passes to handler
+- **Ссылка:** trading-platform REF-11 (Centralized JSON request validation)
 
 ---
 
@@ -343,12 +361,12 @@
 |-----------|-------|-----|
 | P1 DRY | 4 | 10 |
 | P0 Critical | 3 | 12 |
-| P1 Security & Reliability | 6 | 18 |
-| P1 API Improvements | 5 | 19 |
+| P1 Security & Reliability | 6 | 20 |
+| P1 API Improvements | 6 | 24 |
 | P2 Observability & DX | 5 | 12 |
 | P2 Code Quality & Bugs | 7 | 12 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **41** | **140** |
+| **Итого** | **42** | **147** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05

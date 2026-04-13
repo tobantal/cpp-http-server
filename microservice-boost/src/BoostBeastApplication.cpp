@@ -50,6 +50,21 @@ void BoostBeastApplication::stop()
         {
             ioContext_->stop();
         }
+
+        std::cout << "[App] Waiting for sessions to finish..." << std::endl;
+        std::vector<std::thread> threadsToJoin;
+        {
+            std::lock_guard<std::mutex> lock(threadsMutex_);
+            threadsToJoin = std::move(threads_);
+        }
+        for (auto &t : threadsToJoin)
+        {
+            if (t.joinable())
+            {
+                t.join();
+            }
+        }
+        std::cout << "[App] All sessions finished" << std::endl;
     }
 }
 
@@ -194,9 +209,12 @@ void BoostBeastApplication::start()
 
             std::cout << "[Server] New connection accepted" << std::endl;
 
-            std::thread([this](tcp::socket socket)
-                        { handleSession(std::move(socket)); }, std::move(socket))
-                .detach();
+            std::thread t([this](tcp::socket socket)
+                          { handleSession(std::move(socket)); }, std::move(socket));
+            {
+                std::lock_guard<std::mutex> lock(threadsMutex_);
+                threads_.push_back(std::move(t));
+            }
         }
     }
     catch (const std::exception &e)

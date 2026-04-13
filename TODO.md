@@ -79,12 +79,20 @@
 - **Модуль:** microservice-boost
 - **Что:** Добавлен `started_` флаг. `registerHandler()` бросает `std::logic_error` если вызван после `start()`. handlers_ иммутабелен после старта.
 
-### SRV-03: Утечка lifetime — detached threads после stop()
+### SRV-02b: State enum вместо двух atomic bool
+- **SP:** 2
+- **Модуль:** microservice-boost
+- **Что:** Заменить `running_` + `started_` на `std::atomic<ServerState>` с состояниями: NotStarted, Running, Stopped. Невалидные комбинации невозможны. `registerHandler()` разрешён только в NotStarted. `stop()` использует `compare_exchange(Running, Stopped)`. Упрощает рассуждения о lifecycle и добавляет новые состояния в будущем (Starting, Draining).
+
+### SRV-02c: Промежуточная абстракция BaseWebApplication
+- **SP:** 5
+- **Модуль:** microservice-core
+- **Что:** Вынести boost-независимую логику из BoostBeastApplication в BaseWebApplication: `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `started_` флаг. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволит в будущем создать вторую реализацию на другой HTTP-библиотеке без дублирования routing/error-handling логики.
+
+### SRV-03: Утечка lifetime — detached threads после stop() ✅ ВЫПОЛНЕНО
 - **SP:** 5
 - **Модуль:** microservice-boost
-- **Что:** `handleSession` запускается в `std::thread(...).detach()`. При вызове `stop()` (деструктор) detached threads продолжают работать, но `this` уже уничтожен → use-after-free. Решение: заменить detached threads на thread pool + join при stop(). Добавить graceful shutdown: `io_context.stop()` + `thread_pool.join()` с таймаутом.
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`
-- **Тесты:** Integration-тест: start → send request → stop → no crash; start → stop → restart
+- **Что:** `std::thread(...).detach()` заменён на `std::vector<std::thread>` с `std::mutex`. `stop()` закрывает acceptor, затем join'ит все потоки. Use-after-free устранён.
 
 ### SRV-04: Неограниченное создание потоков — DoS-уязвимость
 - **SP:** 5
@@ -373,11 +381,11 @@
 | Категория | Задач | SP |
 |-----------|-------|-----|
 | P1 DRY | 7 | 20 |
-| P0 Critical (thread-safety, lifetime, DoS) | 4 | 13 |
+| P0 Critical (thread-safety, lifetime, DoS) | 6 | 20 |
 | P1 Security & Reliability | 6 | 18 |
 | P1 API Improvements | 5 | 19 |
 | P2 Observability & DX | 5 | 12 |
 | P2 Code Quality & Bugs | 7 | 15 |
 | P3 Performance & Future | 7 | 45 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **44** | **150** |
+| **Итого** | **46** | **160** |

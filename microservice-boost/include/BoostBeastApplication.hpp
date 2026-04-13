@@ -11,6 +11,9 @@
 #include <map>
 #include <optional>
 #include <atomic>
+#include <vector>
+#include <thread>
+#include <mutex>
 
 class IRequest;
 class IResponse;
@@ -72,6 +75,8 @@ private:
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
     std::atomic<bool> running_;
     std::atomic<bool> started_;
+    std::vector<std::thread> threads_;
+    std::mutex threadsMutex_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

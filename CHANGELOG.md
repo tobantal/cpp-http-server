@@ -26,6 +26,11 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-03: Утечка lifetime — detached threads заменены на joinable threads
+- `std::thread(...).detach()` → `std::vector<std::thread>` с `std::mutex`
+- `stop()` закрывает acceptor, затем join'ит все потоки — нет use-after-free
+- `threads_` защищён `threadsMutex_` для thread-safety
+
 #### SRV-02: Thread-safety — handlers_ map защита от регистрации после start()
 - Добавлен `started_` флаг (`std::atomic<bool>`) в BoostBeastApplication
 - `registerHandler()` бросает `std::logic_error` если вызван после `start()`

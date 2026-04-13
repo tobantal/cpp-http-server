@@ -36,9 +36,9 @@ public:
             }
         }
 
-        if (res.getStatus() == 0)
+        if (res.getStatus() < 100 || res.getStatus() >= 600)
         {
-            std::cerr << "[ChainHandler] CRITICAL ERROR: chain finished, but response status not set" << std::endl;
+            std::cerr << "[ChainHandler] CRITICAL ERROR: chain finished with invalid HTTP status: " << res.getStatus() << std::endl;
             sendError(res, 500, "Internal server error");
         }
     }

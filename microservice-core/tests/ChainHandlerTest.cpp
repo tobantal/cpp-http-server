@@ -135,3 +135,21 @@ TEST_F(ChainHandlerTest, EmptyChain_DefaultStatus200)
 
     EXPECT_EQ(res.getStatus(), 200);
 }
+
+class InvalidStatusHandler : public IHttpHandler
+{
+public:
+    void handle(IRequest &, IResponse &res) override
+    {
+        res.setStatus(50000);
+    }
+};
+
+TEST_F(ChainHandlerTest, InvalidStatus_Returns500)
+{
+    auto handler = std::make_shared<InvalidStatusHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    EXPECT_EQ(res.getStatus(), 500);
+}

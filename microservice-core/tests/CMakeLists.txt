@@ -17,6 +17,8 @@ add_executable(microservice-core-test
     EnvironmentTest.cpp
     SimpleRequestTest.cpp
     SimpleResponseTest.cpp
+    HttpErrorTest.cpp
+    ChainHandlerTest.cpp
 )
 
 target_link_libraries(microservice-core-test

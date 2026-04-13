@@ -1,14 +1,11 @@
-// adapters/primary/ChainHandler.hpp
 #pragma once
+
 #include "IHttpHandler.hpp"
+#include "HttpError.hpp"
 #include <memory>
 #include <vector>
 #include <iostream>
 
-/**
- * Класс для формирования цепочки middleware из хэндлеров.
- * Например, сбор метрик -> проверка идемпотентности -> обработка хэндлера -> сохранение идемпотентности.
- */
 class ChainHandler : public IHttpHandler
 {
 public:
@@ -22,14 +19,26 @@ public:
     {
         for (auto &h : handlers_)
         {
-            h->handle(req, res);
-            if (res.getStatus() != 0)
+            try
+            {
+                h->handle(req, res);
+            }
+            catch (const HttpError &e)
+            {
+                sendError(res, e.statusCode(), e.message());
                 return;
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "[ChainHandler] Unhandled exception: " << e.what() << std::endl;
+                sendError(res, 500, "Internal server error");
+                return;
+            }
         }
 
         if (res.getStatus() == 0)
         {
-            std::cerr << "[ChainHandler] Error: " << "middleware chain finished, but httpStatus is zero." << std::endl;
+            std::cerr << "[ChainHandler] CRITICAL ERROR: chain finished, but response status not set" << std::endl;
             sendError(res, 500, "Internal server error");
         }
     }

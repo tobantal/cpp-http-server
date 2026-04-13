@@ -161,3 +161,84 @@ TEST(ServerSettingsTest, InvalidMaxRequestBodySizeEnvUsesDefault)
 
     unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
 }
+
+TEST(ServerSettingsTest, DefaultReadTimeout)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_READ_TIMEOUT_MS");
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getReadTimeout(), std::chrono::milliseconds(30000));
+}
+
+TEST(ServerSettingsTest, ReadTimeoutFromEnv)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    setenv("SERVER_READ_TIMEOUT_MS", "5000", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getReadTimeout(), std::chrono::milliseconds(5000));
+
+    unsetenv("SERVER_READ_TIMEOUT_MS");
+}
+
+TEST(ServerSettingsTest, ReadTimeoutFromConfig)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_READ_TIMEOUT_MS");
+
+    auto env = std::make_shared<Environment>();
+    env->setProperty("server.readTimeoutMs", 10000);
+
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getReadTimeout(), std::chrono::milliseconds(10000));
+}
+
+TEST(ServerSettingsTest, DefaultWriteTimeout)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_WRITE_TIMEOUT_MS");
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getWriteTimeout(), std::chrono::milliseconds(30000));
+}
+
+TEST(ServerSettingsTest, WriteTimeoutFromEnv)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    setenv("SERVER_WRITE_TIMEOUT_MS", "5000", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getWriteTimeout(), std::chrono::milliseconds(5000));
+
+    unsetenv("SERVER_WRITE_TIMEOUT_MS");
+}
+
+TEST(ServerSettingsTest, InvalidReadTimeoutEnvUsesDefault)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    setenv("SERVER_READ_TIMEOUT_MS", "not_a_number", 1);
+    unsetenv("SERVER_WRITE_TIMEOUT_MS");
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getReadTimeout(), std::chrono::milliseconds(30000));
+
+    unsetenv("SERVER_READ_TIMEOUT_MS");
+}

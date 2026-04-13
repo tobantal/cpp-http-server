@@ -26,6 +26,15 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-06: Request timeout (read/write) — сервер
+- `beast::tcp_stream` заменяет `tcp::socket` в `handleSession`
+- Read timeout: `SERVER_READ_TIMEOUT_MS` (default: 30000) — `stream.expires_after()` перед `http::read()`
+- Write timeout: `SERVER_WRITE_TIMEOUT_MS` (default: 30000) — `stream.expires_after()` перед `http::write()`
+- I/O timeout логируется как `[Session] Timeout` и соединение закрывается (без HTTP-ответа — клиент не слушает)
+- `IServerSettings::getReadTimeout()` / `getWriteTimeout()` — новые методы (возвращают `std::chrono::milliseconds`)
+- `RequestTimeoutError` (408) и `GatewayTimeoutError` (504) — добавлены для consumer-кода (низкий приоритет)
+- 7 новых тестов ServerSettings (timeout defaults, ENV, config)
+
 #### SRV-07: HTTP method not allowed — 405 MethodNotAllowedError
 - `MethodNotAllowedError` (405) — новый класс исключения
 - `BoostBeastApplication::handleRequest()` проверяет `pathExists()` — если маршрут найден, но метод не совпадает → `throw MethodNotAllowedError`

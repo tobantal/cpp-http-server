@@ -14,6 +14,7 @@
 #include <vector>
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 class IRequest;
 class IResponse;
@@ -79,6 +80,8 @@ private:
     std::vector<std::thread> threads_;
     std::mutex threadsMutex_;
     size_t maxRequestBodySize_;
+    std::chrono::milliseconds readTimeout_;
+    std::chrono::milliseconds writeTimeout_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

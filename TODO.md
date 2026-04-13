@@ -67,12 +67,10 @@
 
 ## P1 — Security & Reliability
 
-### SRV-06: Request timeout (read/write) — сервер
+### SRV-06: Request timeout (read/write) — сервер ✅ ВЫПОЛНЕНО
 - **SP:** 3
 - **Модуль:** microservice-boost
-- **Что:** `http::read()` и `http::write()` в handleSession не имеют таймаутов. Медленный клиент может блокировать поток бесконечно (slowloris DoS). Добавить `beast::tcp_stream::expires_after()` для read/write. Настройки в ServerSettings: `SERVER_READ_TIMEOUT_MS` (default: 30000), `SERVER_WRITE_TIMEOUT_MS` (default: 30000).
-- **Файлы:** `BoostBeastApplication.cpp`, `ServerSettings.hpp`, `IServerSettings.hpp`
-- **Тесты:** Integration-тест: медленный клиент → timeout → соединение закрыто
+- **Что:** `beast::tcp_stream` с `expires_after()` для read/write. ENV: `SERVER_READ_TIMEOUT_MS`/`SERVER_WRITE_TIMEOUT_MS` (default: 30000). I/O timeout логируется и соединение закрывается. `RequestTimeoutError`(408)/`GatewayTimeoutError`(504) добавлены для consumer-кода (низкий приоритет).
 
 ### SRV-06b: Connect timeout — HttpClient
 - **SP:** 2

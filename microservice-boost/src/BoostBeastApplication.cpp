@@ -25,7 +25,8 @@ using tcp = asio::ip::tcp;
 // =============================================================================
 
 BoostBeastApplication::BoostBeastApplication()
-    : running_(false), started_(false), maxRequestBodySize_(1048576)
+    : running_(false), started_(false), maxRequestBodySize_(1048576),
+      readTimeout_(30000), writeTimeout_(30000)
 {
     std::cout << "[App] BoostBeastApplication created" << std::endl;
 }
@@ -210,6 +211,8 @@ void BoostBeastApplication::start()
         std::string host = serverSettings.getHost();
         int port = serverSettings.getPort();
         maxRequestBodySize_ = serverSettings.getMaxRequestBodySize();
+        readTimeout_ = serverSettings.getReadTimeout();
+        writeTimeout_ = serverSettings.getWriteTimeout();
 
         std::cout << "[App] Starting HTTP server..." << std::endl;
 
@@ -250,24 +253,28 @@ void BoostBeastApplication::start()
 
 void BoostBeastApplication::handleSession(tcp::socket socket)
 {
+    beast::tcp_stream stream(std::move(socket));
+
+    std::string clientIp = "0.0.0.0";
     try
     {
-        std::string clientIp = "0.0.0.0";
-        try
-        {
-            auto endpoint = socket.remote_endpoint();
-            clientIp = endpoint.address().to_string();
-            std::cout << "[Session] Client connected from: " << clientIp << std::endl;
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "[Session] Failed to get client IP: " << e.what() << std::endl;
-        }
+        auto endpoint = stream.socket().remote_endpoint();
+        clientIp = endpoint.address().to_string();
+        std::cout << "[Session] Client connected from: " << clientIp << std::endl;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "[Session] Failed to get client IP: " << e.what() << std::endl;
+    }
 
-        beast::flat_buffer buffer{maxRequestBodySize_};
+    beast::flat_buffer buffer{maxRequestBodySize_};
+
+    try
+    {
+        stream.expires_after(readTimeout_);
 
         http::request<http::string_body> req;
-        http::read(socket, buffer, req);
+        http::read(stream, buffer, req);
 
         if (req.body().size() > maxRequestBodySize_)
         {
@@ -278,7 +285,8 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
             res.set(http::field::content_type, "application/json");
             res.body() = R"({"error": "Payload too large"})";
             res.prepare_payload();
-            http::write(socket, res);
+            stream.expires_after(writeTimeout_);
+            http::write(stream, res);
             return;
         }
 
@@ -291,23 +299,20 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
 
         handleBeastRequest(req, res, clientIp);
 
-        http::write(socket, res);
+        stream.expires_after(writeTimeout_);
+        http::write(stream, res);
 
         std::cout << "[Session] Response sent with status: "
                   << res.result_int() << std::endl;
-
-        beast::error_code ec;
-        socket.shutdown(tcp::socket::shutdown_send, ec);
-
-        if (ec && ec != beast::errc::not_connected)
-        {
-            std::cerr << "[Session] Shutdown error: " << ec.message() << std::endl;
-        }
     }
     catch (const beast::system_error &se)
     {
-        if (se.code() != http::error::end_of_stream &&
-            se.code() != beast::errc::not_connected)
+        if (se.code() == beast::error::timeout)
+        {
+            std::cerr << "[Session] Timeout: " << se.what() << std::endl;
+        }
+        else if (se.code() != http::error::end_of_stream &&
+                 se.code() != beast::errc::not_connected)
         {
             std::cerr << "[Session] Error: " << se.what() << std::endl;
         }
@@ -315,6 +320,14 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     catch (const std::exception &e)
     {
         std::cerr << "[Session] Unexpected error: " << e.what() << std::endl;
+    }
+
+    beast::error_code ec;
+    stream.socket().shutdown(tcp::socket::shutdown_send, ec);
+
+    if (ec && ec != beast::errc::not_connected)
+    {
+        std::cerr << "[Session] Shutdown error: " << ec.message() << std::endl;
     }
 }
 

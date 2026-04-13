@@ -4,6 +4,7 @@
 #include <string>
 #include <cstdlib>
 #include <stdexcept>
+#include <chrono>
 #include "settings/IServerSettings.hpp"
 #include "IEnvironment.hpp"
 
@@ -12,6 +13,8 @@ private:
     std::string host_;
     int port_;
     size_t maxRequestBodySize_;
+    std::chrono::milliseconds readTimeout_;
+    std::chrono::milliseconds writeTimeout_;
 
     static std::string getEnvOrDefault(const char* name, const std::string& defaultValue) {
         const char* value = std::getenv(name);
@@ -31,10 +34,13 @@ private:
     }
 
     static constexpr size_t kDefaultMaxRequestBodySize = 1048576;
+    static constexpr int kDefaultReadTimeoutMs = 30000;
+    static constexpr int kDefaultWriteTimeoutMs = 30000;
 
 public:
     explicit ServerSettings(std::shared_ptr<IEnvironment> env)
-        : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize)
+        : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
+          readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs)
     {
         host_ = getEnvOrDefault("SERVER_HOST", "");
         port_ = 0;
@@ -72,6 +78,28 @@ public:
                 maxRequestBodySize_ = kDefaultMaxRequestBodySize;
             }
         }
+
+        size_t envReadTimeout = getEnvOrDefaultSize("SERVER_READ_TIMEOUT_MS", 0);
+        if (envReadTimeout > 0) {
+            readTimeout_ = std::chrono::milliseconds(envReadTimeout);
+        } else {
+            try {
+                readTimeout_ = std::chrono::milliseconds(env->get<int>("server.readTimeoutMs"));
+            } catch (...) {
+                readTimeout_ = std::chrono::milliseconds(kDefaultReadTimeoutMs);
+            }
+        }
+
+        size_t envWriteTimeout = getEnvOrDefaultSize("SERVER_WRITE_TIMEOUT_MS", 0);
+        if (envWriteTimeout > 0) {
+            writeTimeout_ = std::chrono::milliseconds(envWriteTimeout);
+        } else {
+            try {
+                writeTimeout_ = std::chrono::milliseconds(env->get<int>("server.writeTimeoutMs"));
+            } catch (...) {
+                writeTimeout_ = std::chrono::milliseconds(kDefaultWriteTimeoutMs);
+            }
+        }
     }
 
     std::string getHost() const override {
@@ -84,5 +112,13 @@ public:
 
     size_t getMaxRequestBodySize() const override {
         return maxRequestBodySize_;
+    }
+
+    std::chrono::milliseconds getReadTimeout() const override {
+        return readTimeout_;
+    }
+
+    std::chrono::milliseconds getWriteTimeout() const override {
+        return writeTimeout_;
     }
 };

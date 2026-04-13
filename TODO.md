@@ -41,13 +41,20 @@
 - **Критерий успеха:** Consumer может подключить cpp-http-server через FetchContent без двойного скачивания Boost; microservice-core подключается вообще без зависимостей
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
 
-### DRY-04: Убрать config.json и nlohmann/json — хост/порт из ENV
-- **SP:** 5
+### DRY-04: Хост/порт из ENV переменных (ServerSettings)
+- **SP:** 3
+- **Модуль:** microservice-boost
+- **Что:** `ServerSettings` читает хост и порт из ENV: `SERVER_HOST` (default: "0.0.0.0"), `SERVER_PORT` (default: 8080). Приоритет: ENV → config.json → дефолт. Это упростит Docker-образ (K8s управляет хост/порт через Deployment manifest), как уже сделано в trading-platform. Если ENV не задан — значения берутся из config.json (через IEnvironment), если и там нет — дефолт.
+- **Файлы:** `ServerSettings.hpp`/`.cpp`, `IServerSettings.hpp`
+- **Тесты:** Unit-тест: ENV SERVER_HOST → используется; ENV + config.json → ENV приоритет; только config.json → используется; ничего → дефолт
+- **Совместимость:** Backward compatible — config.json продолжает работать
+
+### DRY-04b: Аналитика — выпиливание nlohmann/json и config.json
+- **SP:** 3
 - **Модуль:** microservice-boost, CMake
-- **Что:** Удалить всю логику парсинга config.json из библиотеки. Сейчас `loadEnvironment()` читает `config.json` через nlohmann/json и вызывает `loadJsonToEnvironment()` — это единственное использование nlohmann/json в cpp-http-server. После удаления: (1) хост и порт сервер получаются из ENV: `SERVER_HOST` (default: "0.0.0.0"), `SERVER_PORT` (default: 8080), как уже сделано в trading-platform; (2) `loadEnvironment()` убирается из Template Method — потребитель сам наполняет IEnvironment в своём `configureInjection()` или переопределяет `loadEnvironment()` при необходимости; (3) nlohmann/json выпиливается из CMakeLists.txt — уменьшение зависимостей и времени сборки. Это упростит Docker-образ (не нужен config.json в контейнере), ускорит сборку, уберёт «жирную» зависимость. Для любых дополнительных настроек потребитель создаёт свой Environment как угодно (из своего конфига, из ENV, из БД — не дело библиотеки).
-- **Файлы:** `BoostBeastApplication.hpp`/`.cpp` (удалить loadJsonToEnvironment, упростить loadEnvironment), `ServerSettings.hpp`/`.cpp` (читать из ENV), `IServerSettings.hpp`, `CMakeLists.txt` (корневой — убрать nlohmann_json), `microservice-boost/CMakeLists.txt` (убрать nlohmann_json), `README.md`
-- **Тесты:** Unit-тест: ENV SERVER_HOST → используется; ENV не установлен → дефолт; ServerSettingsTest обновить; удалить тесты loadJsonToEnvironment
-- **Breaking change:** Consumer-проекты, использующие config.json через BoostBeastApplication::loadEnvironment() — нужно перенести парсинг конфига в свой код. В trading-platform это уже частично сделано (свой ServerSettings с ENV). В CHANGELOG — миграционный guide.
+- **Что:** Проанализировать возможность удалить nlohmann/json и config.json из библиотеки. Сейчас `loadEnvironment()` читает `config.json` через nlohmann/json и вызывает `loadJsonToEnvironment()`. Альтернатива: consumer сам наполняет IEnvironment, а библиотека не парсит конфиг вообще. Но config.json может хранить настройки, которые неудобно передавать через ENV (имя сервера, настройки логирования в будущем). Возможный компромисс: оставить nlohmann/json + config.json для backward compatibility, но парсить значения в ENV через `setenv()` — тогда consumer может читать их через `std::getenv()` единообразно. Результат — документ с рекомендацией.
+- **Файлы:** Анализ: `BoostBeastApplication.cpp` (loadJsonToEnvironment), `CMakeLists.txt`
+- **Результат:** Документ с анализом + рекомендация (пока документируем, реализация — отдельная задача)
 - **Связанные задачи:** DRY-03 (тощая поставка — после выпиливания json задача упрощается)
 
 ### DRY-05: Выпилить IDbSettings / DbSettings из библиотеки
@@ -374,7 +381,7 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 6 | 19 |
+| P1 DRY | 7 | 20 |
 | P0 Critical (thread-safety, lifetime, DoS) | 4 | 13 |
 | P1 Security & Reliability | 6 | 18 |
 | P1 API Improvements | 5 | 19 |

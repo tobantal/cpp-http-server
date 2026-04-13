@@ -26,6 +26,13 @@
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 
+#### SRV-07: HTTP method not allowed — 405 MethodNotAllowedError
+- `MethodNotAllowedError` (405) — новый класс исключения
+- `BoostBeastApplication::handleRequest()` проверяет `pathExists()` — если маршрут найден, но метод не совпадает → `throw MethodNotAllowedError`
+- `pathExists()` — новый метод для проверки существования маршрута без учёта метода
+- 2 новых теста MethodNotAllowedError
+- **Note:** Заголовок `Allow` не добавлен — TODO на будущее
+
 #### SRV-15: Duplicate code — DRY рефакторинг
 - Новый `StringUtils.hpp` (microservice-core): `toLower()`, `splitPath()` — единая реализация вместо 4 копий
 - Новый `PathParamExtractor.hpp` (microservice-core): `getByIndex()` — единая логика извлечения path params

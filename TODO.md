@@ -81,12 +81,16 @@
 - **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`
 - **Тесты:** Unit-тест: connect к несуществующему хосту → timeout → error
 
-### SRV-07: HTTP method not allowed — 405 ответ
+### SRV-07: HTTP method not allowed — 405 ответ ✅ ВЫПОЛНЕНО
 - **SP:** 2
+- **Модуль:** microservice-core + microservice-boost
+- **Что:** `MethodNotAllowedError` (405) + `pathExists()` в BoostBeastApplication. Если маршрут найден, но метод не совпадает → `throw MethodNotAllowedError`. Заголовок `Allow` не добавлен — см. SRV-07b.
+
+### SRV-07b: Заголовок Allow в 405 ответе
+- **SP:** 1
 - **Модуль:** microservice-boost
-- **Что:** Если маршрут найден, но метод не совпадает (например, POST на GET-only маршрут), сервер возвращает 404. Это некорректно по HTTP spec. Вернуть 405 Method Not Allowed + заголовок `Allow: GET`.
-- **Файлы:** `BoostBeastApplication.cpp` (в findHandler или handleRequest)
-- **Тесты:** Integration-тест: POST на GET-only маршрут → 405 + Allow header
+- **Что:** Добавить заголовок `Allow: GET, POST` в 405 ответ. Требует хранить allowed methods для каждого маршрута и передавать в MethodNotAllowedError. Низкий приоритет — внутренний API не использует Allow.
+- **Файлы:** `MethodNotAllowedError.hpp`, `BoostBeastApplication.cpp`
 
 ### SRV-08: Graceful shutdown (IShutdown + ShutdownManager)
 - **SP:** 5
@@ -128,14 +132,6 @@
 - **Тесты:** Unit-тест: named params extraction, mixed wildcards + named params, backward compatibility с `*`
 - **Ссылка:** trading-platform FUT-02, API-00
 
-### SRV-12: HTTP status workaround cleanup — REF-09
-- **SP:** 3
-- **Модуль:** microservice-core
-- **Что:** В trading-platform `CreateOrderHandler` использует `req.setAttribute("httpStatus", "201")` хак для передачи статус-кода через цепочку middleware. Корень проблемы: ChainHandler использует status=0 для «продолжить цепочку», но handler'у нужно вернуть 201/200. Решение: (1) добавить `IResponse::setDeferredStatus(code)` — отложенный статус, который ChainHandler применит в конце цепочки, или (2) изменить семантику: middleware не должна менять status 0, а handler может вернуть любой статус — ChainHandler вызывает post-middleware в любом случае.
-- **Файлы:** `IResponse.hpp`, `ChainHandler.hpp`, `BoostBeastApplication.cpp`
-- **Тесты:** Unit-тест: handler возвращает 201 + post-middleware выполняется; middleware возвращает 401 + chain останавливается
-- **Ссылка:** trading-platform REF-09
-
 ### SRV-13: Trie-based routing — FUT-01
 - **SP:** 8
 - **Модуль:** microservice-core
@@ -150,11 +146,6 @@
 - **Что:** Задокументировать контракт `getPath()`: путь без query string, без trailing slash, URL-decoded или нет. Сейчас `BeastRequestAdapter::getPath()` убирает query string, но не декодирует URL. Добавить URL-декодирование path segments. В trading-platform: `QuotesHandler` обрабатывает `figis=...` query param — нужно гарантировать корректный парсинг.
 - **Файлы:** `IRequest.hpp` (документация), `BeastRequestAdapter.hpp`/`.cpp` (URL decode)
 - **Тесты:** Unit-тест: `getPath()` с encoded URL → decoded result
-
-### SRV-15: Duplicate code — DRY рефакторинг ✅ ВЫПОЛНЕНО
-- **SP:** 2
-- **Модуль:** microservice-core + microservice-boost
-- **Что:** `toLower()` и `splitPath()` вынесены в `StringUtils.hpp`, getPathParam логика — в `PathParamExtractor.hpp`. 4 файла обновлены.
 
 ---
 
@@ -214,13 +205,6 @@
 
 ## P2 — Code Quality & Bug Fixes
 
-### SRV-21: ChainHandler short-circuit semantics — документация и edge cases
-- **SP:** 2
-- **Модуль:** microservice-core
-- **Что:** Статус 0 = «продолжить», статус != 0 = «остановить» — неочевидный контракт. Документировать в ChainHandler.hpp. Обработать edge case: handler не вызвал setStatus() → status 0 → chain продолжает → в конце 500. Добавить вариант: `IHttpHandler::handle()` возвращает `bool` или `ChainResult` (Continue/Handled/Error). Рассмотреть как опцию для v0.3.0.
-- **Файлы:** `ChainHandler.hpp`, `IHttpHandler.hpp`
-- **Тесты:** Unit-тест: empty chain → 500; single handler → correct status; last handler sets 0 → 500
-
 ### SRV-22: Port hardcoded to 80 в BeastRequestAdapter
 - **SP:** 1
 - **Модуль:** microservice-boost
@@ -249,13 +233,7 @@
 - **Файлы:** `IHttpClient.hpp`, `HttpClient.hpp`/`.cpp`
 - **Тесты:** Unit-тест: каждый тип ошибки → соответствующий HttpClientError
 - **Ссылка:** trading-platform BUG-07a
-
-### SRV-26: ServerSettings не имеет дефолтных значений
-- **SP:** 2
-- **Модуль:** microservice-boost
-- **Что:** ServerSettings требует `server.host` и `server.port` в конфиге, иначе exception. Добавить дефолты: host="0.0.0.0", port=8080. Это упростит запуск для development и testing.
-- **Файлы:** `ServerSettings.hpp`/`.cpp`, `IServerSettings.hpp`
-- **Тесты:** Unit-тест: config без server секции → дефолтные значения
+- **Комментарий:** возможно стоит брасать исключение, а сервис или ErrorHandler уже будет принимать решение, что с этим делать. Надо подумать и согласовать. 
 
 ### SRV-27: `ChainHandler` JSON injection vulnerability
 - **SP:** 1
@@ -360,11 +338,11 @@
 | P1 DRY | 4 | 10 |
 | P0 Critical | 3 | 12 |
 | P1 Security & Reliability | 6 | 20 |
-| P1 API Improvements | 6 | 24 |
+| P1 API Improvements | 4 | 14 |
 | P2 Observability & DX | 5 | 12 |
-| P2 Code Quality & Bugs | 7 | 12 |
+| P2 Code Quality & Bugs | 5 | 7 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **42** | **147** |
+| **Итого** | **37** | **128** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05

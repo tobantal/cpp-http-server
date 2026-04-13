@@ -4,6 +4,7 @@
 #include "Environment.hpp"
 #include "RouteMatcher.hpp"
 #include "HttpError.hpp"
+#include "MethodNotAllowedError.hpp"
 #include "settings/ServerSettings.hpp"
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -125,6 +126,24 @@ std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHa
     return std::nullopt;
 }
 
+bool BoostBeastApplication::pathExists(const std::string &path)
+{
+    if (handlers_.find(path) != handlers_.end())
+    {
+        return true;
+    }
+
+    for (const auto &[pattern, methodHandlers] : handlers_)
+    {
+        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // =============================================================================
 // REQUEST HANDLING
 // =============================================================================
@@ -159,6 +178,10 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
     }
     else
     {
+        if (pathExists(path))
+        {
+            throw MethodNotAllowedError("Method " + method + " not allowed for " + path);
+        }
         std::cout << "[BoostBeastApplication] No handler found" << std::endl;
         res.setResult(404, "application/json", "{\"error\": \"Not found\"}");
     }

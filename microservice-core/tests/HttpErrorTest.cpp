@@ -9,6 +9,7 @@
 #include "ServiceUnavailableError.hpp"
 #include "BusinessError.hpp"
 #include "AuthError.hpp"
+#include "MethodNotAllowedError.hpp"
 
 TEST(HttpErrorTest, BaseErrorStatusCode)
 {
@@ -70,6 +71,20 @@ TEST(HttpErrorTest, ConflictDefault)
 {
     ConflictError e;
     EXPECT_EQ(e.statusCode(), 409);
+}
+
+TEST(HttpErrorTest, MethodNotAllowedDefault)
+{
+    MethodNotAllowedError e;
+    EXPECT_EQ(e.statusCode(), 405);
+    EXPECT_EQ(e.message(), "Method not allowed");
+}
+
+TEST(HttpErrorTest, MethodNotAllowedCustomMessage)
+{
+    MethodNotAllowedError e("POST not allowed for /api/orders");
+    EXPECT_EQ(e.statusCode(), 405);
+    EXPECT_EQ(e.message(), "POST not allowed for /api/orders");
 }
 
 TEST(HttpErrorTest, InternalErrorDefault)

@@ -66,6 +66,7 @@ private:
      * @brief Найти handler для указанного метода и пути
      */
     std::optional<HandlerMatch> findHandler(const std::string &method, const std::string &path);
+    bool pathExists(const std::string &path);
 
     // =========================================================================
     // HTTP SERVER

@@ -223,15 +223,6 @@
 
 ## P1 — API Improvements (from trading-platform: REF-11)
 
-### SRV-39: JSON request validation middleware
-- **SP:** 5
-- **Модуль:** microservice-core
-- **Что:** Добавить `IRequestValidator` интерфейс и middleware для JSON-валидации request body перед маршрутизацией в handler. Валидатор проверяет: JSON parse, required fields, type constraints, size limit. Ошибки → 400 JSON response. Аналог: Spring `@Valid` / Jakarta Bean Validation. В trading-platform каждый handler дублирует `nlohmann::json::parse()` + ручные проверки. Схемы валидации определяются consumer-проектом.
-- **Файлы:** Новый `IRequestValidator.hpp`, `JsonValidationMiddleware.hpp` в microservice-core
-- **Тесты:** Unit-тест: invalid JSON → 400, missing required field → 400, valid JSON → passes to handler
-- **Ссылка:** trading-platform REF-11 (Centralized JSON request validation)
-
----
 
 ## P2 — Code Quality & Bug Fixes
 
@@ -368,11 +359,11 @@
 | P1 DRY | 5 | 13 |
 | P0 Critical | 3 | 12 |
 | P1 Security & Reliability | 6 | 20 |
-| P1 API Improvements | 4 | 14 |
+| P1 API Improvements | 3 | 9 |
 | P2 Observability & DX | 6 | 15 |
 | P2 Code Quality & Bugs | 5 | 7 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **40** | **138** |
+| **Итого** | **39** | **133** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-39

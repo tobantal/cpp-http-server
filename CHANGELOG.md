@@ -25,6 +25,14 @@
 
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
+#### SRV-39: JSON request validation middleware
+- `JsonValidator` — middleware (IHttpHandler) для проверки валидности JSON в теле запроса
+- Проверяет `Content-Type: application/json` через `IRequest::isJson()`
+- Парсит тело через `nlohmann::json::parse()` — невалидный JSON → `BadRequestError(400)`
+- Интегрируется в `ChainHandler` как первый обработчик перед бизнес-логикой
+- 15 новых тестов JsonValidatorTest: валидный/невалидный JSON, пустое тело, Content-Type, цепочка с обработчиком
+- **Backward compatible:** новый класс, не ломает существующий код
+
 #### SRV-02b: State enum вместо двух atomic bool
 - `enum class ServerState { NotStarted, Running, Stopped }` заменяет `std::atomic<bool> running_` + `std::atomic<bool> started_`
 - `state_` — единая `std::atomic<ServerState>` в BoostBeastApplication

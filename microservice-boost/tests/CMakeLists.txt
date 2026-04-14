@@ -13,6 +13,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(microservice-boost-test
     BeastRequestAdapterTest.cpp
     BeastResponseAdapterTest.cpp
+    JsonValidatorTest.cpp
     ServerSettingsTest.cpp
     ServerStateTest.cpp
     HttpClientTest.cpp

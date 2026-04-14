@@ -13,10 +13,11 @@
 #include <atomic>
 #include <vector>
 #include <thread>
+#include <cstdint>
 #include <mutex>
 #include <chrono>
 
-enum class ServerState
+enum class ServerState : uint8_t
 {
     NotStarted,
     Running,

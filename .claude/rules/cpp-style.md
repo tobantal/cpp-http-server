@@ -38,9 +38,19 @@
 4. Между группами — пустая строка
 
 ### Header-only vs hpp/cpp
-- Интерфейсы и мелкие реализации — header-only (SimpleRequest, SimpleResponse)
-- Крупные реализации — отдельный .cpp (BoostBeastApplication, HttpClient, RouteMatcher)
-- При росте header-only файла > 150-200 строк — вынести реализацию в .cpp
+- Интерфейсы (только `virtual` = 0, без реализации) — header-only без ограничения размера (IRequest.hpp — 296 строк — ок, это чистый интерфейс + документация)
+- Мелкие реализации (адаптеры, DTO, конфиг) — header-only до **150 строк**
+- При превышении **150 строк** inline-реализации — вынести в `.cpp` файл
+- Исключение: шаблоны (template) остаются header-only, но реализация в блоке `#include "*.impl.hpp"` или в конце файла
+
+#### Текущие нарушения (SRV-34)
+| Файл | Строк | Статус |
+|------|-------|--------|
+| BeastRequestAdapter.hpp | 232 | **Нарушение** — вынести реализацию в BeastRequestAdapter.cpp |
+| SimpleRequest.hpp | 207 | **Нарушение** — вынести реализацию в SimpleRequest.cpp |
+| IRequest.hpp | 296 | Ок — чистый интерфейс + документация |
+| ServerSettings.hpp | 124 | Ок — ниже порога |
+| BeastResponseAdapter.hpp | 80 | Ок — ниже порога |
 
 ## Naming conventions
 
@@ -69,6 +79,49 @@
 - Параметры-ссылки: `const std::string&` если не модифицируется
 - Методы: `const` если не меняет состояние
 - Итераторы: `cbegin()`/`cend()` если не модифицируем
+
+## Порядок полей в структурах — минимизация padding
+
+Поля в struct/class упорядочивать **по убыванию размера**: 8 байт → 4 байта → 2 байта → 1 байт. Это устраняет padding-зазоры между полями разного размера и улучшает cache locality.
+
+```cpp
+// ПРАВИЛЬНО: крупные поля first, мелкие — в конце
+struct Order {
+    std::string id;              // 32 байт, align 8
+    std::string accountId;       // 32 байт, align 8
+    int64_t quantity = 0;        // 8 байт,  align 8
+    Money price;                 // 48 байт, align 8
+    Money executedPrice;          // 48 байт, align 8
+    int64_t executedQuantity = 0; // 8 байт,  align 8
+    Timestamp createdAt;         // 8 байт,  align 8
+    Timestamp updatedAt;         // 8 байт,  align 8
+    OrderDirection direction;    // 1 байт,  align 1  ← enum class : uint8_t
+    OrderType type;              // 1 байт,  align 1
+    OrderStatus status;          // 1 байт,  align 1
+};
+
+// НЕПРАВИЛЬНО: enum между string и int64_t — два padding-зазора
+struct OrderOld {
+    std::string id;
+    std::string accountId;
+    OrderDirection direction;    // 1 байт → 7 байт padding перед quantity
+    int64_t quantity = 0;        // padding перед этим полем
+    ...
+    Timestamp createdAt;
+    OrderStatus status;          // 1 байт → 7 байт padding перед createdAt
+};
+```
+
+### enum class: всегда `uint8_t`
+
+По умолчанию `enum class` имеет underlying type `int` (4 байта). Для доменных перечислений с малым количеством значений указывать `uint8_t`:
+
+```cpp
+enum class ServerState : uint8_t { NotStarted, Running, Stopped };
+enum class LogLevel : uint8_t { Debug, Info, Warn, Error };
+```
+
+Экономия: 3 байта на каждое перечисление (4 → 1). В структуре с несколькими enum'ами это устраняет padding.
 
 ## Кодогенерация и DRY
 

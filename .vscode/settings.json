@@ -1,0 +1,6 @@
+{
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.configurePreset": "dev",
+    "cmake.buildPreset": "dev",
+    "cmake.testPreset": "dev"
+}

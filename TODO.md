@@ -42,11 +42,20 @@
 - **Что:** Проанализировать библиотеки из LIBRARIES.md trading-platform на применимость к cpp-http-server. Фокус на тех, что напрямую улучшают библиотеку сервера. Кандидаты для анализа: (а) **absl::StatusOr<T>** — замена `bool` return в IHttpClient::send(), замена `std::optional` в error paths, более информативный паттерн ошибок; (б) **absl::flat_hash_map** — замена `std::map` для handlers_ (быстрее lookup для роутинга); (в) **boost::lockfree::queue** — для thread-safe очереди задач при переходе на thread pool (SRV-03/SRV-04); (г) **string_view** (C++17, уже доступен) — замена `const std::string&` в IRequest/IResponse методах, устранение лишних аллокаций. Отдельный вопрос: стоит ли добавлять зависимость от Abseil ради StatusOr/flat_hash_map, или проще реализовать аналог своими силами. Результат — документ с рекомендацией по каждой библиотеке.
 - **Результат:** Документ с анализом + рекомендации (пока документируем, реализация — отдельная задача)
 
+### DRY-07: JsonHelper — сериализация DTO в JSON без прямой зависимости от nlohmann/json в handler-коде
+- **SP:** 3
+- **Модуль:** microservice-boost, microservice-core
+- **Что:** Создать типобезопасные хелперы `serialize<T>(obj)` и `deserialize<T>(body)`, скрывающие конкретную JSON-библиотеку из consumer-кода. Сейчас каждый handler работает с `nlohmann::json` напрямую (сборка JSON-объекта, dump(), parse(), get_to()) — это привязка к библиотеке и дублирование. Решение: (1) **microservice-boost**: `JsonHelper.hpp` с шаблонами `serialize<T>(const T&) -> string` и `deserialize<T>(const string&) -> T`, делегирующими в nlohmann/json через `to_json`/`from_json` специализации; (2) **microservice-core**: `JsonParseError` (400) — исключение при ошибке парсинга, чтобы библиотека единообразно обрабатывала ошибки; (3) Consumer-код использует `serialize(dto)` / `deserialize<Dto>(body)`, а `to_json`/`from_json` специализации определяет один раз рядом с DTO. При смене JSON-библиотеки (nlohmann → boost.json) правится только JsonHelper.hpp + специализации, handler-код не меняется. Пример: `TokenResponse dto{...}; res.setResult(200, "application/json", serialize(dto));` вместо ручной сборки `nlohmann::json`. Конкретная JSON-библиотека упомянута только в `to_json`/`from_json` специализациях и JsonHelper.hpp — handler чистый.
+- **Файлы:** Новый `JsonHelper.hpp` в microservice-boost; новый `JsonParseError.hpp` в microservice-core; обновить `CHANGELOG.md`
+- **Тесты:** Unit-тест: serialize DTO → корректный JSON string; deserialize JSON string → DTO; deserialize невалидный JSON → JsonParseError; round-trip serialize→deserialize→serialize
+- **Критерий успеха:** Handler-код не содержит `#include "nlohmann/json.hpp"` и не работает с `nlohmann::json` напрямую
+- **Связанные задачи:** SRV-39 (JSON validation middleware — может использовать JsonHelper для парсинга), DRY-04b (выпиливание nlohmann/json — после JsonHelper зависимость изолирована)
+
 ---
 
 ## P0 — Critical (блокирует production)
 
-### SRV-02b: State enum вместо двух atomic bool
+### SRV-02b: State enum вместо двух atomic bool ✅ ВЫПОЛНЕНО
 - **SP:** 2
 - **Модуль:** microservice-boost
 - **Что:** Заменить `running_` + `started_` на `std::atomic<ServerState>` с состояниями: NotStarted, Running, Stopped. Невалидные комбинации невозможны. `registerHandler()` разрешён только в NotStarted. `stop()` использует `compare_exchange(Running, Stopped)`. Упрощает рассуждения о lifecycle и добавляет новые состояния в будущем (Starting, Draining).
@@ -156,6 +165,29 @@
 - **Файлы:** `BoostBeastApplication.hpp`/`.cpp`, `HttpClient.hpp`/`.cpp`, новый `IServerLogger.hpp` или integration point
 - **Тесты:** Unit-тест: request → log output содержит expected fields
 - **Ссылка:** trading-platform OBS-01 (ILogger + Quill)
+
+### SRV-16a: ILogger — абстракция логирования + ConsoleLogger + TestLogger
+- **SP:** 3
+- **Модуль:** microservice-core, microservice-boost
+- **Что:** Создать абстракцию логирования для библиотеки, чтобы: (1) убрать все `std::cout`/`std::cerr` из BoostBeastApplication и HttpClient; (2) дать возможность consumer-проектам подставить свою реализацию (Quill, spdlog, etc); (3) обеспечить тестируемость — проверять лог-сообщения в unit-тестах. Реализация:
+  1. **microservice-core:** `ILogger` интерфейс — чистая абстракция без зависимостей:
+     ```cpp
+     enum class LogLevel { Debug, Info, Warn, Error };
+     struct ILogger {
+         virtual ~ILogger() = default;
+         virtual void log(LogLevel level, const std::string& message) = 0;
+         virtual void log(LogLevel level, const std::string& category, const std::string& message) = 0;
+     };
+     ```
+     Категории: `"App"`, `"Server"`, `"Session"`, `"HttpClient"`, `"Config"` — соответствуют текущим `std::cout` префиксам `[App]`, `[Server]`, `[Session]`.
+  2. **microservice-core:** `TestLogger` — реализация для unit-тестов. Пишет лог-сообщения в `std::vector<std::string>`. Даёт доступ к истории логов: `getMessages()`, `getMessages(LogLevel)`, `getMessages(category)`, `contains(substr)`, `clear()`. Позволяет проверять в тестах: что сервер залогировал "Stopping application...", что состояние изменилось с NotStarted на Running, что ошибка залогирована с нужным level, и т.д.
+  3. **microservice-boost:** `ConsoleLogger` — дефолтная реализация, пишет в stdout/stderr c тем же форматом что сейчас (`[App] Starting...`, `[Session] Timeout`), но через ILogger. Если ILogger не установлен — создаётся ConsoleLogger по умолчанию (backward compatible).
+  4. **BoostBeastApplication:** инжекция ILogger через конструктор или setter. По умолчанию — ConsoleLogger. Заменить все `std::cout`/`std::cerr` на `logger_->log(...)`.
+  5. **HttpClient:** аналогично — ILogger через конструктор, дефолт ConsoleLogger.
+- **Файлы:** Новый `ILogger.hpp`, `TestLogger.hpp` в microservice-core; новый `ConsoleLogger.hpp`/`.cpp` в microservice-boost; обновить `BoostBeastApplication.hpp`/`.cpp`, `HttpClient.hpp`/`.cpp`
+- **Тесты:** (а) TestLogger unit-тест: log → getMessages() содержит текст; log с level → filter by level; log с category → filter by category; contains() → true/false. (б) ServerStateTest с TestLogger: registerHandler → лог "Registered: GET /test"; stop() → лог "Stopping application..."; start → лог "Listening on..."; state transitions — проверка последовательности логов. (в) BoostBeastApplication с nullptr logger → fallback to ConsoleLogger (no crash). (г) HttpClient log messages — request sent, response received, error
+- **Критерий успеха:** Ни одного `std::cout` или `std::cerr` в BoostBeastApplication.cpp и HttpClient.cpp (только в ConsoleLogger). Все тесты ServerState проверяют поведение через TestLogger.
+- **Связанные задачи:** SRV-16 (общая интеграция ILogger), SRV-02b (ServerState — тесты улучшатся через TestLogger)
 
 ### SRV-17: `IResponse` расширения
 - **SP:** 3
@@ -333,14 +365,14 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 4 | 10 |
+| P1 DRY | 5 | 13 |
 | P0 Critical | 3 | 12 |
 | P1 Security & Reliability | 6 | 20 |
 | P1 API Improvements | 4 | 14 |
-| P2 Observability & DX | 5 | 12 |
+| P2 Observability & DX | 6 | 15 |
 | P2 Code Quality & Bugs | 5 | 7 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **37** | **128** |
+| **Итого** | **40** | **138** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b

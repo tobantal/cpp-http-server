@@ -25,7 +25,7 @@ using tcp = asio::ip::tcp;
 // =============================================================================
 
 BoostBeastApplication::BoostBeastApplication()
-    : running_(false), started_(false), maxRequestBodySize_(1048576),
+    : maxRequestBodySize_(1048576),
       readTimeout_(30000), writeTimeout_(30000)
 {
     std::cout << "[App] BoostBeastApplication created" << std::endl;
@@ -39,7 +39,8 @@ BoostBeastApplication::~BoostBeastApplication()
 
 void BoostBeastApplication::stop()
 {
-    if (running_.exchange(false))
+    ServerState expected = ServerState::Running;
+    if (state_.compare_exchange_strong(expected, ServerState::Stopped))
     {
         std::cout << "[App] Stopping application..." << std::endl;
 
@@ -79,7 +80,7 @@ void BoostBeastApplication::registerHandler(
     const std::string &pattern,
     std::shared_ptr<IHttpHandler> handler)
 {
-    if (started_.load())
+    if (state_.load() != ServerState::NotStarted)
     {
         throw std::logic_error("Cannot register handler after server has started");
     }
@@ -226,10 +227,9 @@ void BoostBeastApplication::start()
         std::cout << "[Server] Listening on " << host << ":" << port << std::endl;
         std::cout << "[Server] Server is ready to accept connections!" << std::endl;
 
-        running_.store(true);
-        started_.store(true);
+        state_.store(ServerState::Running);
 
-        while (running_.load())
+        while (state_.load() == ServerState::Running)
         {
             tcp::socket socket{*ioContext_};
             acceptor_->accept(socket);
@@ -247,7 +247,7 @@ void BoostBeastApplication::start()
     catch (const std::exception &e)
     {
         std::cerr << "[Server] Error: " << e.what() << std::endl;
-        running_.store(false);
+        state_.store(ServerState::Stopped);
     }
 }
 

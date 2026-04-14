@@ -12,7 +12,7 @@
 
 ### Thread-safety
 - **`handlers_` map** — доступ из detached threads → нужна синхронизация или иммутабельность после start()
-- **`running_` flag** — `std::atomic<bool>`, не plain bool. Доступ из main thread + signal handler.
+- **`state_`** — `std::atomic<ServerState>`, состояния: NotStarted, Running, Stopped. Доступ из main thread + signal handler. `registerHandler()` разрешён только в NotStarted. `stop()` использует `compare_exchange(Running, Stopped)`.
 - **Request/Response objects** — создаются per-session, не разделяются между потоками. OK.
 - **Detached threads** — lifetime hazard: `this` может быть уничтожен пока thread работает. Решение: thread pool + join при stop().
 

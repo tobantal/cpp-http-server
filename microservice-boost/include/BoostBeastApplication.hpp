@@ -16,6 +16,13 @@
 #include <mutex>
 #include <chrono>
 
+enum class ServerState
+{
+    NotStarted,
+    Running,
+    Stopped
+};
+
 class IRequest;
 class IResponse;
 
@@ -75,8 +82,7 @@ private:
 
     std::unique_ptr<boost::asio::io_context> ioContext_;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
-    std::atomic<bool> running_;
-    std::atomic<bool> started_;
+    std::atomic<ServerState> state_{ServerState::NotStarted};
     std::vector<std::thread> threads_;
     std::mutex threadsMutex_;
     size_t maxRequestBodySize_;

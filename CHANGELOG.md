@@ -25,6 +25,16 @@
 
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
+#### SRV-02b: State enum вместо двух atomic bool
+- `enum class ServerState { NotStarted, Running, Stopped }` заменяет `std::atomic<bool> running_` + `std::atomic<bool> started_`
+- `state_` — единая `std::atomic<ServerState>` в BoostBeastApplication
+- `registerHandler()` разрешён только в `NotStarted` (иначе `std::logic_error`)
+- `stop()` использует `compare_exchange_strong(Running, Stopped)` — атомарный переход, повторный вызов — noop
+- `start()` устанавливает `Running`, accept loop проверяет `state_ == Running`
+- Невалидные комбинации состояний невозможны на уровне типа
+- Добавляет возможность расширения: `Starting`, `Draining` в будущем
+- 6 новых тестов ServerStateTest
+- **Backward compatible:** поведение не изменилось
 
 #### SRV-06: Request timeout (read/write) — сервер
 - `beast::tcp_stream` заменяет `tcp::socket` в `handleSession`

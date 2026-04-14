@@ -53,12 +53,7 @@
 
 ---
 
-## P0 — Critical (блокирует production)
-
-### SRV-02b: State enum вместо двух atomic bool ✅ ВЫПОЛНЕНО
-- **SP:** 2
-- **Модуль:** microservice-boost
-- **Что:** Заменить `running_` + `started_` на `std::atomic<ServerState>` с состояниями: NotStarted, Running, Stopped. Невалидные комбинации невозможны. `registerHandler()` разрешён только в NotStarted. `stop()` использует `compare_exchange(Running, Stopped)`. Упрощает рассуждения о lifecycle и добавляет новые состояния в будущем (Starting, Draining).
+## P0 — Critical (блокирует производство)
 
 ### SRV-02c: Промежуточная абстракция BaseWebApplication
 - **SP:** 5
@@ -76,22 +71,12 @@
 
 ## P1 — Security & Reliability
 
-### SRV-06: Request timeout (read/write) — сервер ✅ ВЫПОЛНЕНО
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** `beast::tcp_stream` с `expires_after()` для read/write. ENV: `SERVER_READ_TIMEOUT_MS`/`SERVER_WRITE_TIMEOUT_MS` (default: 30000). I/O timeout логируется и соединение закрывается. `RequestTimeoutError`(408)/`GatewayTimeoutError`(504) добавлены для consumer-кода (низкий приоритет).
-
 ### SRV-06b: Connect timeout — HttpClient
 - **SP:** 2
 - **Модуль:** microservice-boost
 - **Что:** `HttpClient::send()` вызывает `boost::asio::connect()` без таймаута. Если сервер недоступен, connect висит бесконечно. Добавить connect timeout через `beast::tcp_stream::expires_after()` перед connect. Настройка: `HTTP_CLIENT_CONNECT_TIMEOUT_MS` (default: 5000). Часть SRV-09, вынесена как отдельная задача.
 - **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`
 - **Тесты:** Unit-тест: connect к несуществующему хосту → timeout → error
-
-### SRV-07: HTTP method not allowed — 405 ответ ✅ ВЫПОЛНЕНО
-- **SP:** 2
-- **Модуль:** microservice-core + microservice-boost
-- **Что:** `MethodNotAllowedError` (405) + `pathExists()` в BoostBeastApplication. Если маршрут найден, но метод не совпадает → `throw MethodNotAllowedError`. Заголовок `Allow` не добавлен — см. SRV-07b.
 
 ### SRV-07b: Заголовок Allow в 405 ответе
 - **SP:** 1

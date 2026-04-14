@@ -5,7 +5,7 @@
 
 ## Текущая задача
 
-**Задача:** SRV-39 — завершена
+**Задача:** SRV-22 — завершена
 **Статус:** выполнено
 
 ## Контекст для восстановления
@@ -16,4 +16,4 @@
 - **Consumer-проект:** cpp-trading-platform-project (33 endpoint-а, 3 микросервиса)
 - **Backlog:** см. TODO.md
 - **Сборка:** Ninja через CMakePresets (dev/release)
-- **Последняя выполненная задача:** SRV-39 — JsonValidator middleware проверяет Content-Type: application/json и парсит JSON body через nlohmann/json. Невалидный JSON → BadRequestError(400). 15 тестов JsonValidatorTest.
+- **Последняя выполненная задача:** SRV-22 — BeastRequestAdapter::getPort() больше не хардкодит 80. Порт передаётся в конструктор, по умолчанию 80 (backward compatible). BoostBeastApplication извлекает реальный порт из socket.local_endpoint().

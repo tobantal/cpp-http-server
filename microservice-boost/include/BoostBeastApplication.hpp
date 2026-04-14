@@ -94,7 +94,8 @@ private:
     void handleBeastRequest(
         const boost::beast::http::request<boost::beast::http::string_body> &req,
         boost::beast::http::response<boost::beast::http::string_body> &res,
-        const std::string &clientIp);
+        const std::string &clientIp,
+        int port);
     void handleRequest(IRequest &req, IResponse &res);
 
     // =========================================================================

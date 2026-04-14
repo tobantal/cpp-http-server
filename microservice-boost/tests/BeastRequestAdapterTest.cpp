@@ -289,12 +289,28 @@ TEST(BeastRequestAdapterTest, GetIp)
     EXPECT_EQ(adapter.getIp(), "10.10.10.1");
 }
 
-TEST(BeastRequestAdapterTest, GetPort)
+TEST(BeastRequestAdapterTest, GetPortDefault)
 {
     http::request<http::string_body> req{http::verb::get, "/", 11};
     BeastRequestAdapter adapter(req, "127.0.0.1");
 
     EXPECT_EQ(adapter.getPort(), 80);
+}
+
+TEST(BeastRequestAdapterTest, GetPortExplicit)
+{
+    http::request<http::string_body> req{http::verb::get, "/", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1", 8080);
+
+    EXPECT_EQ(adapter.getPort(), 8080);
+}
+
+TEST(BeastRequestAdapterTest, GetPortCustom)
+{
+    http::request<http::string_body> req{http::verb::get, "/", 11};
+    BeastRequestAdapter adapter(req, "10.0.0.1", 443);
+
+    EXPECT_EQ(adapter.getPort(), 443);
 }
 
 // =============================================================================

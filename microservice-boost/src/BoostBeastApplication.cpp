@@ -192,9 +192,10 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
 void BoostBeastApplication::handleBeastRequest(
     const http::request<http::string_body> &req,
     http::response<http::string_body> &res,
-    const std::string &clientIp)
+    const std::string &clientIp,
+    int port)
 {
-    BeastRequestAdapter requestAdapter(req, clientIp);
+    BeastRequestAdapter requestAdapter(req, clientIp, port);
     BeastResponseAdapter responseAdapter(res);
 
     handleRequest(requestAdapter, responseAdapter);
@@ -256,10 +257,12 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     beast::tcp_stream stream(std::move(socket));
 
     std::string clientIp = "0.0.0.0";
+    int localPort = 80;
     try
     {
-        auto endpoint = stream.socket().remote_endpoint();
-        clientIp = endpoint.address().to_string();
+        auto remoteEp = stream.socket().remote_endpoint();
+        clientIp = remoteEp.address().to_string();
+        localPort = stream.socket().local_endpoint().port();
         std::cout << "[Session] Client connected from: " << clientIp << std::endl;
     }
     catch (const std::exception &e)
@@ -297,7 +300,7 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
         res.set(http::field::server, "BoostBeast");
         res.keep_alive(req.keep_alive());
 
-        handleBeastRequest(req, res, clientIp);
+        handleBeastRequest(req, res, clientIp, localPort);
 
         stream.expires_after(writeTimeout_);
         http::write(stream, res);

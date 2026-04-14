@@ -25,6 +25,11 @@
 
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
+#### SRV-22: Port hardcoded to 80 в BeastRequestAdapter
+- `BeastRequestAdapter::getPort()` возвращал хардкод 80 — теперь принимает port в конструкторе (default=80 для backward compatibility)
+- `BoostBeastApplication::handleSession()` извлекает реальный порт из `socket.local_endpoint().port()` и передаёт в `handleBeastRequest()`
+- 3 новых теста: GetPortDefault(80), GetPortExplicit(8080), GetPortCustom(443)
+
 #### SRV-39: JSON request validation middleware
 - `JsonValidator` — middleware (IHttpHandler) для проверки валидности JSON в теле запроса
 - Проверяет `Content-Type: application/json` через `IRequest::isJson()`

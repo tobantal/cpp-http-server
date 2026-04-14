@@ -13,8 +13,9 @@ struct BeastRequestAdapter : IRequest
 {
     BeastRequestAdapter(
         const boost::beast::http::request<boost::beast::http::string_body>& req,
-        const std::string& clientIp)
-        : req_(req), ip_(clientIp), body_(req.body()) {}
+        const std::string& clientIp,
+        int port = 80)
+        : req_(req), ip_(clientIp), port_(port), body_(req.body()) {}
 
     std::string getPath() const override
     {
@@ -173,7 +174,7 @@ struct BeastRequestAdapter : IRequest
 
     int getPort() const override
     {
-        return 80;
+        return port_;
     }
 
     std::optional<std::string> getBearerToken() const override
@@ -224,6 +225,7 @@ struct BeastRequestAdapter : IRequest
 private:
     const boost::beast::http::request<boost::beast::http::string_body>& req_;
     std::string ip_;
+    int port_;
     std::string body_;
     std::string pathPattern_;
     std::map<std::string, std::string> queryParams_;

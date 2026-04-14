@@ -211,13 +211,6 @@
 
 ## P2 — Code Quality & Bug Fixes
 
-### SRV-22: Port hardcoded to 80 в BeastRequestAdapter
-- **SP:** 1
-- **Модуль:** microservice-boost
-- **Что:** `BeastRequestAdapter::getPort()` возвращает хардкод 80. Нужно извлекать реальный порт из `req_` (через endpoint) или передавать в конструктор.
-- **Файлы:** `BeastRequestAdapter.hpp`
-- **Тесты:** Unit-тест: port != 80 → возвращается корректный порт
-
 ### SRV-23: `getQueryParams()` парсинг при каждом вызове
 - **SP:** 1
 - **Модуль:** microservice-boost
@@ -351,4 +344,4 @@
 | P3 Documentation & DX | 4 | 9 |
 | **Итого** | **39** | **133** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-39
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-22, SRV-39

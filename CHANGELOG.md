@@ -25,6 +25,15 @@
 
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
+#### SRV-06b: Connect timeout — HttpClient
+- `HttpClient::send()` больше не висит при недоступном сервере — `async_connect` с `steady_timer` таймаутом
+- Конструктор `HttpClient()` читает `HTTP_CLIENT_CONNECT_TIMEOUT_MS` из ENV (default: 5000ms)
+- При таймауте: `stream.close()` + return false + response status 500
+- При ошибке connect (connection refused, DNS failure): return false + response status 500
+- Точечные логи: `[HttpClient] Connect error: timeout` / `[HttpClient] Connect error: <message>`
+- 4 новых теста: ConnectTimeoutOnUnreachableHost (~500ms timeout), ConnectTimeoutRespectsEnvVariable (~300ms), InvalidHostReturnsError (DNS fail), DefaultConnectTimeoutIs5000 (connection refused)
+- **Backward compatible:** интерфейс `IHttpClient::send()` не изменён, поведение для успешных запросов не затронуто
+
 #### SRV-22: Port hardcoded to 80 в BeastRequestAdapter
 - `BeastRequestAdapter::getPort()` возвращал хардкод 80 — теперь принимает port в конструкторе (default=80 для backward compatibility)
 - `BoostBeastApplication::handleSession()` извлекает реальный порт из `socket.local_endpoint().port()` и передаёт в `handleBeastRequest()`

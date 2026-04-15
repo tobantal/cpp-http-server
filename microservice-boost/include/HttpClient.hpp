@@ -3,6 +3,7 @@
 #include "IHttpClient.hpp"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
+#include <chrono>
 
 /**
  * @file HttpClient.hpp
@@ -12,6 +13,8 @@
 class HttpClient : public IHttpClient
 {
 public:
+    HttpClient();
+
     /**
      * @brief Отправить HTTP запрос
      * @param request IRequest с методом, IP, портом, путём, телом и заголовками
@@ -19,4 +22,8 @@ public:
      * @return true если успешно, false в случае ошибки
      */
     bool send(const IRequest& request, IResponse& response) override;
+
+private:
+    static constexpr int kDefaultConnectTimeoutMs = 5000;
+    std::chrono::milliseconds connectTimeout_;
 };

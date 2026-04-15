@@ -1,10 +1,26 @@
 #include "HttpClient.hpp"
 #include <iostream>
+#include <cstdlib>
 
 using tcp = boost::asio::ip::tcp;
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace asio = boost::asio;
+
+HttpClient::HttpClient()
+    : connectTimeout_(kDefaultConnectTimeoutMs)
+{
+    const char* envTimeout = std::getenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS");
+    if (envTimeout) {
+        try {
+            int ms = std::stoi(envTimeout);
+            if (ms > 0) {
+                connectTimeout_ = std::chrono::milliseconds(ms);
+            }
+        } catch (...) {
+        }
+    }
+}
 
 bool HttpClient::send(const IRequest& request, IResponse& response)
 {
@@ -20,7 +36,34 @@ bool HttpClient::send(const IRequest& request, IResponse& response)
         auto results = resolver.resolve(request.getIp(), portStr);
 
         beast::tcp_stream stream(ioc);
-        stream.connect(results);
+
+        asio::steady_timer timer(ioc);
+        timer.expires_after(connectTimeout_);
+
+        bool timeoutOccurred = false;
+        timer.async_wait([&](const beast::error_code& ec) {
+            if (!ec) {
+                timeoutOccurred = true;
+                stream.close();
+            }
+        });
+
+        beast::error_code connectEc;
+        asio::async_connect(stream.socket(), results,
+            [&](const beast::error_code& ec, const tcp::endpoint&) {
+                timer.cancel();
+                connectEc = ec;
+            });
+
+        ioc.run();
+
+        if (timeoutOccurred || connectEc) {
+            std::cerr << "[HttpClient] Connect error: "
+                      << (timeoutOccurred ? "timeout" : connectEc.message()) << std::endl;
+            response.setStatus(500);
+            response.setBody("Internal Server Error");
+            return false;
+        }
 
         // Формируем HTTP запрос
         http::request<http::string_body> req;

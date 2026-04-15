@@ -71,13 +71,6 @@
 
 ## P1 — Security & Reliability
 
-### SRV-06b: Connect timeout — HttpClient
-- **SP:** 2
-- **Модуль:** microservice-boost
-- **Что:** `HttpClient::send()` вызывает `boost::asio::connect()` без таймаута. Если сервер недоступен, connect висит бесконечно. Добавить connect timeout через `beast::tcp_stream::expires_after()` перед connect. Настройка: `HTTP_CLIENT_CONNECT_TIMEOUT_MS` (default: 5000). Часть SRV-09, вынесена как отдельная задача.
-- **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`
-- **Тесты:** Unit-тест: connect к несуществующему хосту → timeout → error
-
 ### SRV-07b: Заголовок Allow в 405 ответе
 - **SP:** 1
 - **Модуль:** microservice-boost
@@ -336,12 +329,12 @@
 |-----------|-------|-----|
 | P1 DRY | 5 | 13 |
 | P0 Critical | 3 | 12 |
-| P1 Security & Reliability | 6 | 20 |
+| P1 Security & Reliability | 5 | 18 |
 | P1 API Improvements | 3 | 9 |
 | P2 Observability & DX | 6 | 15 |
 | P2 Code Quality & Bugs | 5 | 7 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **39** | **133** |
+| **Итого** | **38** | **131** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-22, SRV-39
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-22, SRV-39, SRV-06b

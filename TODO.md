@@ -161,12 +161,7 @@
 - **Критерий успеха:** Ни одного `std::cout` или `std::cerr` в BoostBeastApplication.cpp и HttpClient.cpp (только в ConsoleLogger). Все тесты ServerState проверяют поведение через TestLogger.
 - **Связанные задачи:** SRV-16 (общая интеграция ILogger), SRV-02b (ServerState — тесты улучшатся через TestLogger)
 
-### SRV-17: `IResponse` расширения
-- **SP:** 3
-- **Модуль:** microservice-core
-- **Что:** Добавить в IResponse: (1) `getStatusCode()` — получить reason phrase по коду (например, 201 → "Created"), (2) `setCookie(name, value, options)` — поддержка Set-Cookie заголовка, (3) HTTP status constants — `HttpStatus::OK`, `HttpStatus::CREATED`, `HttpStatus::NOT_FOUND`, `HttpStatus::METHOD_NOT_ALLOWED`. В trading-platform статусы захардкодены как числа.
-- **Файлы:** `IResponse.hpp`, `SimpleResponse.hpp`, `BeastResponseAdapter.hpp`, новый `HttpStatus.hpp`
-- **Тесты:** Unit-тест для каждого нового метода
+### ~~SRV-17~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### SRV-18: Tracing middleware support (X-Trace-ID)
 - **SP:** 2
@@ -319,11 +314,11 @@
 | P1 DRY | 4 | 10 |
 | P0 Critical | 2 | 10 |
 | P1 Security & Reliability | 4 | 17 |
-| P1 API Improvements | 3 | 9 |
+| P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 6 | 15 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **33** | **124** |
+| **Итого** | **32** | **119** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

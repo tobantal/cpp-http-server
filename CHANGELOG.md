@@ -23,6 +23,16 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### SRV-17: IResponse расширения — HttpStatus enum, getReasonPhrase(), setCookie()
+- **HttpStatus enum** (`HttpStatus.hpp`): `HttpStatus::Ok`, `Created`, `BadRequest`, `NotFound`, `Conflict`, `InternalServerError` и т.д. — заменяют магические числа
+- **toInt(HttpStatus)** — конвертация в int
+- **getReasonPhrase(int)** / **getReasonPhrase(HttpStatus)** — reason phrase по коду (200 → "OK", 404 → "Not Found" и т.д.)
+- **IResponse::setStatus(HttpStatus)** и **IResponse::setResult(HttpStatus, ...)** — перегрузки с enum
+- **IResponse::setCookie(name, value, path, httpOnly, secure, maxAge)** — поддержка Set-Cookie с Path, Max-Age, HttpOnly, Secure
+- Реализовано в SimpleResponse и BeastResponseAdapter
+- 16 новых тестов (HttpStatus enum values, getReasonPhrase, setStatus(HttpStatus), setResult(HttpStatus), setCookie variants)
+- **Backward compatible:** `setStatus(int)` и `setResult(int, ...)` по-прежнему работают
+
 #### DRY-03: Тощая поставка библиотеки — find_package + FetchContent fallback
 - Корневой CMakeLists.txt реорганизован: `find_package` приоритет + `FetchContent` fallback (опция `CPP_HTTP_SERVER_FETCH_DEPS`, default ON)
 - При standalone-сборке (CPP_HTTP_SERVER_FETCH_DEPS=ON) зависимости подтягиваются FetchContent, как раньше

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <boost/beast/http.hpp>
 #include "BeastResponseAdapter.hpp"
+#include "HttpStatus.hpp"
 
 /**
  * @file BeastResponseAdapterTest.cpp
@@ -180,4 +181,66 @@ TEST(BeastResponseAdapterTest, OverwriteValues)
     EXPECT_EQ(adapter.getStatus(), 400);
     EXPECT_EQ(*adapter.getHeader("Content-Type"), "text/plain");
     EXPECT_EQ(adapter.getBody(), "second");
+}
+
+// =============================================================================
+// HttpStatus ENUM TESTS
+// =============================================================================
+
+TEST(BeastResponseAdapterTest, SetStatusWithEnum)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setStatus(HttpStatus::NotFound);
+
+    EXPECT_EQ(adapter.getStatus(), 404);
+}
+
+TEST(BeastResponseAdapterTest, SetResultWithEnum)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setResult(HttpStatus::Created, "application/json", R"({"id": "new"})");
+
+    EXPECT_EQ(adapter.getStatus(), 201);
+    EXPECT_EQ(*adapter.getHeader("Content-Type"), "application/json");
+}
+
+// =============================================================================
+// setCookie TESTS
+// =============================================================================
+
+TEST(BeastResponseAdapterTest, SetCookie_Basic)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setCookie("session", "abc123");
+
+    auto cookie = res[http::field::set_cookie];
+    EXPECT_EQ(std::string(cookie), "session=abc123; Path=/; HttpOnly");
+}
+
+TEST(BeastResponseAdapterTest, SetCookie_WithMaxAge)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setCookie("token", "xyz", "/", true, false, 3600);
+
+    auto cookie = res[http::field::set_cookie];
+    EXPECT_EQ(std::string(cookie), "token=xyz; Path=/; Max-Age=3600; HttpOnly");
+}
+
+TEST(BeastResponseAdapterTest, SetCookie_SecureFlag)
+{
+    http::response<http::string_body> res;
+    BeastResponseAdapter adapter(res);
+
+    adapter.setCookie("sid", "val", "/", true, true, 0);
+
+    auto cookie = res[http::field::set_cookie];
+    EXPECT_EQ(std::string(cookie), "sid=val; Path=/; Max-Age=0; HttpOnly; Secure");
 }

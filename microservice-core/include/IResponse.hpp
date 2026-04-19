@@ -2,11 +2,12 @@
 #include <string>
 #include <map>
 #include <optional>
+#include "HttpStatus.hpp"
 
 /**
  * @file IResponse.hpp
  * @brief Интерфейс HTTP-ответа
- * @version 2.0
+ * @version 2.1
  * @author Anton Tobolkin
  */
 struct IResponse {
@@ -23,6 +24,12 @@ struct IResponse {
     virtual void setStatus(int code) = 0;
 
     /**
+     * @brief Установить HTTP статус из HttpStatus enum
+     * @param status HttpStatus enum value
+     */
+    virtual void setStatus(HttpStatus status) = 0;
+
+    /**
      * @brief Установить тело ответа
      * @param body Тело ответа
      */
@@ -34,6 +41,22 @@ struct IResponse {
      * @param value Значение заголовка
      */
     virtual void setHeader(const std::string& name, const std::string& value) = 0;
+
+    /**
+     * @brief Установить Set-Cookie заголовок
+     * @param name Имя cookie
+     * @param value Значение cookie
+     * @param path Path attribute (default: "/")
+     * @param httpOnly HttpOnly flag (default: true)
+     * @param secure Secure flag (default: false)
+     * @param maxAge Max-Age in seconds (default: -1 = not set)
+     */
+    virtual void setCookie(const std::string& name,
+                            const std::string& value,
+                            const std::string& path = "/",
+                            bool httpOnly = true,
+                            bool secure = false,
+                            int maxAge = -1) = 0;
 
     // =========================================================================
     // GETTERS — получение данных ответа
@@ -84,13 +107,20 @@ struct IResponse {
      *   setBody(body);
      * 
      * @example
-     *   // JSON успешный ответ
-     *   res.setResult(200, "application/json", R"({"status": "ok"})");
-     * 
-     *   // JSON ошибка
-     *   res.setResult(404, "application/json", R"({"error": "Not found"})");
+     *   res.setResult(HttpStatus::Ok, "application/json", R"({"status": "ok"})");
+     *   res.setResult(HttpStatus::NotFound, "application/json", R"({"error": "Not found"})");
      */
     virtual void setResult(int code, 
                            const std::string& contentType, 
+                           const std::string& body) = 0;
+
+    /**
+     * @brief Установить полный результат ответа с HttpStatus enum
+     * @param status HttpStatus enum value
+     * @param contentType Значение Content-Type
+     * @param body Тело ответа
+     */
+    virtual void setResult(HttpStatus status,
+                           const std::string& contentType,
                            const std::string& body) = 0;
 };

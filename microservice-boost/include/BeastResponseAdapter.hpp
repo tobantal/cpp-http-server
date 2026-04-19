@@ -17,6 +17,11 @@ struct BeastResponseAdapter : IResponse
         res_.result(boost::beast::http::status(code));
     }
 
+    void setStatus(HttpStatus status) override
+    {
+        res_.result(boost::beast::http::status(toInt(status)));
+    }
+
     void setBody(const std::string& body) override
     {
         res_.body() = body;
@@ -25,6 +30,33 @@ struct BeastResponseAdapter : IResponse
     void setHeader(const std::string& name, const std::string& value) override
     {
         res_.set(name, value);
+    }
+
+    void setCookie(const std::string& name,
+                    const std::string& value,
+                    const std::string& path = "/",
+                    bool httpOnly = true,
+                    bool secure = false,
+                    int maxAge = -1) override
+    {
+        std::string cookie = name + "=" + value;
+        if (!path.empty())
+        {
+            cookie += "; Path=" + path;
+        }
+        if (maxAge >= 0)
+        {
+            cookie += "; Max-Age=" + std::to_string(maxAge);
+        }
+        if (httpOnly)
+        {
+            cookie += "; HttpOnly";
+        }
+        if (secure)
+        {
+            cookie += "; Secure";
+        }
+        res_.set(boost::beast::http::field::set_cookie, cookie);
     }
 
     int getStatus() const override
@@ -74,6 +106,13 @@ struct BeastResponseAdapter : IResponse
         setStatus(code);
         setHeader("Content-Type", contentType);
         setBody(body);
+    }
+
+    void setResult(HttpStatus status,
+                   const std::string& contentType,
+                   const std::string& body) override
+    {
+        setResult(toInt(status), contentType, body);
     }
 
 private:

@@ -164,3 +164,45 @@ TEST(StringUtilsTest, EscapeJson_JsonInjectionAttack)
     std::string expected = R"(ok\",\"injected\":\"true)";
     EXPECT_EQ(StringUtils::escapeJson(malicious), expected);
 }
+
+// --- StringUtils::urlDecode ---
+
+TEST(StringUtilsTest, UrlDecode_PlainString)
+{
+    EXPECT_EQ(StringUtils::urlDecode("/api/v1/orders"), "/api/v1/orders");
+}
+
+TEST(StringUtilsTest, UrlDecode_EncodedSpaces)
+{
+    EXPECT_EQ(StringUtils::urlDecode("/api/v1/my%20order"), "/api/v1/my order");
+}
+
+TEST(StringUtilsTest, UrlDecode_EncodedUnicode)
+{
+    EXPECT_EQ(StringUtils::urlDecode("/%C3%BCnicode"), "/ünicode");
+}
+
+TEST(StringUtilsTest, UrlDecode_MultipleEncodedChars)
+{
+    EXPECT_EQ(StringUtils::urlDecode("/api/hello%20world%21"), "/api/hello world!");
+}
+
+TEST(StringUtilsTest, UrlDecode_PlusAsSpace)
+{
+    EXPECT_EQ(StringUtils::urlDecode("hello+world"), "hello world");
+}
+
+TEST(StringUtilsTest, UrlDecode_IncompletePercent)
+{
+    EXPECT_EQ(StringUtils::urlDecode("%2"), "%2");
+}
+
+TEST(StringUtilsTest, UrlDecode_InvalidHex)
+{
+    EXPECT_EQ(StringUtils::urlDecode("%ZZ"), "%ZZ");
+}
+
+TEST(StringUtilsTest, UrlDecode_EmptyString)
+{
+    EXPECT_EQ(StringUtils::urlDecode(""), "");
+}

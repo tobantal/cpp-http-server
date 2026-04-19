@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -80,6 +81,39 @@ public:
                     result += c;
                 }
                 break;
+            }
+        }
+        return result;
+    }
+
+    static std::string urlDecode(const std::string &s)
+    {
+        std::string result;
+        result.reserve(s.size());
+        for (size_t i = 0; i < s.size(); ++i)
+        {
+            if (s[i] == '%' && i + 2 < s.size())
+            {
+                char hex[3] = {s[i + 1], s[i + 2], '\0'};
+                char *end = nullptr;
+                long value = std::strtol(hex, &end, 16);
+                if (end != nullptr && *end == '\0' && value >= 0 && value <= 255)
+                {
+                    result += static_cast<char>(value);
+                    i += 2;
+                }
+                else
+                {
+                    result += s[i];
+                }
+            }
+            else if (s[i] == '+')
+            {
+                result += ' ';
+            }
+            else
+            {
+                result += s[i];
             }
         }
         return result;

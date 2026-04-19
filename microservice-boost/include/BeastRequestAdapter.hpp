@@ -21,7 +21,8 @@ struct BeastRequestAdapter : IRequest
     {
         auto target = std::string(req_.target());
         auto pos = target.find('?');
-        return pos == std::string::npos ? target : target.substr(0, pos);
+        std::string path = pos == std::string::npos ? target : target.substr(0, pos);
+        return StringUtils::urlDecode(path);
     }
 
     std::vector<std::string> getPathSegments() const override
@@ -62,10 +63,10 @@ struct BeastRequestAdapter : IRequest
             if (eq == std::string::npos)
                 break;
 
-            std::string key = query.substr(start, eq - start);
+            std::string key = StringUtils::urlDecode(query.substr(start, eq - start));
             std::string value = amp == std::string::npos
-                                    ? query.substr(eq + 1)
-                                    : query.substr(eq + 1, amp - eq - 1);
+                                    ? StringUtils::urlDecode(query.substr(eq + 1))
+                                    : StringUtils::urlDecode(query.substr(eq + 1, amp - eq - 1));
 
             if (params.find(key) == params.end())
             {

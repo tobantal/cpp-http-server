@@ -435,3 +435,52 @@ TEST(BeastRequestAdapterTest, MultipleAttributes)
     EXPECT_EQ(*adapter.getAttribute("account_id"), "acc-456");
     EXPECT_EQ(*adapter.getAttribute("account_type"), "sandbox");
 }
+
+// =============================================================================
+// URL DECODING TESTS
+// =============================================================================
+
+TEST(BeastRequestAdapterTest, GetPath_DecodesPercentEncoding)
+{
+    http::request<http::string_body> req{http::verb::get, "/api/v1/my%20order", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    EXPECT_EQ(adapter.getPath(), "/api/v1/my order");
+}
+
+TEST(BeastRequestAdapterTest, GetPath_DecodesUnicode)
+{
+    http::request<http::string_body> req{http::verb::get, "/%C3%BCnicode", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    EXPECT_EQ(adapter.getPath(), "/ünicode");
+}
+
+TEST(BeastRequestAdapterTest, GetPath_StripsQueryStringThenDecodes)
+{
+    http::request<http::string_body> req{http::verb::get, "/api/hello%20world?status=active", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    EXPECT_EQ(adapter.getPath(), "/api/hello world");
+}
+
+TEST(BeastRequestAdapterTest, GetPath_PlainPathUnchanged)
+{
+    http::request<http::string_body> req{http::verb::get, "/api/v1/orders", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    EXPECT_EQ(adapter.getPath(), "/api/v1/orders");
+}
+
+TEST(BeastRequestAdapterTest, GetQueryParams_DecodedValues)
+{
+    http::request<http::string_body> req{http::verb::get, "/api?name=hello%20world&type=test", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    auto params = adapter.getQueryParams();
+    EXPECT_EQ(params.at("name"), "hello world");
+    EXPECT_EQ(params.at("type"), "test");
+}
+
+TEST(BeastRequestAdapterTest, GetQueryParams_PlusDecodedAsSpace)
+{
+    http::request<http::string_body> req{http::verb::get, "/api?q=hello+world", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    auto params = adapter.getQueryParams();
+    EXPECT_EQ(params.at("q"), "hello world");
+}

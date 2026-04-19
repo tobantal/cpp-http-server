@@ -21,14 +21,21 @@ struct IRequest {
 
 
     /**
-     * @brief Получить путь запроса БЕЗ query string
-     * @return Путь, например "/api/v1/orders"
+     * @brief Получить путь запроса БЕЗ query string, URL-декодированный
+     * @return Декодированный путь, например "/api/v1/orders/my order"
      * 
      * @example
-     *   Запрос: GET /api/v1/orders?status=active
-     *   getPath() → "/api/v1/orders"
+     *   Запрос: GET /api/v1/orders/my%20order?status=active
+     *   getPath() → "/api/v1/orders/my order"
      * 
-     * @contract Всегда возвращает путь без query string.
+     *   Запрос: GET /api/v1/orders/%C3%BCnicode
+     *   getPath() → "/api/v1/orders/ünicode"
+     * 
+     * @contract 
+     *   1. Всегда возвращает путь без query string
+     *   2. URL-декодированный (%20 → space, %C3%BC → ü и т.д.)
+     *   3. Без trailing slash (кроме корня "/")
+     *   4. Всегда начинается с "/"
      */
     virtual std::string getPath() const = 0;
 

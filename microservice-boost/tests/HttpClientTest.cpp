@@ -7,14 +7,11 @@
 #include "HttpClient.hpp"
 #include "SimpleRequest.hpp"
 #include "SimpleResponse.hpp"
+#include "HttpClientError.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;
 namespace beast = boost::beast;
-
-// -----------------------------------------------------------------------------
-//                 Лёгкий тестовый HTTP сервер (Beast)
-// -----------------------------------------------------------------------------
 
 void runTestHttpServer(std::atomic<bool>& ready)
 {
@@ -46,10 +43,6 @@ void runTestHttpServer(std::atomic<bool>& ready)
     }
 }
 
-// -----------------------------------------------------------------------------
-//                                Т Е С Т
-// -----------------------------------------------------------------------------
-
 TEST(HttpClientTest, SendRealHttpRequest)
 {
     std::atomic<bool> serverReady = false;
@@ -60,15 +53,15 @@ TEST(HttpClientTest, SendRealHttpRequest)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     HttpClient client;
-    
+
     SimpleRequest request("GET", "/test", "", "127.0.0.1", 8089);
     SimpleResponse response;
 
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
 
     serverThread.join();
 
-    ASSERT_TRUE(ok);
+    ASSERT_TRUE(result.ok());
     ASSERT_EQ(response.getStatus(), 200);
     ASSERT_EQ(response.getBody(), "HelloTest");
 
@@ -87,18 +80,18 @@ TEST(HttpClientTest, RequestWithHeaders)
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     HttpClient client;
-    
+
     SimpleRequest request("GET", "/test", "", "127.0.0.1", 8089);
     request.setHeader("Authorization", "Bearer test-token");
     request.setHeader("Accept", "application/json");
-    
+
     SimpleResponse response;
 
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
 
     serverThread.join();
 
-    ASSERT_TRUE(ok);
+    ASSERT_TRUE(result.ok());
     ASSERT_EQ(response.getStatus(), 200);
 }
 
@@ -112,14 +105,15 @@ TEST(HttpClientTest, ConnectTimeoutOnUnreachableHost)
     SimpleResponse response;
 
     auto start = std::chrono::steady_clock::now();
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
     auto elapsed = std::chrono::steady_clock::now() - start;
     auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
     unsetenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS");
 
-    ASSERT_FALSE(ok);
-    ASSERT_EQ(response.getStatus(), 500);
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::ConnectTimeout);
+    EXPECT_EQ(response.getStatus(), 200);
     ASSERT_TRUE(elapsedMs >= 400 && elapsedMs < 5000)
         << "Connect timeout should be ~500ms, took " << elapsedMs << "ms";
 }
@@ -134,19 +128,19 @@ TEST(HttpClientTest, ConnectTimeoutRespectsEnvVariable)
     SimpleResponse response;
 
     auto start = std::chrono::steady_clock::now();
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
     auto elapsed = std::chrono::steady_clock::now() - start;
     auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
     unsetenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS");
 
-    ASSERT_FALSE(ok);
-    ASSERT_EQ(response.getStatus(), 500);
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::ConnectTimeout);
     ASSERT_TRUE(elapsedMs >= 200 && elapsedMs < 5000)
         << "Custom timeout should be ~300ms, took " << elapsedMs << "ms";
 }
 
-TEST(HttpClientTest, InvalidHostReturnsError)
+TEST(HttpClientTest, DnsFailedOnInvalidHost)
 {
     setenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS", "1000", 1);
 
@@ -155,12 +149,25 @@ TEST(HttpClientTest, InvalidHostReturnsError)
     SimpleRequest request("GET", "/test", "", "this.host.does.not.exist.invalid", 80);
     SimpleResponse response;
 
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
 
     unsetenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS");
 
-    ASSERT_FALSE(ok);
-    ASSERT_EQ(response.getStatus(), 500);
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::DnsFailed);
+}
+
+TEST(HttpClientTest, ConnectionRefusedOnClosedPort)
+{
+    HttpClient client;
+
+    SimpleRequest request("GET", "/test", "", "127.0.0.1", 59999);
+    SimpleResponse response;
+
+    auto result = client.send(request, response);
+
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::ConnectionRefused);
 }
 
 TEST(HttpClientTest, DefaultConnectTimeoutIs5000)
@@ -173,11 +180,54 @@ TEST(HttpClientTest, DefaultConnectTimeoutIs5000)
     SimpleResponse response;
 
     auto start = std::chrono::steady_clock::now();
-    bool ok = client.send(request, response);
+    auto result = client.send(request, response);
     auto elapsed = std::chrono::steady_clock::now() - start;
     auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
-    ASSERT_FALSE(ok);
+    ASSERT_FALSE(result.ok());
     ASSERT_TRUE(elapsedMs < 15000)
         << "Default connect timeout should be ~5000ms, took " << elapsedMs << "ms";
+}
+
+TEST(HttpClientTest, ResponseNotMutatedOnError)
+{
+    HttpClient client;
+
+    SimpleRequest request("GET", "/test", "", "127.0.0.1", 59999);
+    SimpleResponse response;
+    response.setStatus(201);
+    response.setBody("original");
+
+    auto result = client.send(request, response);
+
+    ASSERT_FALSE(result.ok());
+    EXPECT_EQ(response.getStatus(), 201);
+    EXPECT_EQ(response.getBody(), "original");
+}
+
+TEST(HttpClientTest, HttpClientResultOk)
+{
+    HttpClientResult result;
+    EXPECT_TRUE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::None);
+    EXPECT_TRUE(result.errorMessage.empty());
+}
+
+TEST(HttpClientTest, HttpClientResultError)
+{
+    HttpClientResult result{HttpClientError::ReadTimeout, "read timeout"};
+    EXPECT_FALSE(result.ok());
+    EXPECT_EQ(result.error, HttpClientError::ReadTimeout);
+    EXPECT_EQ(result.errorMessage, "read timeout");
+}
+
+TEST(HttpClientTest, HttpClientErrorToString)
+{
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::None), "none");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::DnsFailed), "dns_failed");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::ConnectTimeout), "connect_timeout");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::ConnectionRefused), "connection_refused");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::WriteTimeout), "write_timeout");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::ReadTimeout), "read_timeout");
+    EXPECT_EQ(httpClientErrorToString(HttpClientError::UnknownError), "unknown_error");
 }

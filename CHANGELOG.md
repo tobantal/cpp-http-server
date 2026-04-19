@@ -23,6 +23,14 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### SRV-14: getPath() contract — URL-декодирование
+- `StringUtils::urlDecode()`: `%XX` hex-декодирование, `+` → space, invalid `%` passthrough
+- `BeastRequestAdapter::getPath()`: URL-декодирование после удаления query string
+- `BeastRequestAdapter::getQueryParams()`: URL-декодирование ключей и значений
+- `IRequest::getPath()` контракт задокументирован: (1) без query string, (2) URL-декодированный, (3) без trailing slash, (4) начинается с "/"
+- 14 новых тестов (8 urlDecode + 6 BeastRequestAdapter URL decoding)
+- **Backward compatible:** plain paths и query params без %XX не меняются
+
 #### SRV-16a: ILogger абстракция логирования + ConsoleLogger + NullLogger + TestLogger
 - `LogLevel` enum (`: uint8_t`): Debug, Info, Warn, Error
 - `ILogger` интерфейс: `log(level, category, message)` — чистый virtual, нулевые зависимости

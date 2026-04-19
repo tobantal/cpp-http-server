@@ -140,12 +140,7 @@
 - **Тесты:** Benchmark: trie vs linear для 33, 100, 500 маршрутов; Unit-тесты: exact, named, wildcard, priority (most specific match)
 - **Зависит от:** SRV-11 (named params — сначала определить API)
 
-### SRV-14: `getPath()` contract — REF-10
-- **SP:** 1
-- **Модуль:** microservice-core
-- **Что:** Задокументировать контракт `getPath()`: путь без query string, без trailing slash, URL-decoded или нет. Сейчас `BeastRequestAdapter::getPath()` убирает query string, но не декодирует URL. Добавить URL-декодирование path segments. В trading-platform: `QuotesHandler` обрабатывает `figis=...` query param — нужно гарантировать корректный парсинг.
-- **Файлы:** `IRequest.hpp` (документация), `BeastRequestAdapter.hpp`/`.cpp` (URL decode)
-- **Тесты:** Unit-тест: `getPath()` с encoded URL → decoded result
+### ~~SRV-14~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ---
 
@@ -311,10 +306,10 @@
 | P0 Critical | 2 | 8 |
 | P1 Security & Reliability | 4 | 17 |
 | P1 API Improvements | 2 | 4 |
-| P2 Observability & DX | 4 | 9 |
+| P2 Observability & DX | 3 | 7 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **31** | **110** |
+| **Итого** | **30** | **109** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

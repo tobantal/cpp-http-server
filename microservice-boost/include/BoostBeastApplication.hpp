@@ -2,6 +2,8 @@
 
 #include "IWebApplication.hpp"
 #include "IHttpHandler.hpp"
+#include "ILogger.hpp"
+#include "NullLogger.hpp"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/http.hpp>
@@ -36,7 +38,8 @@ class IResponse;
 class BoostBeastApplication : public IWebApplication
 {
 public:
-    BoostBeastApplication();
+    explicit BoostBeastApplication(
+        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
     virtual ~BoostBeastApplication();
 
     void start() override;
@@ -91,6 +94,7 @@ private:
     std::chrono::milliseconds writeTimeout_;
     size_t maxConnections_;
     std::atomic<int> activeConnections_{0};
+    std::shared_ptr<ILogger> logger_;
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

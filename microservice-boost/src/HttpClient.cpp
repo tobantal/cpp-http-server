@@ -1,5 +1,4 @@
 #include "HttpClient.hpp"
-#include "NullLogger.hpp"
 #include <cstdlib>
 
 using tcp = boost::asio::ip::tcp;
@@ -7,20 +6,15 @@ namespace beast = boost::beast;
 namespace http = beast::http;
 namespace asio = boost::asio;
 
-HttpClient::HttpClient()
+HttpClient::HttpClient(std::shared_ptr<ILogger> logger)
     : connectTimeout_(kDefaultConnectTimeoutMs),
       readTimeout_(kDefaultReadTimeoutMs),
       writeTimeout_(kDefaultWriteTimeoutMs),
-      logger_(std::make_shared<NullLogger>())
+      logger_(logger ? std::move(logger) : std::make_shared<NullLogger>())
 {
     loadTimeoutFromEnv("HTTP_CLIENT_CONNECT_TIMEOUT_MS", connectTimeout_, kDefaultConnectTimeoutMs);
     loadTimeoutFromEnv("HTTP_CLIENT_READ_TIMEOUT_MS", readTimeout_, kDefaultReadTimeoutMs);
     loadTimeoutFromEnv("HTTP_CLIENT_WRITE_TIMEOUT_MS", writeTimeout_, kDefaultWriteTimeoutMs);
-}
-
-void HttpClient::setLogger(std::shared_ptr<ILogger> logger)
-{
-    logger_ = logger ? logger : std::make_shared<NullLogger>();
 }
 
 void HttpClient::loadTimeoutFromEnv(const char* envVar, std::chrono::milliseconds& target, int /*defaultMs*/)

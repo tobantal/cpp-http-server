@@ -20,10 +20,11 @@ namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
-BoostBeastApplication::BoostBeastApplication()
+BoostBeastApplication::BoostBeastApplication(std::shared_ptr<ILogger> logger)
     : maxRequestBodySize_(1048576),
       readTimeout_(30000), writeTimeout_(30000),
-      maxConnections_(0), activeConnections_(0)
+      maxConnections_(0), activeConnections_(0),
+      logger_(std::move(logger))
 {
     logger_->log(LogLevel::Info, "App", "BoostBeastApplication created");
 }

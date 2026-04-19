@@ -2,16 +2,13 @@
 
 #include "IEnvironment.hpp"
 #include "IHttpHandler.hpp"
-#include "ILogger.hpp"
 #include "ChainHandler.hpp"
-#include "NullLogger.hpp"
 #include <memory>
 #include <string>
 
 class IWebApplication
 {
 public:
-    IWebApplication() : logger_(std::make_shared<NullLogger>()) {}
     virtual ~IWebApplication() = default;
 
     virtual void run(int argc, char *argv[])
@@ -19,16 +16,6 @@ public:
         loadEnvironment(argc, argv);
         configureInjection();
         start();
-    }
-
-    void setLogger(std::shared_ptr<ILogger> logger)
-    {
-        logger_ = logger ? logger : std::make_shared<NullLogger>();
-    }
-
-    std::shared_ptr<ILogger> getLogger() const
-    {
-        return logger_;
     }
 
     template <typename... Handlers>
@@ -51,5 +38,4 @@ protected:
         std::shared_ptr<IHttpHandler> handler) = 0;
 
     std::shared_ptr<IEnvironment> env_;
-    std::shared_ptr<ILogger> logger_;
 };

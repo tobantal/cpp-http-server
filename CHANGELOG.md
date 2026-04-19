@@ -100,6 +100,15 @@
 - 16 новых тестов (HttpStatus enum values, getReasonPhrase, setStatus(HttpStatus), setResult(HttpStatus), setCookie variants)
 - **Backward compatible:** `setStatus(int)` и `setResult(int, ...)` по-прежнему работают
 
+#### SRV-16b: Logger refactoring — constructor injection, remove setLogger/getLogger
+- **IWebApplication**: removed `setLogger()`, `getLogger()`, `logger_` member, `#include "NullLogger.hpp"` from interface — interfaces should not contain implementation details
+- **BoostBeastApplication**: `logger_` is now a private member initialized via constructor `explicit BoostBeastApplication(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())` — like trading-platform pattern
+- **ChainHandler**: removed `setLogger()`, added two constructors — `ChainHandler(handlers...)` (default NullLogger) and `ChainHandler(logger, handlers...)` (explicit injection). Removed all `if (logger_)` null-checks — logger is always valid
+- **HttpClient**: removed `setLogger()`, logger injected via constructor `explicit HttpClient(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())` — same pattern
+- Pattern: `explicit Foo(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())` — consistent with trading-platform DI style
+- 268/268 tests pass with zero changes to test code (backward compatible — default NullLogger preserves existing behavior)
+- **Breaking change**: `IWebApplication::setLogger()` and `IWebApplication::getLogger()` removed, `ChainHandler::setLogger()` removed, `HttpClient::setLogger()` removed. Consumer migration: pass logger via constructor instead of calling setter
+
 #### SRV-38: CI improvements — caching, matrix, linting, sanitizers
 - **clang-tidy bug fix:** grep regex `^(error|warning):` never matched clang-tidy output format (`/path/File.cpp:42:5: error:`) — CI was always green regardless of issues. Fixed regex to `:(error|warning):` and added `--warnings-as-errors='*'` flag
 - **clang-tidy config (`.clang-tidy`):** scoped `HeaderFilterRegex` to `microservice-(core|boost)/` (was `.*` which included Boost/GTest headers); disabled noisy checks (`cppcoreguidelines-pro-bounds-*`, `cppcoreguidelines-avoid-magic-numbers`, `cppcoreguidelines-avoid-c-arrays`, `cppcoreguidelines-pro-type-reinterpret-cast`, `cppcoreguidelines-pro-type-union-access`, `readability-magic-numbers`, `readability-identifier-length`, `readability-function-cognitive-complexity`, `bugprone-easily-swappable-parameters`, `modernize-use-trailing-return-type`); added `concurrency-*` checks (critical for multithreaded code); set `WarningsAsErrors: '*'`; added `FormatStyle: file`

@@ -2,6 +2,7 @@
 
 #include "IHttpClient.hpp"
 #include "ILogger.hpp"
+#include "NullLogger.hpp"
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 #include <chrono>
@@ -10,9 +11,7 @@
 class HttpClient : public IHttpClient
 {
 public:
-    HttpClient();
-
-    void setLogger(std::shared_ptr<ILogger> logger);
+    explicit HttpClient(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
 
     HttpClientResult send(const IRequest& request, IResponse& response) override;
 

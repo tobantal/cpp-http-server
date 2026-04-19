@@ -1,4 +1,4 @@
-#include "ChainHandler.hpp"
+#include "handler/ChainHandler.hpp"
 
 void ChainHandler::handle(IRequest &req, IResponse &res)
 {
@@ -15,11 +15,8 @@ void ChainHandler::handle(IRequest &req, IResponse &res)
         }
         catch (const std::exception &e)
         {
-            if (logger_)
-            {
-                logger_->log(LogLevel::Error, "ChainHandler",
-                             std::string("Unhandled exception: ") + e.what());
-            }
+            logger_->log(LogLevel::Error, "ChainHandler",
+                         std::string("Unhandled exception: ") + e.what());
             sendError(res, 500, "Internal server error");
             return;
         }
@@ -27,11 +24,8 @@ void ChainHandler::handle(IRequest &req, IResponse &res)
 
     if (res.getStatus() < 100 || res.getStatus() >= 600)
     {
-        if (logger_)
-        {
-            logger_->log(LogLevel::Error, "ChainHandler",
-                         "Chain finished with invalid HTTP status: " + std::to_string(res.getStatus()));
-        }
+        logger_->log(LogLevel::Error, "ChainHandler",
+                     "Chain finished with invalid HTTP status: " + std::to_string(res.getStatus()));
         sendError(res, 500, "Internal server error");
     }
 }

@@ -1,8 +1,8 @@
-﻿name: CMake CI
+name: CMake CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/v0.3.0 ]
   pull_request:
     branches: [ main ]
 

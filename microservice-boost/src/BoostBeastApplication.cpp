@@ -22,7 +22,8 @@ using tcp = asio::ip::tcp;
 
 BoostBeastApplication::BoostBeastApplication()
     : maxRequestBodySize_(1048576),
-      readTimeout_(30000), writeTimeout_(30000)
+      readTimeout_(30000), writeTimeout_(30000),
+      maxConnections_(0), activeConnections_(0)
 {
     logger_->log(LogLevel::Info, "App", "BoostBeastApplication created");
 }
@@ -199,6 +200,7 @@ void BoostBeastApplication::start()
         maxRequestBodySize_ = serverSettings.getMaxRequestBodySize();
         readTimeout_ = serverSettings.getReadTimeout();
         writeTimeout_ = serverSettings.getWriteTimeout();
+        maxConnections_ = serverSettings.getMaxConnections();
 
         logger_->log(LogLevel::Info, "App", "Starting HTTP server...");
 
@@ -211,6 +213,17 @@ void BoostBeastApplication::start()
 
         logger_->log(LogLevel::Info, "Server",
                      "Listening on " + host + ":" + std::to_string(port));
+
+        if (maxConnections_ > 0)
+        {
+            logger_->log(LogLevel::Info, "Server",
+                         "Max connections limit: " + std::to_string(maxConnections_));
+        }
+        else
+        {
+            logger_->log(LogLevel::Info, "Server", "Max connections: unlimited");
+        }
+
         logger_->log(LogLevel::Info, "Server", "Server is ready to accept connections!");
 
         state_.store(ServerState::Running);
@@ -220,7 +233,30 @@ void BoostBeastApplication::start()
             tcp::socket socket{*ioContext_};
             acceptor_->accept(socket);
 
-            logger_->log(LogLevel::Info, "Server", "New connection accepted");
+            int current = activeConnections_.load();
+
+            if (maxConnections_ > 0 && current >= static_cast<int>(maxConnections_))
+            {
+                logger_->log(LogLevel::Warn, "Server",
+                             "Connection limit reached (" + std::to_string(current) +
+                             "/" + std::to_string(maxConnections_) + "). Sending 503.");
+
+                http::response<http::string_body> res{http::status::service_unavailable, 11};
+                res.set(http::field::server, "BoostBeast");
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Service unavailable. Connection limit reached."})";
+                res.prepare_payload();
+
+                beast::error_code ec;
+                http::write(socket, res, ec);
+                socket.shutdown(tcp::socket::shutdown_both, ec);
+                continue;
+            }
+
+            activeConnections_++;
+            logger_->log(LogLevel::Info, "Server",
+                         "New connection accepted (" + std::to_string(activeConnections_.load()) +
+                         "/" + (maxConnections_ > 0 ? std::to_string(maxConnections_) : "unlimited") + ")");
 
             std::thread t([this](tcp::socket socket)
                           { handleSession(std::move(socket)); }, std::move(socket));
@@ -326,6 +362,8 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
         logger_->log(LogLevel::Error, "Session",
                      std::string("Shutdown error: ") + ec.message());
     }
+
+    activeConnections_--;
 }
 
 void BoostBeastApplication::loadEnvironment(int argc, char *argv[])

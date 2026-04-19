@@ -12,4 +12,5 @@ public:
     virtual size_t getMaxRequestBodySize() const = 0;
     virtual std::chrono::milliseconds getReadTimeout() const = 0;
     virtual std::chrono::milliseconds getWriteTimeout() const = 0;
+    virtual size_t getMaxConnections() const = 0;
 };

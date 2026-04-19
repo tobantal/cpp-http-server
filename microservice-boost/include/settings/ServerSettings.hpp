@@ -15,6 +15,7 @@ private:
     size_t maxRequestBodySize_;
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
+    size_t maxConnections_;
 
     static std::string getEnvOrDefault(const char* name, const std::string& defaultValue) {
         const char* value = std::getenv(name);
@@ -36,11 +37,13 @@ private:
     static constexpr size_t kDefaultMaxRequestBodySize = 1048576;
     static constexpr int kDefaultReadTimeoutMs = 30000;
     static constexpr int kDefaultWriteTimeoutMs = 30000;
+    static constexpr size_t kDefaultMaxConnections = 0; // 0 = unlimited
 
 public:
     explicit ServerSettings(std::shared_ptr<IEnvironment> env)
         : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
-          readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs)
+          readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),
+          maxConnections_(kDefaultMaxConnections)
     {
         host_ = getEnvOrDefault("SERVER_HOST", "");
         port_ = 0;
@@ -100,6 +103,17 @@ public:
                 writeTimeout_ = std::chrono::milliseconds(kDefaultWriteTimeoutMs);
             }
         }
+
+        size_t envMaxConn = getEnvOrDefaultSize("SERVER_MAX_CONNECTIONS", 0);
+        if (envMaxConn > 0) {
+            maxConnections_ = envMaxConn;
+        } else {
+            try {
+                maxConnections_ = env->get<size_t>("server.maxConnections");
+            } catch (...) {
+                maxConnections_ = kDefaultMaxConnections;
+            }
+        }
     }
 
     std::string getHost() const override {
@@ -120,5 +134,9 @@ public:
 
     std::chrono::milliseconds getWriteTimeout() const override {
         return writeTimeout_;
+    }
+
+    size_t getMaxConnections() const override {
+        return maxConnections_;
     }
 };

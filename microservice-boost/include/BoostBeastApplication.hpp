@@ -89,6 +89,8 @@ private:
     size_t maxRequestBodySize_;
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
+    size_t maxConnections_;
+    std::atomic<int> activeConnections_{0};
 
     void handleSession(boost::asio::ip::tcp::socket socket);
     void handleBeastRequest(

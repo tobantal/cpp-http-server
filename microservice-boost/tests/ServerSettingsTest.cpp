@@ -242,3 +242,69 @@ TEST(ServerSettingsTest, InvalidReadTimeoutEnvUsesDefault)
 
     unsetenv("SERVER_READ_TIMEOUT_MS");
 }
+
+TEST(ServerSettingsTest, DefaultMaxConnectionsIsUnlimited)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_MAX_CONNECTIONS");
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxConnections(), 0u);
+}
+
+TEST(ServerSettingsTest, MaxConnectionsFromEnv)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    setenv("SERVER_MAX_CONNECTIONS", "100", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxConnections(), 100u);
+
+    unsetenv("SERVER_MAX_CONNECTIONS");
+}
+
+TEST(ServerSettingsTest, MaxConnectionsFromConfig)
+{
+    unsetenv("SERVER_HOST");
+    unsetenv("SERVER_PORT");
+    unsetenv("SERVER_MAX_CONNECTIONS");
+
+    auto env = std::make_shared<Environment>();
+    env->setProperty("server.maxConnections", static_cast<size_t>(50));
+
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxConnections(), 50u);
+}
+
+TEST(ServerSettingsTest, MaxConnectionsEnvOverridesConfig)
+{
+    setenv("SERVER_MAX_CONNECTIONS", "200", 1);
+
+    auto env = std::make_shared<Environment>();
+    env->setProperty("server.maxConnections", static_cast<size_t>(50));
+
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxConnections(), 200u);
+
+    unsetenv("SERVER_MAX_CONNECTIONS");
+}
+
+TEST(ServerSettingsTest, InvalidMaxConnectionsEnvUsesDefault)
+{
+    setenv("SERVER_MAX_CONNECTIONS", "not_a_number", 1);
+
+    auto env = std::make_shared<Environment>();
+    ServerSettings settings(env);
+
+    EXPECT_EQ(settings.getMaxConnections(), 0u);
+
+    unsetenv("SERVER_MAX_CONNECTIONS");
+}

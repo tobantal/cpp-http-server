@@ -238,12 +238,7 @@
 - **Файлы:** `CMakeLists.txt`, `version.hpp`
 - **Тесты:** Unit-тест: version string format
 
-### SRV-38: CI improvements — caching, matrix, linting
-- **SP:** 3
-- **Модуль:** .github
-- **Что:** (1) Добавить cache для FetchContent зависимостей (Boost, DI, nlohmann_json) — сэкономит 5+ мин на каждый run. (2) Добавить matrix: build на ubuntu-latest + macOS-latest. (3) Добавить шаг clang-tidy/static-analysis. (4) Добавить шаг sanitize (AddressSanitizer, UndefinedBehaviorSanitizer).
-- **Файлы:** `.github/workflows/ci.yml`, возможный `.clang-tidy`
-- **Тесты:** CI проходит
+### ~~SRV-38~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### DX-01: Установка C++ плагинов для Cursor IDE
 - **SP:** 1
@@ -265,7 +260,7 @@
 | P2 Observability & DX | 3 | 7 |
 | P2 Code Quality & Bugs | 2 | 3 |
 | P3 Performance & Future | 6 | 43 |
-| P3 Documentation & DX | 5 | 10 |
-| **Итого** | **25** | **92** |
+| P3 Documentation & DX | 4 | 7 |
+| **Итого** | **24** | **89** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-38, SRV-39, SRV-06b

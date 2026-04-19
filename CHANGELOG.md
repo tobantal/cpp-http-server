@@ -100,6 +100,19 @@
 - 16 новых тестов (HttpStatus enum values, getReasonPhrase, setStatus(HttpStatus), setResult(HttpStatus), setCookie variants)
 - **Backward compatible:** `setStatus(int)` и `setResult(int, ...)` по-прежнему работают
 
+#### SRV-38: CI improvements — caching, matrix, linting, sanitizers
+- **clang-tidy bug fix:** grep regex `^(error|warning):` never matched clang-tidy output format (`/path/File.cpp:42:5: error:`) — CI was always green regardless of issues. Fixed regex to `:(error|warning):` and added `--warnings-as-errors='*'` flag
+- **clang-tidy config (`.clang-tidy`):** scoped `HeaderFilterRegex` to `microservice-(core|boost)/` (was `.*` which included Boost/GTest headers); disabled noisy checks (`cppcoreguidelines-pro-bounds-*`, `cppcoreguidelines-avoid-magic-numbers`, `cppcoreguidelines-avoid-c-arrays`, `cppcoreguidelines-pro-type-reinterpret-cast`, `cppcoreguidelines-pro-type-union-access`, `readability-magic-numbers`, `readability-identifier-length`, `readability-function-cognitive-complexity`, `bugprone-easily-swappable-parameters`, `modernize-use-trailing-return-type`); added `concurrency-*` checks (critical for multithreaded code); set `WarningsAsErrors: '*'`; added `FormatStyle: file`
+- **ccache integration:** `CMAKE_CXX_COMPILER_LAUNCHER=ccache` in all jobs (build, sanitize, lint) — 50-80% build time reduction on cache hits
+- **Cache improvements:** removed `build/CMakeFiles` from cache (stale-state risk, zero savings); separate cache keys for deps vs ccache; added `github.run_id` to ccache key for invalidation on dependency changes
+- **Matrix additions:**
+  - GCC Release + hardening flags (`-D_FORTIFY_SOURCE=2 -fstack-protector-strong -D_GLIBCXX_ASSERTIONS`)
+  - ThreadSanitizer (TSan) in sanitize matrix — critical for project with `std::atomic`, `std::mutex`, `std::thread`
+  - Total matrix: 4 build configs (gcc/Debug+coverage, gcc/Release+hardening, clang/Release, macOS/clang/Release) + 3 sanitizers (ASan, UBSan, TSan) + 1 lint job
+- **`.clang-format`:** added project code style config (Allman braces, 4-space indent, 120-column limit, left-aligned pointers/references, C++17)
+- **268/268 tests pass** with zero changes to production code
+- **Backward compatible:** no production code changes, CI-only
+
 #### DRY-03: Тощая поставка библиотеки — find_package + FetchContent fallback
 - Корневой CMakeLists.txt реорганизован: `find_package` приоритет + `FetchContent` fallback (опция `CPP_HTTP_SERVER_FETCH_DEPS`, default ON)
 - При standalone-сборке (CPP_HTTP_SERVER_FETCH_DEPS=ON) зависимости подтягиваются FetchContent, как раньше

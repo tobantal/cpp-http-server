@@ -23,6 +23,15 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### DRY-07: JsonSerializer — isolate nlohmann/json from handler code
+- **JsonParseError** (microservice-core): `HttpError(400)` thrown by `deserialize()` on invalid JSON — handler catches `JsonParseError` via `ChainHandler` → returns 400
+- **serialize<T>(const T&)** → `std::string` JSON (requires `to_json` specialization for T)
+- **deserialize<T>(const std::string&)** → `T` (requires `from_json` specialization), throws `JsonParseError` on parse/type/out_of_range errors
+- Consumer code: `res.setResult(HttpStatus::Ok, "application/json", serialize(dto))` instead of manual `nlohmann::json` assembly
+- `nlohmann::json` only referenced in `JsonSerializer.hpp` + `to_json`/`from_json` specializations — handler code is clean
+- 10 new tests (3 JsonParseError + 7 JsonSerializer: serialize, deserialize, invalid JSON, missing field, type error, round-trip)
+- **Backward compatible:** existing handler code continues to work; `serialize`/`deserialize` are opt-in
+
 #### SRV-04: Connection limit — DoS protection with 503 on limit exceeded
 - `IServerSettings::getMaxConnections()` — new virtual method
 - `ServerSettings`: `SERVER_MAX_CONNECTIONS` env or `server.maxConnections` config (default: 0 = unlimited)

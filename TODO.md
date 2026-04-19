@@ -36,14 +36,7 @@
 - **Что:** Проанализировать библиотеки из LIBRARIES.md trading-platform на применимость к cpp-http-server. Фокус на тех, что напрямую улучшают библиотеку сервера. Кандидаты для анализа: (а) **absl::StatusOr<T>** — замена `bool` return в IHttpClient::send(), замена `std::optional` в error paths, более информативный паттерн ошибок; (б) **absl::flat_hash_map** — замена `std::map` для handlers_ (быстрее lookup для роутинга); (в) **boost::lockfree::queue** — для thread-safe очереди задач при переходе на thread pool (SRV-03/SRV-04); (г) **string_view** (C++17, уже доступен) — замена `const std::string&` в IRequest/IResponse методах, устранение лишних аллокаций. Отдельный вопрос: стоит ли добавлять зависимость от Abseil ради StatusOr/flat_hash_map, или проще реализовать аналог своими силами. Результат — документ с рекомендацией по каждой библиотеке.
 - **Результат:** Документ с анализом + рекомендации (пока документируем, реализация — отдельная задача)
 
-### DRY-07: JsonSerializer— сериализация DTO в JSON без прямой зависимости от nlohmann/json в handler-коде
-- **SP:** 3
-- **Модуль:** microservice-boost, microservice-core
-- **Что:** Создать типобезопасные хелперы `serialize<T>(obj)` и `deserialize<T>(body)`, скрывающие конкретную JSON-библиотеку из consumer-кода. Сейчас каждый handler работает с `nlohmann::json` напрямую (сборка JSON-объекта, dump(), parse(), get_to()) — это привязка к библиотеке и дублирование. Решение: (1) **microservice-boost**: `JsonSerializer.hpp` с шаблонами `serialize<T>(const T&) -> string` и `deserialize<T>(const string&) -> T`, делегирующими в nlohmann/json через `to_json`/`from_json` специализации; (2) **microservice-core**: `JsonParseError` (400) — исключение при ошибке парсинга, чтобы библиотека единообразно обрабатывала ошибки; (3) Consumer-код использует `serialize(dto)` / `deserialize<Dto>(body)`, а `to_json`/`from_json` специализации определяет один раз рядом с DTO. При смене JSON-библиотеки (nlohmann → boost.json) правится только JsonSerializer.hpp + специализации, handler-код не меняется. Пример: `TokenResponse dto{...}; res.setResult(200, "application/json", serialize(dto));` вместо ручной сборки `nlohmann::json`. Конкретная JSON-библиотека упомянута только в `to_json`/`from_json` специализациях и JsonSerializer.hpp — handler чистый.
-- **Файлы:** Новый `JsonSerializer.hpp` в microservice-boost; новый `JsonParseError.hpp` в microservice-core; обновить `CHANGELOG.md`
-- **Тесты:** Unit-тест: serialize DTO → корректный JSON string; deserialize JSON string → DTO; deserialize невалидный JSON → JsonParseError; round-trip serialize→deserialize→serialize
-- **Критерий успеха:** Handler-код не содержит `#include "nlohmann/json.hpp"` и не работает с `nlohmann::json` напрямую
-- **Связанные задачи:** SRV-39 (JSON validation middleware — может использовать JsonHelper для парсинга), DRY-04b (выпиливание nlohmann/json — после JsonHelper зависимость изолирована)
+### ~~DRY-07~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### DRY-08: Архитектурный порядок — структура файлов, интерфейсы, .opencode
 - **SP:** 3
@@ -284,7 +277,7 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 5 | 13 |
+| P1 DRY | 3 | 7 |
 | P0 Critical | 1 | 3 |
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
@@ -292,6 +285,6 @@
 | P2 Code Quality & Bugs | 2 | 3 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **27** | **98** |
+| **Итого** | **26** | **95** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

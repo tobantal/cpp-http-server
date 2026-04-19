@@ -23,6 +23,20 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### SRV-16a: ILogger абстракция логирования + ConsoleLogger + NullLogger + TestLogger
+- `LogLevel` enum (`: uint8_t`): Debug, Info, Warn, Error
+- `ILogger` интерфейс: `log(level, category, message)` — чистый virtual, нулевые зависимости
+- `logLevelToString(LogLevel)` — утилита, реализация в LogLevel.cpp
+- `ConsoleLogger`: `[LEVEL] [category] message` → stdout (микросервис-core)
+- `NullLogger`: no-op (Null Object pattern, default в IWebApplication)
+- `TestLogger`: thread-safe log capture с `getEntries()`, `at(index)`, `clear()`, `size()` (микросервис-core)
+- `IWebApplication::setLogger()/getLogger()`: инжекция логера, дефолт — NullLogger (backward compatible)
+- `ChainHandler::setLogger()`: `std::cerr` заменён на `logger_->log()` (Error level)
+- `BoostBeastApplication`: все 38 `std::cerr/cout` заменены на `logger_->log()` с категориями App, Server, Session, HttpClient, Config
+- `HttpClient::setLogger()`: `std::cerr/cout` заменены на `logger_->log()`
+- 10 новых тестов (LogLevel, NullLogger, TestLogger, ConsoleLogger, ILogger interface)
+- **Backward compatible:** без setLogger() поведение как раньше (NullLogger, тихий дефолт; ConsoleLogger для production через setLogger)
+
 #### SRV-17: IResponse расширения — HttpStatus enum, getReasonPhrase(), setCookie()
 - **HttpStatus enum** (`HttpStatus.hpp`): `HttpStatus::Ok`, `Created`, `BadRequest`, `NotFound`, `Conflict`, `InternalServerError` и т.д. — заменяют магические числа
 - **toInt(HttpStatus)** — конвертация в int

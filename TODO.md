@@ -151,36 +151,9 @@
 
 ## P2 — Observability & Developer Experience
 
-### SRV-16: Structured logging (ILogger integration)
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** Заменить `std::cout/std::cerr` в BoostBeastApplication и HttpClient на ILogger interface (инжектируемый через DI или setter). Логировать: request start (method, path, IP), request end (status, duration), errors, connections. В trading-platform уже есть ILogger с Quill — нужно сделать библиотеку совместимой.
-- **Файлы:** `BoostBeastApplication.hpp`/`.cpp`, `HttpClient.hpp`/`.cpp`, новый `IServerLogger.hpp` или integration point
-- **Тесты:** Unit-тест: request → log output содержит expected fields
-- **Ссылка:** trading-platform OBS-01 (ILogger + Quill)
+### ~~SRV-16~~ ✅ ПОГЛОЩЕНО SRV-16a — см. CHANGELOG
 
-### SRV-16a: ILogger — абстракция логирования + ConsoleLogger + TestLogger
-- **SP:** 3
-- **Модуль:** microservice-core, microservice-boost
-- **Что:** Создать абстракцию логирования для библиотеки, чтобы: (1) убрать все `std::cout`/`std::cerr` из BoostBeastApplication и HttpClient; (2) дать возможность consumer-проектам подставить свою реализацию (Quill, spdlog, etc); (3) обеспечить тестируемость — проверять лог-сообщения в unit-тестах. Реализация:
-  1. **microservice-core:** `ILogger` интерфейс — чистая абстракция без зависимостей:
-     ```cpp
-     enum class LogLevel { Debug, Info, Warn, Error };
-     struct ILogger {
-         virtual ~ILogger() = default;
-         virtual void log(LogLevel level, const std::string& message) = 0;
-         virtual void log(LogLevel level, const std::string& category, const std::string& message) = 0;
-     };
-     ```
-     Категории: `"App"`, `"Server"`, `"Session"`, `"HttpClient"`, `"Config"` — соответствуют текущим `std::cout` префиксам `[App]`, `[Server]`, `[Session]`.
-  2. **microservice-core:** `TestLogger` — реализация для unit-тестов. Пишет лог-сообщения в `std::vector<std::string>`. Даёт доступ к истории логов: `getMessages()`, `getMessages(LogLevel)`, `getMessages(category)`, `contains(substr)`, `clear()`. Позволяет проверять в тестах: что сервер залогировал "Stopping application...", что состояние изменилось с NotStarted на Running, что ошибка залогирована с нужным level, и т.д.
-  3. **microservice-boost:** `ConsoleLogger` — дефолтная реализация, пишет в stdout/stderr c тем же форматом что сейчас (`[App] Starting...`, `[Session] Timeout`), но через ILogger. Если ILogger не установлен — создаётся ConsoleLogger по умолчанию (backward compatible).
-  4. **BoostBeastApplication:** инжекция ILogger через конструктор или setter. По умолчанию — ConsoleLogger. Заменить все `std::cout`/`std::cerr` на `logger_->log(...)`.
-  5. **HttpClient:** аналогично — ILogger через конструктор, дефолт ConsoleLogger.
-- **Файлы:** Новый `ILogger.hpp`, `TestLogger.hpp` в microservice-core; новый `ConsoleLogger.hpp`/`.cpp` в microservice-boost; обновить `BoostBeastApplication.hpp`/`.cpp`, `HttpClient.hpp`/`.cpp`
-- **Тесты:** (а) TestLogger unit-тест: log → getMessages() содержит текст; log с level → filter by level; log с category → filter by category; contains() → true/false. (б) ServerStateTest с TestLogger: registerHandler → лог "Registered: GET /test"; stop() → лог "Stopping application..."; start → лог "Listening on..."; state transitions — проверка последовательности логов. (в) BoostBeastApplication с nullptr logger → fallback to ConsoleLogger (no crash). (г) HttpClient log messages — request sent, response received, error
-- **Критерий успеха:** Ни одного `std::cout` или `std::cerr` в BoostBeastApplication.cpp и HttpClient.cpp (только в ConsoleLogger). Все тесты ServerState проверяют поведение через TestLogger.
-- **Связанные задачи:** SRV-16 (общая интеграция ILogger), SRV-02b (ServerState — тесты улучшатся через TestLogger)
+### ~~SRV-16a~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### ~~SRV-17~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
@@ -331,10 +304,10 @@
 | P0 Critical | 2 | 10 |
 | P1 Security & Reliability | 4 | 17 |
 | P1 API Improvements | 2 | 4 |
-| P2 Observability & DX | 6 | 15 |
+| P2 Observability & DX | 4 | 9 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **32** | **117** |
+| **Итого** | **30** | **111** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

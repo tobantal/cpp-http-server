@@ -45,6 +45,27 @@
 - **Критерий успеха:** Handler-код не содержит `#include "nlohmann/json.hpp"` и не работает с `nlohmann::json` напрямую
 - **Связанные задачи:** SRV-39 (JSON validation middleware — может использовать JsonHelper для парсинга), DRY-04b (выпиливание nlohmann/json — после JsonHelper зависимость изолирована)
 
+### DRY-08: Архитектурный порядок — структура файлов, интерфейсы, .opencode
+- **SP:** 3
+- **Модуль:** microservice-core, microservice-boost
+- **Что:** Навести порядок в структуре файлов проекта. Сейчас в `include/` всё перемешано: интерфейсы (IRequest, IResponse), ошибки (HttpError, NotFoundError), утилиты (StringUtils, ThreadSafeMap), хендлеры (ChainHandler, HealthHandler). Нужно:
+  1. **Ввести архитектурный стиль — два подхода к организации файлов:**
+     - **Интерфейсы** (I*.hpp): только чистые virtual методы + виртуальный деструктор, без переменных-членов и без реализаций. Файлы интерфейсов — в корне `include/` для удобного `#include "IRequest.hpp"`.
+     - **Заголовки классов** (*.hpp): объявление класса + inline-реализации до 150 строк; при превышении — вынести реализацию в *.cpp.
+  2. **Разделить `include/` на подпапки по домену:**
+     - `include/error/` — все классы ошибок (HttpError, NotFoundError, BadRequestError, ...)
+     - `include/handler/` — хендлеры (ChainHandler, HealthHandler, JsonValidator)
+     - `include/util/` — утилиты (StringUtils, ThreadSafeMap, PathParamExtractor)
+     - `include/settings/` — настройки (ServerSettings, IEnvironment, Environment)
+     - `include/` (корень) — только интерфейсы (IRequest, IResponse, IHttpHandler, IWebApplication, IHttpClient) и HttpStatus
+     - Обратная совместимость: для каждого перенесённого файла создать forwarding-заголовок в корне `include/` с `#include "error/NotFoundError.hpp"` и `#pragma message("... is deprecated, use error/NotFoundError.hpp")`, удалить в следующей версии.
+  3. **Создать `.opencode/` директорию** для инструкций Open Code, перенести туда содержимое `.claude/` (CLAUDE.md → OPENCODE.md, rules/, architecture.md, memory.md, commands/, settings.json). Правила проекта должны быть доступны как для Claude, так и для Open Code.
+  4. **Добавить архитектурное правило** в `.opencode/rules/architecture.md` о структуре файлов: интерфейсы в корне `include/`, ошибки в `error/`, хендлеры в `handler/`, утилиты в `util/`, настройки в `settings/`. Правило должно соблюдаться при добавлении новых файлов — это часть DRY, чтобы потребитель мог быстро найти нужный хедер.
+- **Файлы:** Реорганизация `microservice-core/include/` и `microservice-boost/include/`, новые forwarding-заголовки, `.opencode/` директория
+- **Тесты:** Существующие тесты проходят без изменений (forwarding-заголовки обеспечивают совместимость). Новый тест: `#include "NotFoundError.hpp"` (старый путь) → работает, `#include "error/NotFoundError.hpp"` (новый путь) → работает.
+- **Критерий успеха:** Структура файлов отражает доменную модель; интерфейсы отделены от реализаций и ошибок; `.opencode/` содержит полные инструкции; `.claude/` forwarding → `.opencode/`
+- **Связанные задачи:** SRV-34 (разделение header-only на hpp/cpp — делать вместе или после DRY-08)
+
 ---
 
 ## P0 — Critical (блокирует производство)
@@ -311,7 +332,7 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 4 | 10 |
+| P1 DRY | 5 | 13 |
 | P0 Critical | 2 | 10 |
 | P1 Security & Reliability | 4 | 17 |
 | P1 API Improvements | 2 | 4 |
@@ -319,6 +340,6 @@
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **32** | **119** |
+| **Итого** | **33** | **122** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

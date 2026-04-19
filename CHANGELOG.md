@@ -23,6 +23,21 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### DRY-08: Architectural file structure — error/, handler/, util/ subdirs + forwarding headers
+- **microservice-core/include/** restructured into domain subdirectories:
+  - `error/` — 14 error classes (HttpError, NotFoundError, BadRequestError, etc.)
+  - `handler/` — ChainHandler, HealthHandler
+  - `util/` — StringUtils, ThreadSafeMap, PathParamExtractor
+  - `settings/` — IEnvironment, Environment (unchanged)
+  - root — interfaces (I*), HttpStatus, HttpClientError, RouteMatcher, ConsoleLogger, NullLogger, TestLogger, SimpleRequest, SimpleResponse
+- **microservice-boost/include/** restructured:
+  - `handler/` — JsonValidator
+  - `settings/` — ServerSettings (unchanged)
+  - root — BoostBeastApplication, BeastRequestAdapter, BeastResponseAdapter, HttpClient, JsonSerializer
+- **20 forwarding headers** created at old paths (`include/NotFoundError.hpp` → `#include "error/NotFoundError.hpp"`) — backward compatible, old `#include` paths still work
+- **268/268 tests pass** with zero changes (forwarding headers provide compatibility)
+- Architectural rule documented in `.opencode/rules/architecture.md`
+
 #### DRY-07: JsonSerializer — isolate nlohmann/json from handler code
 - **JsonParseError** (microservice-core): `HttpError(400)` thrown by `deserialize()` on invalid JSON — handler catches `JsonParseError` via `ChainHandler` → returns 400
 - **serialize<T>(const T&)** → `std::string` JSON (requires `to_json` specialization for T)

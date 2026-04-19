@@ -294,6 +294,13 @@
 - **Файлы:** `.github/workflows/ci.yml`, возможный `.clang-tidy`
 - **Тесты:** CI проходит
 
+### DX-01: Установка C++ плагинов для Cursor IDE
+- **SP:** 1
+- **Модуль:** DX/инструменты
+- **Что:** Установить в Cursor IDE те же C++ плагины, что и в VS Code: `twxs.cmake`, `xaver.clang-format`, `llvm-vs-code-extensions.vscode-clangd`, `vadimcn.vscode-lldb`, `ms-vscode.cpptools`, `ms-vscode.cmake-tools`. Cursor использует свой config-директорий (`~/.config/Cursor/`), поэтому расширения нужно ставить отдельно: `cursor --install-extension <id>`. Также скопировать `settings.json` (format on save, clang-tidy path, CMake presets) из VS Code.
+- **Файлы:** Cursor extensions + settings
+- **Приоритет:** P3 (низкий)
+
 ---
 
 ## Сводка по Story Points
@@ -307,7 +314,7 @@
 | P2 Observability & DX | 4 | 9 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 6 | 43 |
-| P3 Documentation & DX | 4 | 9 |
-| **Итого** | **30** | **111** |
+| P3 Documentation & DX | 5 | 10 |
+| **Итого** | **31** | **112** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.14)
 project(cpp-http-server VERSION 0.3.0 LANGUAGES CXX)
 
+if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 # ============================================================================
 # C++ standard
 # ============================================================================

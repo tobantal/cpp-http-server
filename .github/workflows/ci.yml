@@ -93,6 +93,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -G Ninja
 
       - name: Build
@@ -166,6 +167,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -g" \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -G Ninja
         env:
           CC: clang
@@ -185,7 +187,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja clang clang-tidy ccache
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang clang-tidy ccache
 
       - name: Configure ccache
         run: |
@@ -210,7 +212,7 @@ jobs:
             deps-linux-clang-tidy-
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -G Ninja
         env:
           CC: clang
           CXX: clang++

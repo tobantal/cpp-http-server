@@ -23,6 +23,16 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### SRV-04: Connection limit — DoS protection with 503 on limit exceeded
+- `IServerSettings::getMaxConnections()` — new virtual method
+- `ServerSettings`: `SERVER_MAX_CONNECTIONS` env or `server.maxConnections` config (default: 0 = unlimited)
+- `std::atomic<int> activeConnections_` — thread-safe counter in BoostBeastApplication
+- When limit reached: accept → send HTTP 503 `{"error": "Service unavailable. Connection limit reached."}` → close socket
+- When `maxConnections_ == 0`: unlimited connections (backward compatible default)
+- Logging: connection count on accept, 503 warning on limit
+- 5 new tests for maxConnections (default, env, config, override, invalid)
+- **Backward compatible:** default `maxConnections = 0` means unlimited, same as before
+
 #### SRV-09: HttpClient error handling — HttpClientError, decomposed send, read/write timeouts
 - **HttpClientError** enum: None, DnsFailed, ConnectTimeout, ConnectionRefused, WriteTimeout, ReadTimeout, UnknownError
 - **HttpClientResult** struct: `error` + `errorMessage` + `ok()` — replaces `bool` return

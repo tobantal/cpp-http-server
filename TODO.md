@@ -75,12 +75,7 @@
 - **Модуль:** microservice-core
 - **Что:** Вынести boost-независимую логику из BoostBeastApplication в BaseWebApplication: `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `started_` флаг. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволит в будущем создать вторую реализацию на другой HTTP-библиотеке без дублирования routing/error-handling логики.
 
-### SRV-04: Лимит одновременных соединений — DoS-защита
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** Каждый коннект создаёт новый thread без лимита. При flash-crowd или DoS — исчерпание ресурсов. Решение: `std::atomic<int> activeConnections_` — счётчик активных соединений. При превышении лимита — принять соединение, отправить HTTP 503 Service Unavailable, закрыть. Лимит из `SERVER_MAX_CONNECTIONS` env или `config.json`, default = `std::thread::hardware_concurrency() * 4`. Без очереди (очередь — отдельная задача SRV-28 при переходе на async). Thread pool тоже отдельная задача (SRV-28).
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`, `settings/ServerSettings.hpp`
-- **Тесты:** Unit: лимит 2, 3-й запрос → 503; после закрытия соединения → новый запрос OK; default limit = hardware_concurrency * 4; SERVER_MAX_CONNECTIONS env override
+### ~~SRV-04~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ---
 
@@ -290,13 +285,13 @@
 | Категория | Задач | SP |
 |-----------|-------|-----|
 | P1 DRY | 5 | 13 |
-| P0 Critical | 2 | 8 |
+| P0 Critical | 1 | 3 |
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 3 | 7 |
 | P2 Code Quality & Bugs | 2 | 3 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **28** | **101** |
+| **Итого** | **27** | **98** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

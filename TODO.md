@@ -105,13 +105,7 @@
 - **Тесты:** Unit-тест: ShutdownManager LIFO order + timeout; Integration-тест: SIGTERM → graceful shutdown → текущий запрос завершается
 - **Ссылка:** trading-platform REL-08 (ICloseable + ShutdownManager — будет использовать IShutdown из библиотеки)
 
-### SRV-09: HttpClient error handling и connection pooling
-- **SP:** 5
-- **Модуль:** microservice-boost
-- **Что:** HttpClient::send() синхронный, создаёт новое соединение на каждый запрос. Добавить: (1) read/write timeout (default: 5s, configurable через HttpClientSettings) — connect timeout в SRV-06b; (2) корректный error code enum вместо bool; (3) connection pooling или хотя бы keep-alive. В trading-platform это критично для HttpAuthClient и HttpBrokerGateway.
-- **Файлы:** `HttpClient.hpp`, `HttpClient.cpp`, новый `IHttpClient.hpp` (расширить), `HttpClientSettings.hpp`
-- **Тесты:** Unit-тест: timeout → error code; integration-тест с mock-сервером
-- **Ссылка:** trading-platform REL-05 (Circuit Breaker), REL-06 (Retry), BUG-07a (silent exception swallowing)
+### ~~SRV-09~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### SRV-10: Config path через ENV/CLI
 - **SP:** 2
@@ -304,12 +298,12 @@
 |-----------|-------|-----|
 | P1 DRY | 5 | 13 |
 | P0 Critical | 2 | 8 |
-| P1 Security & Reliability | 4 | 17 |
+| P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 3 | 7 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **30** | **109** |
+| **Итого** | **29** | **104** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

@@ -23,6 +23,17 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### SRV-09: HttpClient error handling — HttpClientError, decomposed send, read/write timeouts
+- **HttpClientError** enum: None, DnsFailed, ConnectTimeout, ConnectionRefused, WriteTimeout, ReadTimeout, UnknownError
+- **HttpClientResult** struct: `error` + `errorMessage` + `ok()` — replaces `bool` return
+- **IHttpClient::send()** returns `HttpClientResult` (breaking change: `if (client.send(req, res))` → `if (client.send(req, res).ok())`)
+- **IResponse NOT mutated on network error** — only filled on successful HTTP response. Caller distinguishes "server returned 500" vs "connection refused"
+- HttpClient decomposed: `connect()` + `sendRequest()` + `readResponse()` private methods
+- **Read/write timeouts**: `HTTP_CLIENT_READ_TIMEOUT_MS` (default 30s), `HTTP_CLIENT_WRITE_TIMEOUT_MS` (default 30s)
+- `httpClientErrorToString()` utility
+- 11 updated/new tests
+- **Breaking change**: `IHttpClient::send()` signature changed. Consumer migration: `bool ok = client.send(req, res)` → `auto result = client.send(req, res); if (!result.ok()) { handle(result.error); }`
+
 #### SRV-14: getPath() contract — URL-декодирование
 - `StringUtils::urlDecode()`: `%XX` hex-декодирование, `+` → space, invalid `%` passthrough
 - `BeastRequestAdapter::getPath()`: URL-декодирование после удаления query string

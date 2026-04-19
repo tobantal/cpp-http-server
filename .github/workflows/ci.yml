@@ -1,49 +1,178 @@
-name: CMake CI
+name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
-    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            build-type: Debug
+            coverage: true
+            sanitizers: false
+          - os: ubuntu-latest
+            compiler: clang
+            build-type: Release
+            coverage: false
+            sanitizers: true
+          - os: macos-latest
+            compiler: clang
+            build-type: Release
+            coverage: false
+            sanitizers: false
+
     steps:
-    - name: 🔄 Checkout
-      uses: actions/checkout@v3
-      
-    - name: 🛠 Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y cmake g++ gcovr
-      
-    - name: 🏗 Configure with coverage
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage -g -O0"
-      
-    - name: ⚙️ Build
-      run: cmake --build build
-      
-    - name: ✅ Run tests
-      run: ctest --test-dir build --output-on-failure --verbose
-      
-    - name: 📊 Generate HTML coverage report
-      run: |
-        gcovr \
-          --root . \
-          --exclude '.*CMakeFiles/.*' \
-          --exclude '.*CompilerIdCXX.*' \
-          --exclude '.*CompilerIdC.*' \
-          --exclude '.*cmake/.*' \
-          --exclude '.*/tests/.*' \
-          --exclude '.*_deps/.*' \
-          --exclude '.*/demo/.*' \
-          --gcov-ignore-parse-errors=all \
-          --html-details coverage.html \
-          --print-summary
-              
-    - name: 📤 Upload coverage report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: coverage-report-html
-        path: coverage*.html
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set GCC compiler
+        if: matrix.compiler == 'gcc'
+        run: |
+          echo "CC=gcc" >> $GITHUB_ENV
+          echo "CXX=g++" >> $GITHUB_ENV
+
+      - name: Set Clang compiler
+        if: matrix.compiler == 'clang'
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build gcovr clang-tidy
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/CMakeFiles
+          key: cmake-${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-${{ runner.os }}-${{ matrix.compiler }}-
+
+      - name: Configure
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+            -G Ninja
+        env:
+          CXX_FLAGS: ${{ matrix.coverage && '--coverage -g -O0' || '' }}
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Coverage report
+        if: matrix.coverage
+        run: |
+          gcovr \
+            --root . \
+            --exclude '.*CMakeFiles/.*' \
+            --exclude '.*CompilerIdCXX.*' \
+            --exclude '.*CompilerIdC.*' \
+            --exclude '.*cmake/.*' \
+            --exclude '.*/tests/.*' \
+            --exclude '.*_deps/.*' \
+            --exclude '.*/demo/.*' \
+            --gcov-ignore-parse-errors=all \
+            --html-details coverage.html \
+            --print-summary
+
+      - name: Upload coverage report
+        if: matrix.coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-${{ matrix.os }}-${{ matrix.compiler }}
+          path: coverage*.html
+
+  sanitize:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, undefined]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/CMakeFiles
+          key: cmake-linux-clang-sanitize-${{ matrix.sanitizer }}-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-linux-clang-sanitize-${{ matrix.sanitizer }}-
+
+      - name: Configure with ${{ matrix.sanitizer }} sanitizer
+        run: |
+          cmake -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -g" \
+            -G Ninja
+        env:
+          CC: clang
+          CXX: clang++
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test with ${{ matrix.sanitizer }} sanitizer
+        run: ctest --test-dir build --output-on-failure
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja clang clang-tidy
+
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/CMakeFiles
+          key: cmake-linux-clang-tidy-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
+          restore-keys: |
+            cmake-linux-clang-tidy-
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -G Ninja
+
+      - name: clang-tidy
+        run: |
+          if [ -f build/compile_commands.json ]; then
+            clang-tidy -p build \
+              $(find microservice-core/include microservice-core/src microservice-boost/include microservice-boost/src -name '*.cpp' -o -name '*.hpp' | grep -v '_deps' | grep -v 'build') 2>&1 | tee tidy.log
+            if grep -qE '^(error|warning):' tidy.log; then
+              echo "::error::clang-tidy found issues"
+              exit 1
+            fi
+          else
+            echo "No compile_commands.json found, skipping clang-tidy"
+          fi

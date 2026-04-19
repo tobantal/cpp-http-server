@@ -75,12 +75,12 @@
 - **Модуль:** microservice-core
 - **Что:** Вынести boost-независимую логику из BoostBeastApplication в BaseWebApplication: `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `started_` флаг. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволит в будущем создать вторую реализацию на другой HTTP-библиотеке без дублирования routing/error-handling логики.
 
-### SRV-04: Неограниченное создание потоков — DoS-уязвимость
-- **SP:** 5
+### SRV-04: Лимит одновременных соединений — DoS-защита
+- **SP:** 3
 - **Модуль:** microservice-boost
-- **Что:** Каждый коннект создаёт новый thread без лимита. При flash-crowd или DoS — исчерпание ресурсов. Решение: thread pool с фиксированным размером (configurable, default = std::thread::hardware_concurrency()). Если пул полон — отклонять новые соединения (503 Service Unavailable) или ставить в очередь.
-- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`, новый `ThreadPool.hpp`
-- **Тесты:** Integration-тест: pool exhaustion → 503; pool recovery → новый запрос обслуживается
+- **Что:** Каждый коннект создаёт новый thread без лимита. При flash-crowd или DoS — исчерпание ресурсов. Решение: `std::atomic<int> activeConnections_` — счётчик активных соединений. При превышении лимита — принять соединение, отправить HTTP 503 Service Unavailable, закрыть. Лимит из `SERVER_MAX_CONNECTIONS` env или `config.json`, default = `std::thread::hardware_concurrency() * 4`. Без очереди (очередь — отдельная задача SRV-28 при переходе на async). Thread pool тоже отдельная задача (SRV-28).
+- **Файлы:** `BoostBeastApplication.hpp`, `BoostBeastApplication.cpp`, `settings/ServerSettings.hpp`
+- **Тесты:** Unit: лимит 2, 3-й запрос → 503; после закрытия соединения → новый запрос OK; default limit = hardware_concurrency * 4; SERVER_MAX_CONNECTIONS env override
 
 ---
 
@@ -219,10 +219,10 @@
 ### SRV-28: Async I/O — переход на асинхронную модель
 - **SP:** 13
 - **Модуль:** microservice-boost
-- **Что:** Заменить синхронную модель (один поток на соединение) на асинхронную на Boost.Asio. `io_context.run()` с thread pool для handlers, async read/write через `async_read_some()` + `async_write()`. Это масштабируемое решение: 10K+ соединений на одном процессе. BREAKING CHANGE — новая архитектура, но интерфейс IRequest/IResponse остаётся.
-- **Файлы:** `BoostBeastApplication.hpp`/`.cpp` — полная переработка
+- **Что:** Заменить синхронную модель (один поток на соединение) на асинхронную на Boost.Asio. `io_context.run()` с thread pool для handlers, async read/write через `async_read_some()` + `async_write()`. Это масштабируемое решение: 10K+ соединений на одном процессе. Включает: (1) фиксированный thread pool вместо создания thread на запрос; (2) очередь запросов с bounded capacity; (3) async обработку соединений. BREAKING CHANGE — новая архитектура, но интерфейс IRequest/IResponse остаётся.
+- **Файлы:** `BoostBeastApplication.hpp`/`.cpp` — полная переработка, новый `ThreadPool.hpp`
 - **Тесты:** Integration-тесты: concurrent connections, load testing (wrk/hey/ab), graceful shutdown
-- **Зависит от:** SRV-04 (thread pool, connection limit)
+- **Зависит от:** SRV-04 (connection limit уже реализован, thread pool добавляется здесь)
 
 ### SRV-29: Keep-alive support
 - **SP:** 3
@@ -308,13 +308,13 @@
 | Категория | Задач | SP |
 |-----------|-------|-----|
 | P1 DRY | 5 | 13 |
-| P0 Critical | 2 | 10 |
+| P0 Critical | 2 | 8 |
 | P1 Security & Reliability | 4 | 17 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 4 | 9 |
 | P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **31** | **112** |
+| **Итого** | **31** | **110** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

@@ -2,25 +2,18 @@
 
 #include "IEnvironment.hpp"
 #include "IHttpHandler.hpp"
+#include "ILogger.hpp"
 #include "ChainHandler.hpp"
+#include "NullLogger.hpp"
 #include <memory>
 #include <string>
 
-/**
- * @file IWebApplication.hpp
- * @brief Базовый интерфейс веб-приложения
- * @version 2.1
- * @author Anton Tobolkin
- */
 class IWebApplication
 {
 public:
-    IWebApplication() = default;
+    IWebApplication() : logger_(std::make_shared<NullLogger>()) {}
     virtual ~IWebApplication() = default;
 
-    /**
-     * @brief Запустить приложение (Template Method)
-     */
     virtual void run(int argc, char *argv[])
     {
         loadEnvironment(argc, argv);
@@ -28,22 +21,16 @@ public:
         start();
     }
 
-    // =========================================================================
-    // ROUTING API (public)
-    // =========================================================================
+    void setLogger(std::shared_ptr<ILogger> logger)
+    {
+        logger_ = logger ? logger : std::make_shared<NullLogger>();
+    }
 
-    /**
-     * @brief Зарегистрировать цепочку middleware для endpoint'а
-     * @param method HTTP метод
-     * @param pattern URL паттерн
-     * @param handlers Обработчики (выполняются последовательно)
-     *
-     * @example
-     *   registerEndpoint("GET", "/api/orders/*",
-     *       authMiddleware,
-     *       loggingMiddleware,
-     *       orderByIdHandler);
-     */
+    std::shared_ptr<ILogger> getLogger() const
+    {
+        return logger_;
+    }
+
     template <typename... Handlers>
     void registerEndpoint(const std::string &method,
                           const std::string &pattern,
@@ -58,19 +45,11 @@ protected:
     virtual void configureInjection() = 0;
     virtual void start() = 0;
 
-    /**
-     * @brief Зарегистрировать обработчик (внутренний метод)
-     * @param method HTTP метод
-     * @param pattern URL паттерн
-     * @param handler Обработчик
-     *
-     * @note Используется из registerEndpoint().
-     *       Для регистрации handlers используйте registerEndpoint().
-     */
     virtual void registerHandler(
         const std::string &method,
         const std::string &pattern,
         std::shared_ptr<IHttpHandler> handler) = 0;
 
     std::shared_ptr<IEnvironment> env_;
+    std::shared_ptr<ILogger> logger_;
 };

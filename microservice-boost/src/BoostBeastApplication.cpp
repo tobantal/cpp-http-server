@@ -10,7 +10,6 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <iostream>
 #include <fstream>
 #include <thread>
 
@@ -21,21 +20,17 @@ namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
-// =============================================================================
-// LIFECYCLE
-// =============================================================================
-
 BoostBeastApplication::BoostBeastApplication()
     : maxRequestBodySize_(1048576),
       readTimeout_(30000), writeTimeout_(30000)
 {
-    std::cout << "[App] BoostBeastApplication created" << std::endl;
+    logger_->log(LogLevel::Info, "App", "BoostBeastApplication created");
 }
 
 BoostBeastApplication::~BoostBeastApplication()
 {
     stop();
-    std::cout << "[App] BoostBeastApplication destroyed" << std::endl;
+    logger_->log(LogLevel::Info, "App", "BoostBeastApplication destroyed");
 }
 
 void BoostBeastApplication::stop()
@@ -43,7 +38,7 @@ void BoostBeastApplication::stop()
     ServerState expected = ServerState::Running;
     if (state_.compare_exchange_strong(expected, ServerState::Stopped))
     {
-        std::cout << "[App] Stopping application..." << std::endl;
+        logger_->log(LogLevel::Info, "App", "Stopping application...");
 
         if (acceptor_ && acceptor_->is_open())
         {
@@ -55,7 +50,7 @@ void BoostBeastApplication::stop()
             ioContext_->stop();
         }
 
-        std::cout << "[App] Waiting for sessions to finish..." << std::endl;
+        logger_->log(LogLevel::Info, "App", "Waiting for sessions to finish...");
         std::vector<std::thread> threadsToJoin;
         {
             std::lock_guard<std::mutex> lock(threadsMutex_);
@@ -68,13 +63,9 @@ void BoostBeastApplication::stop()
                 t.join();
             }
         }
-        std::cout << "[App] All sessions finished" << std::endl;
+        logger_->log(LogLevel::Info, "App", "All sessions finished");
     }
 }
-
-// =============================================================================
-// ROUTING
-// =============================================================================
 
 void BoostBeastApplication::registerHandler(
     const std::string &method,
@@ -88,15 +79,14 @@ void BoostBeastApplication::registerHandler(
 
     handlers_[pattern][method] = handler;
 
-    std::cout << "[BoostBeastApplication] Registered: "
-              << method << " " << pattern << std::endl;
+    logger_->log(LogLevel::Info, "App",
+                 "Registered: " + method + " " + pattern);
 }
 
 std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHandler(
     const std::string &method,
     const std::string &path)
 {
-    // 1. Точное совпадение по паттерну
     auto exactIt = handlers_.find(path);
     if (exactIt != handlers_.end())
     {
@@ -107,10 +97,8 @@ std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHa
         }
     }
 
-    // 2. Поиск по wildcard паттернам
     for (const auto &[pattern, methodHandlers] : handlers_)
     {
-        // Пропускаем exact matches (уже проверили)
         if (pattern.find('*') == std::string::npos)
         {
             continue;
@@ -147,17 +135,13 @@ bool BoostBeastApplication::pathExists(const std::string &path)
     return false;
 }
 
-// =============================================================================
-// REQUEST HANDLING
-// =============================================================================
-
 void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
 {
     std::string path = req.getPath();
     std::string method = req.getMethod();
 
-    std::cout << "[BoostBeastApplication] " << method << " " << path
-              << " from " << req.getIp() << std::endl;
+    logger_->log(LogLevel::Info, "App",
+                 method + " " + path + " from " + req.getIp());
 
     auto match = findHandler(method, path);
 
@@ -170,13 +154,15 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
         }
         catch (const HttpError &e)
         {
-            std::cerr << "[BoostBeastApplication] HttpError: " << e.statusCode() << " - " << e.message() << std::endl;
+            logger_->log(LogLevel::Error, "App",
+                         "HttpError: " + std::to_string(e.statusCode()) + " - " + e.message());
             res.setResult(e.statusCode(), "application/json",
                           R"({"error": ")" + StringUtils::escapeJson(e.message()) + R"("})");
         }
         catch (const std::exception &e)
         {
-            std::cerr << "[BoostBeastApplication] Handler error: " << e.what() << std::endl;
+            logger_->log(LogLevel::Error, "App",
+                         std::string("Handler error: ") + e.what());
             res.setResult(500, "application/json", "{\"error\": \"Internal server error\"}");
         }
     }
@@ -186,7 +172,7 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
         {
             throw MethodNotAllowedError("Method " + method + " not allowed for " + path);
         }
-        std::cout << "[BoostBeastApplication] No handler found" << std::endl;
+        logger_->log(LogLevel::Warn, "App", "No handler found");
         res.setResult(404, "application/json", "{\"error\": \"Not found\"}");
     }
 }
@@ -203,10 +189,6 @@ void BoostBeastApplication::handleBeastRequest(
     handleRequest(requestAdapter, responseAdapter);
 }
 
-// =============================================================================
-// HTTP SERVER
-// =============================================================================
-
 void BoostBeastApplication::start()
 {
     try
@@ -218,7 +200,7 @@ void BoostBeastApplication::start()
         readTimeout_ = serverSettings.getReadTimeout();
         writeTimeout_ = serverSettings.getWriteTimeout();
 
-        std::cout << "[App] Starting HTTP server..." << std::endl;
+        logger_->log(LogLevel::Info, "App", "Starting HTTP server...");
 
         ioContext_ = std::make_unique<asio::io_context>();
 
@@ -227,8 +209,9 @@ void BoostBeastApplication::start()
 
         acceptor_ = std::make_unique<tcp::acceptor>(*ioContext_, endpoint);
 
-        std::cout << "[Server] Listening on " << host << ":" << port << std::endl;
-        std::cout << "[Server] Server is ready to accept connections!" << std::endl;
+        logger_->log(LogLevel::Info, "Server",
+                     "Listening on " + host + ":" + std::to_string(port));
+        logger_->log(LogLevel::Info, "Server", "Server is ready to accept connections!");
 
         state_.store(ServerState::Running);
 
@@ -237,7 +220,7 @@ void BoostBeastApplication::start()
             tcp::socket socket{*ioContext_};
             acceptor_->accept(socket);
 
-            std::cout << "[Server] New connection accepted" << std::endl;
+            logger_->log(LogLevel::Info, "Server", "New connection accepted");
 
             std::thread t([this](tcp::socket socket)
                           { handleSession(std::move(socket)); }, std::move(socket));
@@ -249,7 +232,8 @@ void BoostBeastApplication::start()
     }
     catch (const std::exception &e)
     {
-        std::cerr << "[Server] Error: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "Server",
+                     std::string("Error: ") + e.what());
         state_.store(ServerState::Stopped);
     }
 }
@@ -265,11 +249,13 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
         auto remoteEp = stream.socket().remote_endpoint();
         clientIp = remoteEp.address().to_string();
         localPort = stream.socket().local_endpoint().port();
-        std::cout << "[Session] Client connected from: " << clientIp << std::endl;
+        logger_->log(LogLevel::Info, "Session",
+                     "Client connected from: " + clientIp);
     }
     catch (const std::exception &e)
     {
-        std::cerr << "[Session] Failed to get client IP: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "Session",
+                     std::string("Failed to get client IP: ") + e.what());
     }
 
     beast::flat_buffer buffer{maxRequestBodySize_};
@@ -283,8 +269,9 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
 
         if (req.body().size() > maxRequestBodySize_)
         {
-            std::cerr << "[Session] Request body too large: " << req.body().size()
-                      << " bytes (max: " << maxRequestBodySize_ << ")" << std::endl;
+            logger_->log(LogLevel::Error, "Session",
+                         "Request body too large: " + std::to_string(req.body().size()) +
+                         " bytes (max: " + std::to_string(maxRequestBodySize_) + ")");
             http::response<http::string_body> res{http::status::payload_too_large, req.version()};
             res.set(http::field::server, "BoostBeast");
             res.set(http::field::content_type, "application/json");
@@ -295,8 +282,9 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
             return;
         }
 
-        std::cout << "[Session] Received request: "
-                  << req.method_string() << " " << req.target() << std::endl;
+        logger_->log(LogLevel::Info, "Session",
+                     std::string("Received request: ") +
+                     std::string(req.method_string()) + " " + std::string(req.target()));
 
         http::response<http::string_body> res{http::status::ok, req.version()};
         res.set(http::field::server, "BoostBeast");
@@ -307,24 +295,27 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
         stream.expires_after(writeTimeout_);
         http::write(stream, res);
 
-        std::cout << "[Session] Response sent with status: "
-                  << res.result_int() << std::endl;
+        logger_->log(LogLevel::Info, "Session",
+                     "Response sent with status: " + std::to_string(res.result_int()));
     }
     catch (const beast::system_error &se)
     {
         if (se.code() == beast::error::timeout)
         {
-            std::cerr << "[Session] Timeout: " << se.what() << std::endl;
+            logger_->log(LogLevel::Error, "Session",
+                         std::string("Timeout: ") + se.what());
         }
         else if (se.code() != http::error::end_of_stream &&
                  se.code() != beast::errc::not_connected)
         {
-            std::cerr << "[Session] Error: " << se.what() << std::endl;
+            logger_->log(LogLevel::Error, "Session",
+                         std::string("Error: ") + se.what());
         }
     }
     catch (const std::exception &e)
     {
-        std::cerr << "[Session] Unexpected error: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "Session",
+                     std::string("Unexpected error: ") + e.what());
     }
 
     beast::error_code ec;
@@ -332,17 +323,14 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
 
     if (ec && ec != beast::errc::not_connected)
     {
-        std::cerr << "[Session] Shutdown error: " << ec.message() << std::endl;
+        logger_->log(LogLevel::Error, "Session",
+                     std::string("Shutdown error: ") + ec.message());
     }
 }
 
-// =============================================================================
-// CONFIGURATION
-// =============================================================================
-
 void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 {
-    std::cout << "[BoostBeastApplication] Loading environment..." << std::endl;
+    logger_->log(LogLevel::Info, "App", "Loading environment...");
 
     (void)argc;
     (void)argv;
@@ -355,26 +343,28 @@ void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 
         if (!configFile.is_open())
         {
-            std::cout << "[BoostBeastApplication] config.json not found" << std::endl;
+            logger_->log(LogLevel::Info, "App", "config.json not found");
             return;
         }
 
-        std::cout << "[BoostBeastApplication] Reading config.json..." << std::endl;
+        logger_->log(LogLevel::Info, "App", "Reading config.json...");
 
         json config = json::parse(configFile);
 
         loadJsonToEnvironment(config);
 
-        std::cout << "[BoostBeastApplication] Configuration loaded from config.json" << std::endl;
+        logger_->log(LogLevel::Info, "App", "Configuration loaded from config.json");
     }
     catch (const json::parse_error &e)
     {
-        std::cerr << "[BoostBeastApplication] JSON parse error: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "App",
+                     std::string("JSON parse error: ") + e.what());
         throw;
     }
     catch (const std::exception &e)
     {
-        std::cerr << "[BoostBeastApplication] Error loading config: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "App",
+                     std::string("Error loading config: ") + e.what());
         throw;
     }
 }
@@ -392,7 +382,7 @@ void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::stri
         else if (it->is_string())
         {
             std::string value = it->get<std::string>();
-            std::cout << "[BoostBeastApplication] Setting: " << key << " = " << value << std::endl;
+            logger_->log(LogLevel::Debug, "App", "Setting: " + key + " = " + value);
             env_->setProperty(key, value);
         }
         else if (it->is_number_integer())
@@ -413,7 +403,7 @@ void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::stri
         }
         else if (it->is_array())
         {
-            std::cout << "[BoostBeastApplication] Skipping array: " << key << std::endl;
+            logger_->log(LogLevel::Debug, "App", "Skipping array: " + key);
         }
     }
 }

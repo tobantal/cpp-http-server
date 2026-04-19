@@ -1,5 +1,5 @@
 #include "HttpClient.hpp"
-#include <iostream>
+#include "NullLogger.hpp"
 #include <cstdlib>
 
 using tcp = boost::asio::ip::tcp;
@@ -8,7 +8,8 @@ namespace http = beast::http;
 namespace asio = boost::asio;
 
 HttpClient::HttpClient()
-    : connectTimeout_(kDefaultConnectTimeoutMs)
+    : connectTimeout_(kDefaultConnectTimeoutMs),
+      logger_(std::make_shared<NullLogger>())
 {
     const char* envTimeout = std::getenv("HTTP_CLIENT_CONNECT_TIMEOUT_MS");
     if (envTimeout) {
@@ -22,14 +23,20 @@ HttpClient::HttpClient()
     }
 }
 
+void HttpClient::setLogger(std::shared_ptr<ILogger> logger)
+{
+    logger_ = logger ? logger : std::make_shared<NullLogger>();
+}
+
 bool HttpClient::send(const IRequest& request, IResponse& response)
 {
     try
     {
         std::string portStr = std::to_string(request.getPort());
 
-        std::cout << "[HttpClient] Sending " << request.getMethod() 
-                  << " " << request.getIp() << ":" << portStr << request.getPath() << std::endl;
+        logger_->log(LogLevel::Info, "HttpClient",
+                     std::string(request.getMethod()) + " " +
+                     request.getIp() + ":" + portStr + request.getPath());
 
         asio::io_context ioc;
         tcp::resolver resolver(ioc);
@@ -58,30 +65,27 @@ bool HttpClient::send(const IRequest& request, IResponse& response)
         ioc.run();
 
         if (timeoutOccurred || connectEc) {
-            std::cerr << "[HttpClient] Connect error: "
-                      << (timeoutOccurred ? "timeout" : connectEc.message()) << std::endl;
+            logger_->log(LogLevel::Error, "HttpClient",
+                         "Connect error: " +
+                         std::string(timeoutOccurred ? "timeout" : connectEc.message()));
             response.setStatus(500);
             response.setBody("Internal Server Error");
             return false;
         }
 
-        // Формируем HTTP запрос
         http::request<http::string_body> req;
         req.method(http::string_to_verb(request.getMethod()));
         req.target(request.getPath());
         req.version(11);
 
-        // Базовые хэдеры
         req.set(http::field::host, request.getIp());
         req.set(http::field::user_agent, "microservices/1.0");
 
-        // Копируем хэдеры из IRequest
         for (const auto& [key, value] : request.getHeaders())
         {
             req.set(key, value);
         }
 
-        // Устанавливаем body если есть
         std::string body = request.getBody();
         if (!body.empty())
         {
@@ -91,24 +95,21 @@ bool HttpClient::send(const IRequest& request, IResponse& response)
 
         req.prepare_payload();
 
-        // Отправляем запрос
         http::write(stream, req);
 
-        // Читаем ответ
         beast::flat_buffer buffer;
         http::response<http::string_body> res;
         http::read(stream, buffer, res);
 
-        // Закрываем соединение
         beast::error_code ec;
         stream.socket().shutdown(tcp::socket::shutdown_both, ec);
 
-        std::cout << "[HttpClient] Received status: " << res.result_int() << std::endl;
+        logger_->log(LogLevel::Info, "HttpClient",
+                     "Received status: " + std::to_string(res.result_int()));
 
-        // Заполняем response
         response.setStatus(res.result_int());
         response.setBody(res.body());
-        
+
         for (const auto& field : res)
         {
             response.setHeader(std::string(field.name_string()), std::string(field.value()));
@@ -118,7 +119,8 @@ bool HttpClient::send(const IRequest& request, IResponse& response)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "[HttpClient] Error: " << e.what() << std::endl;
+        logger_->log(LogLevel::Error, "HttpClient",
+                     std::string("Error: ") + e.what());
         response.setStatus(500);
         response.setBody("Internal Server Error");
         return false;

@@ -5,7 +5,12 @@ cmake_minimum_required(VERSION 3.14)
 
 # Создаем библиотеку с реализацией утилит
 add_library(microservice-core
+    src/ChainHandler.cpp
+    src/ConsoleLogger.cpp
+    src/LogLevel.cpp
+    src/NullLogger.cpp
     src/RouteMatcher.cpp
+    src/TestLogger.cpp
 )
 
 # Подключаем заголовки

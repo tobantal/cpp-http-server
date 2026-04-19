@@ -1,11 +1,11 @@
 #pragma once
 
 #include "IHttpHandler.hpp"
+#include "ILogger.hpp"
 #include "HttpError.hpp"
 #include "StringUtils.hpp"
 #include <memory>
 #include <vector>
-#include <iostream>
 
 class ChainHandler : public IHttpHandler
 {
@@ -16,40 +16,16 @@ public:
         (handlers_.push_back(std::forward<Handlers>(handlers)), ...);
     }
 
-    void handle(IRequest &req, IResponse &res) override
+    void setLogger(std::shared_ptr<ILogger> logger)
     {
-        for (auto &h : handlers_)
-        {
-            try
-            {
-                h->handle(req, res);
-            }
-            catch (const HttpError &e)
-            {
-                sendError(res, e.statusCode(), e.message());
-                return;
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "[ChainHandler] Unhandled exception: " << e.what() << std::endl;
-                sendError(res, 500, "Internal server error");
-                return;
-            }
-        }
-
-        if (res.getStatus() < 100 || res.getStatus() >= 600)
-        {
-            std::cerr << "[ChainHandler] CRITICAL ERROR: chain finished with invalid HTTP status: " << res.getStatus() << std::endl;
-            sendError(res, 500, "Internal server error");
-        }
+        logger_ = logger;
     }
+
+    void handle(IRequest &req, IResponse &res) override;
 
 private:
     std::vector<std::shared_ptr<IHttpHandler>> handlers_;
+    std::shared_ptr<ILogger> logger_;
 
-    void sendError(IResponse &res, int status, const std::string &message)
-    {
-        res.setResult(status, "application/json",
-                      R"({"error": ")" + StringUtils::escapeJson(message) + R"("})");
-    }
+    void sendError(IResponse &res, int status, const std::string &message);
 };

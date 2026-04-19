@@ -190,14 +190,7 @@
 - **Файлы:** `BoostBeastApplication.cpp`
 - **Тесты:** Unit-тест: JSON с array → parsed корректно
 
-### SRV-25: `IHttpClient::send()` возвращает bool — недостаточно информативно
-- **SP:** 3
-- **Модуль:** microservice-core + microservice-boost
-- **Что:** `IHttpClient::send()` возвращает `bool` (success/failure). Нет информации о типе ошибки (DNS failure, connect timeout, read timeout, HTTP error). Добавить `HttpClientError` enum: `None`, `DnsError`, `ConnectError`, `ConnectTimeout`, `ReadTimeout`, `WriteTimeout`, `HttpResponseError`. Метод `send()` возвращает `HttpClientError` или `Result<IResponse, HttpClientError>`. В trading-platform BUG-07a (silent exception swallowing) — HttpBrokerGateway не может отличить «нет данных» от «сервис недоступен».
-- **Файлы:** `IHttpClient.hpp`, `HttpClient.hpp`/`.cpp`
-- **Тесты:** Unit-тест: каждый тип ошибки → соответствующий HttpClientError
-- **Ссылка:** trading-platform BUG-07a
-- **Комментарий:** возможно стоит брасать исключение, а сервис или ErrorHandler уже будет принимать решение, что с этим делать. Надо подумать и согласовать. 
+### ~~SRV-25~~ ✅ ПОГЛОЩЕНО SRV-09 — см. CHANGELOG
 
 ### ~~SRV-27~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
@@ -301,9 +294,9 @@
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 3 | 7 |
-| P2 Code Quality & Bugs | 3 | 6 |
+| P2 Code Quality & Bugs | 2 | 3 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 5 | 10 |
-| **Итого** | **29** | **104** |
+| **Итого** | **28** | **101** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

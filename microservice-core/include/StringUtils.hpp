@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -42,5 +43,45 @@ public:
         }
 
         return segments;
+    }
+
+    static std::string escapeJson(const std::string &s)
+    {
+        std::string result;
+        result.reserve(s.size());
+        for (char c : s)
+        {
+            switch (c)
+            {
+            case '"':
+                result += "\\\"";
+                break;
+            case '\\':
+                result += "\\\\";
+                break;
+            case '\n':
+                result += "\\n";
+                break;
+            case '\r':
+                result += "\\r";
+                break;
+            case '\t':
+                result += "\\t";
+                break;
+            default:
+                if (static_cast<unsigned char>(c) < 0x20)
+                {
+                    char buf[8];
+                    std::snprintf(buf, sizeof(buf), "\\u%04x", static_cast<unsigned char>(c));
+                    result += buf;
+                }
+                else
+                {
+                    result += c;
+                }
+                break;
+            }
+        }
+        return result;
     }
 };

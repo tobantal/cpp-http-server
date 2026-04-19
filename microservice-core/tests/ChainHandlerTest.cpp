@@ -153,3 +153,41 @@ TEST_F(ChainHandlerTest, InvalidStatus_Returns500)
 
     EXPECT_EQ(res.getStatus(), 500);
 }
+
+class JsonInjectionHandler : public IHttpHandler
+{
+public:
+    void handle(IRequest &, IResponse &res) override
+    {
+        throw NotFoundError(R"(ok","injected":"true)");
+    }
+};
+
+TEST_F(ChainHandlerTest, HttpErrorMessageWithQuotes_EscapesJson)
+{
+    auto handler = std::make_shared<JsonInjectionHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    EXPECT_EQ(res.getStatus(), 404);
+    EXPECT_EQ(res.getBody(), R"({"error": "ok\",\"injected\":\"true"})");
+}
+
+class StdExceptionInjectionHandler : public IHttpHandler
+{
+public:
+    void handle(IRequest &, IResponse &res) override
+    {
+        throw std::runtime_error(R"(path\not\found)");
+    }
+};
+
+TEST_F(ChainHandlerTest, StdExceptionMessage_NotExposedInResponse)
+{
+    auto handler = std::make_shared<StdExceptionInjectionHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    EXPECT_EQ(res.getStatus(), 500);
+    EXPECT_EQ(res.getBody(), R"({"error": "Internal server error"})");
+}

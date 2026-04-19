@@ -5,6 +5,7 @@
 #include "RouteMatcher.hpp"
 #include "HttpError.hpp"
 #include "MethodNotAllowedError.hpp"
+#include "StringUtils.hpp"
 #include "settings/ServerSettings.hpp"
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -170,7 +171,8 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
         catch (const HttpError &e)
         {
             std::cerr << "[BoostBeastApplication] HttpError: " << e.statusCode() << " - " << e.message() << std::endl;
-            res.setResult(e.statusCode(), "application/json", R"({"error": ")" + e.message() + R"("})");
+            res.setResult(e.statusCode(), "application/json",
+                          R"({"error": ")" + StringUtils::escapeJson(e.message()) + R"("})");
         }
         catch (const std::exception &e)
         {

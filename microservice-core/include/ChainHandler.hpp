@@ -2,6 +2,7 @@
 
 #include "IHttpHandler.hpp"
 #include "HttpError.hpp"
+#include "StringUtils.hpp"
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -49,6 +50,6 @@ private:
     void sendError(IResponse &res, int status, const std::string &message)
     {
         res.setResult(status, "application/json",
-                      R"({"error": ")" + message + R"("})");
+                      R"({"error": ")" + StringUtils::escapeJson(message) + R"("})");
     }
 };

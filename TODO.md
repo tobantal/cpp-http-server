@@ -20,13 +20,7 @@
 - **Файлы:** Анализ: `trading-platform/education/*/src/main.cpp` (3 файла), `BoostBeastApplication.hpp`
 - **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
 
-### DRY-03: Аналитика — разделение «тощего» кода библиотеки и внешних зависимостей
-- **SP:** 3
-- **Модуль:** CMake (корневой)
-- **Что:** Сейчас библиотека «жирная» — FetchContent в корневом CMakeLists.txt тянет: Boost 1.83.0 (весь tarball ~33MB, хотя нужны только system/beast/asio), Boost.DI v1.3.0, nlohmann/json v3.11.3. При подключении через FetchContent consumer-проект получает чужие транзитивные зависимости с захардкоженными версиями — риск конфликта. Проанализировать варианты поставки библиотеки, где в репозитории — только наш код, а зависимости подтягиваются consumer-проектом. Варианты: (а) `find_package()` — потребитель сам предоставляет зависимости через систему (apt, vcpkg, conan, свой FetchContent); (б) FetchContent как опциональный fallback (`CPP_HTTP_SERVER_FETCH_DEPS=ON`); (в) CMake PackageConfig (`cpp-http-serverConfig.cmake`) — install + find_package для consumer; (г) разделить microservice-core (нулевые зависимости) и microservice-boost (зависимости Consumer обеспечивает). microservice-core вообще не должен требовать FetchContent — у него нет сторонних зависимостей. Результат — документ с рекомендацией по варианту + задача на реализацию.
-- **Файлы:** `CMakeLists.txt` (корневой), `microservice-core/CMakeLists.txt`, `microservice-boost/CMakeLists.txt`, `README.md` (раздел Installation)
-- **Критерий успеха:** Consumer может подключить cpp-http-server через FetchContent без двойного скачивания Boost; microservice-core подключается вообще без зависимостей
-- **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
+### ~~DRY-03~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### DRY-04b: Аналитика — выпиливание nlohmann/json и config.json
 - **SP:** 3
@@ -227,12 +221,7 @@
 - **Ссылка:** trading-platform BUG-07a
 - **Комментарий:** возможно стоит брасать исключение, а сервис или ErrorHandler уже будет принимать решение, что с этим делать. Надо подумать и согласовать. 
 
-### SRV-27: `ChainHandler` JSON injection vulnerability
-- **SP:** 1
-- **Модуль:** microservice-core
-- **Что:** Строка `R"({"error": ")" + message + R"("})"` в ChainHandler уязвима к JSON injection, если message содержит двойные кавычки. Сейчас вызывается только с литеральной строкой, но при расширении может стать проблемой. Экранировать спецсимволы или использовать nlohmann::json для формирования.
-- **Файлы:** `ChainHandler.hpp`
-- **Тесты:** Unit-тест: message с `"` → escaped корректно
+### ~~SRV-27~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ---
 
@@ -327,14 +316,14 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 5 | 13 |
-| P0 Critical | 3 | 12 |
-| P1 Security & Reliability | 5 | 18 |
+| P1 DRY | 4 | 10 |
+| P0 Critical | 2 | 10 |
+| P1 Security & Reliability | 4 | 17 |
 | P1 API Improvements | 3 | 9 |
 | P2 Observability & DX | 6 | 15 |
-| P2 Code Quality & Bugs | 5 | 7 |
+| P2 Code Quality & Bugs | 3 | 6 |
 | P3 Performance & Future | 7 | 48 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **38** | **131** |
+| **Итого** | **33** | **124** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-22, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-22, SRV-27, SRV-39, SRV-06b

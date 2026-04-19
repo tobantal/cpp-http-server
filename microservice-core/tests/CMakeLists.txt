@@ -1,16 +1,3 @@
-# Tests for microservice-core
-
-# Fetch GoogleTest
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.14.0
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(googletest)
-
-# Create test executable
 add_executable(microservice-core-test
     RouteMatcherTest.cpp
     ThreadSafeMapTest.cpp
@@ -28,6 +15,5 @@ target_link_libraries(microservice-core-test
     gtest_main
 )
 
-# Discover tests
 include(GoogleTest)
 gtest_discover_tests(microservice-core-test)

@@ -45,7 +45,7 @@
 ### Через CMake FetchContent
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.14)
 project(my_service)
 
 include(FetchContent)
@@ -53,33 +53,37 @@ include(FetchContent)
 FetchContent_Declare(
     cpp-http-server
     GIT_REPOSITORY https://github.com/tobantal/cpp-http-server.git
-    GIT_TAG v0.1.0
+    GIT_TAG v0.3.0
 )
 
-FetchContent_MakeAvailable(http_server)
+# Если ваш проект уже подтягивает Boost/nlohmann_json через свой FetchContent,
+# установите CPP_HTTP_SERVER_FETCH_DEPS=OFF чтобы избежать двойного скачивания:
+# set(CPP_HTTP_SERVER_FETCH_DEPS OFF)
+
+FetchContent_MakeAvailable(cpp-http-server)
 
 add_executable(my_app src/main.cpp)
-target_link_libraries(my_app http_server)
+target_link_libraries(my_app microservice-boost)
 ```
 
 ### Требования
 
 - **C++17** или выше
-- **CMake 3.15+**
-- **Boost 1.70+** (для модуля http-server-boost)
-  - `Boost.Asio`
-  - `Boost.Beast`
-- **nlohmann/json** (для парсинга JSON конфигурации)
+- **CMake 3.14+**
+- **Boost 1.70+** (для модуля microservice-boost)
+  - `Boost.Asio`, `Boost.Beast`, `Boost.System`
+- **nlohmann/json** 3.9+ (для парсинга JSON конфигурации в microservice-boost)
+
+При standalone-сборке (по умолчанию `CPP_HTTP_SERVER_FETCH_DEPS=ON`) все зависимости подтягиваются автоматически через FetchContent. Если ваш проект уже предоставляет Boost и nlohmann_json — установите `CPP_HTTP_SERVER_FETCH_DEPS=OFF`, и библиотека будет искать их через `find_package`.
 
 ### Сборка из исходников
 
 ```bash
 git clone https://github.com/tobantal/cpp-http-server.git
 cd cpp-http-server
-mkdir build && cd build
-cmake ..
-cmake --build .
-ctest  # Запустить unit-тесты
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+cd build && ctest --verbose
 ```
 
 ---

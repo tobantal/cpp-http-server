@@ -14,30 +14,26 @@
 - **Репозиторий:** https://github.com/tobantal/cpp-http-server.git
 - **Текущая версия:** v0.2.0 (v0.3.0 в разработке)
 - **Consumer-проект:** cpp-trading-platform-project (33 endpoint-а, 3 микросервиса)
-- **Backlog:** см. TODO.md (39 задач, 133 SP)
-- **Сборка:** Ninja через CMakePresets (dev/release), 196 тестов, все проходят
+- **Backlog:** см. TODO.md (38 задач, 130 SP)
+- **Сборка:** Ninja через CMakePresets (dev/release), 208 тестов, все проходят
 
 ## Выполнено в этой сессии
 
-1. **SRV-02b** (уже был закоммичен, верифицирован) — `enum class ServerState : uint8_t` вместо двух `atomic<bool>`
-2. **cpp-style.md** — добавлены правила: padding/ordering полей, `enum class : uint8_t`, уточнён hpp/cpp порог (150 строк) + таблица нарушений SRV-34
-3. **ServerState : uint8_t** — применено новое правило к единственному enum в проекте
-4. **Ninja presets** — `CMakePresets.json` (dev/release) + `.vscode/settings.json`
-5. **SRV-39** — JsonValidator middleware (JSON parse check + Content-Type validation), 15 тестов
-6. **TODO cleanup** — удалены выполненные задачи SRV-02b, SRV-06, SRV-07
-7. **SRV-22** — BeastRequestAdapter::getPort() из socket.local_endpoint(), 3 теста
-8. **SRV-06b** — HttpClient connect timeout: async_connect + steady_timer, ENV HTTP_CLIENT_CONNECT_TIMEOUT_MS (default: 5000ms), 4 теста
+1. **DRY-03** — Реорганизация CMake: find_package приоритет + FetchContent fallback (опция `CPP_HTTP_SERVER_FETCH_DEPS=ON`)
+2. **Boost.DI удалён** — не использовался ни в одном файле (0 include'ов), убран из CMakeLists.txt
+3. **GoogleTest дедуплицирован** — единый FetchContent в корневом CMake
+4. **Версия проекта** — `project(cpp-http-server VERSION 0.3.0)`
+5. **SRV-27** — `StringUtils::escapeJson()`: экранирование `"`, `\`, `\n`, `\r`, `\t`, control chars → закрывает JSON injection в ChainHandler и BoostBeastApplication
+6. 12 новых тестов (10 escapeJson + 2 ChainHandler JSON injection)
 
 ## Правила, добавленные в этой сессии
 
-- **Порядок полей в структурах** — по убыванию размера (8→4→2→1 байт), минимизация padding
-- **enum class : uint8_t** — всегда для доменных перечислений с малым количеством значений
-- **Header-only vs hpp/cpp** — порог 150 строк inline-реализации, чистые интерфейсы без ограничения
+- (нет новых правил)
 
 ## Следующие задачи по приоритету (из TODO.md)
 
-1. **SRV-02c** (SP:5) — BaseWebApplication абстракция
-2. **SRV-04** (SP:5) — Thread pool вместо unlimited threads (DoS-уязвимость)
-3. **SRV-08** (SP:5) — Graceful shutdown (IShutdown + ShutdownManager)
-4. **DRY-07** (SP:3) — deserialize<T>(body) — JSON string → типизированный объект
-5. **SRV-11** (SP:5) — Named path parameters (`:param` синтаксис)
+1. **SRV-02c** (SP:5, P0) — BaseWebApplication абстракция
+2. **SRV-04** (SP:5, P0) — Thread pool вместо unlimited threads (DoS)
+3. **SRV-08** (SP:5, P1) — Graceful shutdown (IShutdown + ShutdownManager)
+4. **DRY-07** (SP:3, P1) — JsonHelper (serialize/deserialize DTO)
+5. **SRV-11** (SP:5, P1) — Named path parameters (`:param` синтаксис)

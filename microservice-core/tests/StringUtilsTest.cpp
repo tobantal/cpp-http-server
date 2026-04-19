@@ -106,3 +106,61 @@ TEST(PathParamExtractorTest, WildcardIndexOutOfRange)
     auto result = PathParamExtractor::getByIndex("/api/v1/orders/123", "/api/v1/orders/*", 1);
     EXPECT_FALSE(result.has_value());
 }
+
+// --- StringUtils::escapeJson ---
+
+TEST(StringUtilsTest, EscapeJson_PlainString)
+{
+    EXPECT_EQ(StringUtils::escapeJson("hello"), "hello");
+}
+
+TEST(StringUtilsTest, EscapeJson_EmptyString)
+{
+    EXPECT_EQ(StringUtils::escapeJson(""), "");
+}
+
+TEST(StringUtilsTest, EscapeJson_DoubleQuote)
+{
+    EXPECT_EQ(StringUtils::escapeJson(R"(he said "hello")"), R"(he said \"hello\")");
+}
+
+TEST(StringUtilsTest, EscapeJson_Backslash)
+{
+    EXPECT_EQ(StringUtils::escapeJson(R"(path\to\file)"), R"(path\\to\\file)");
+}
+
+TEST(StringUtilsTest, EscapeJson_Newline)
+{
+    EXPECT_EQ(StringUtils::escapeJson("line1\nline2"), "line1\\nline2");
+}
+
+TEST(StringUtilsTest, EscapeJson_CarriageReturn)
+{
+    EXPECT_EQ(StringUtils::escapeJson("line1\rline2"), "line1\\rline2");
+}
+
+TEST(StringUtilsTest, EscapeJson_Tab)
+{
+    EXPECT_EQ(StringUtils::escapeJson("col1\tcol2"), "col1\\tcol2");
+}
+
+TEST(StringUtilsTest, EscapeJson_ControlCharacter)
+{
+    std::string input = "text";
+    input += '\x01';
+    input += "char";
+    std::string result = StringUtils::escapeJson(input);
+    EXPECT_EQ(result, "text\\u0001char");
+}
+
+TEST(StringUtilsTest, EscapeJson_MultipleSpecialChars)
+{
+    EXPECT_EQ(StringUtils::escapeJson(R"("path"\n)"), R"(\"path\"\\n)");
+}
+
+TEST(StringUtilsTest, EscapeJson_JsonInjectionAttack)
+{
+    std::string malicious = R"(ok","injected":"true)";
+    std::string expected = R"(ok\",\"injected\":\"true)";
+    EXPECT_EQ(StringUtils::escapeJson(malicious), expected);
+}

@@ -23,6 +23,24 @@
 - Разделение README на docs/api.md, docs/routing.md, docs/deployment.md
 
 
+#### DRY-03: Тощая поставка библиотеки — find_package + FetchContent fallback
+- Корневой CMakeLists.txt реорганизован: `find_package` приоритет + `FetchContent` fallback (опция `CPP_HTTP_SERVER_FETCH_DEPS`, default ON)
+- При standalone-сборке (CPP_HTTP_SERVER_FETCH_DEPS=ON) зависимости подтягиваются FetchContent, как раньше
+- Consumer-проекты, уже имеющие Boost/nlohmann_json через свой FetchContent или system install, устанавливают `CPP_HTTP_SERVER_FETCH_DEPS=OFF` — без двойного скачивания
+- **Boost.DI удалён** — не используется ни в одном файле проекта (0 include'ов)
+- GoogleTest: дублирующий FetchContent убран из test/CMakeLists.txt — единый FetchContent в корневом CMake
+- Версия проекта: `project(cpp-http-server VERSION 0.3.0)` вместо `MicroservicesProject VERSION 1.0.0`
+- microservice-core по-прежнему не имеет внешних зависимостей (header-only + RouteMatcher.cpp)
+
+#### SRV-27: JSON injection vulnerability — ChainHandler::sendError экранирование
+- `StringUtils::escapeJson()` — новый метод для экранирования спецсимволов JSON: `"`, `\`, `\n`, `\r`, `\t`, control characters (< 0x20 → `\uXXXX`)
+- `ChainHandler::sendError()` использует `escapeJson()` для message — закрывает уязвимость JSON injection
+- `BoostBeastApplication::handleRequest()` использует `escapeJson()` для `e.message()` в HttpError catch
+- 10 новых тестов StringUtilsTest (escapeJson: plain, empty, quotes, backslash, newline, CR, tab, control chars, multiple, injection attack)
+- 2 новых теста ChainHandlerTest (HttpError с кавычками, std::exception не раскрывает сообщение)
+- **Backward compatible:** обычные сообщения без спецсимволов не меняются
+- **Backward compatible:** при standalone-сборке поведение не меняется (CPP_HTTP_SERVER_FETCH_DEPS=ON по умолчанию)
+
 ### Выполнено в v0.3.0 (feature/v0.3.0)
 
 #### SRV-06b: Connect timeout — HttpClient

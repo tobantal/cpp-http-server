@@ -5,6 +5,7 @@ add_executable(microservice-boost-test
     ServerSettingsTest.cpp
     ServerStateTest.cpp
     HttpClientTest.cpp
+    JsonSerializerTest.cpp
 )
 
 target_link_libraries(microservice-boost-test

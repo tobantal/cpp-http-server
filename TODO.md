@@ -287,12 +287,7 @@
 - **Файлы:** Новый `IWebSocketHandler.hpp` в core, `WebSocketSession.hpp`/`.cpp` в boost
 - **Тесты:** Integration-тест: connect → send message → receive message → close
 
-### SRV-34: Разделение header-only на hpp/cpp
-- **SP:** 5
-- **Модуль:** microservice-boost
-- **Что:** Вынести реализации из `.hpp` в `.cpp` для: BeastRequestAdapter, BeastResponseAdapter, ServerSettings. Оставить header-only только шаблоны и tiny classes. Ускорит компиляцию consumer-проектов.
-- **Файлы:** Все `.hpp` с inline-реализациями в microservice-boost
-- **Тесты:** Существующие тесты должны пройти без изменений
+### ~~SRV-34~~ ✅ ПОГЛОЩЕНО DRY-08 — см. DRY-08 (разделение header-only на hpp/cpp — часть архитектурного порядка)
 
 ---
 
@@ -338,8 +333,8 @@
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 6 | 15 |
 | P2 Code Quality & Bugs | 3 | 6 |
-| P3 Performance & Future | 7 | 48 |
+| P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 4 | 9 |
-| **Итого** | **33** | **122** |
+| **Итого** | **32** | **117** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, SRV-01, SRV-02, SRV-03, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-17, SRV-22, SRV-27, SRV-39, SRV-06b

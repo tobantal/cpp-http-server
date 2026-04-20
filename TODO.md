@@ -142,6 +142,21 @@
 
 ## P2 — Code Quality & Bug Fixes
 
+### SRV-40: ChainHandler — логирование с именем хэндлера и временем обработки
+- **SP:** 2
+- **Модуль:** microservice-core
+- **Что:** В логах ChainHandler передавать имя хэндлера (class name) в Handler started/finished — чтобы понимать какой хэндлер сейчас в работе. Также передавать время обработки `handle(req, res)` — чтобы выявлять долгие обработчики (slow handler detection). Формат лога: `[traceId] ClassName started/finished (Nms)`.
+- **Файлы:** `ChainHandler.cpp`, `IHttpHandler.hpp` (возможно `virtual std::string name() const`)
+- **Тесты:** Unit-тест: log entry содержит имя хэндлера и время
+
+### SRV-41: HttpErrorSender — вынести обработку ошибок из ChainHandler
+- **SP:** 3
+- **Модуль:** microservice-core
+- **Что:** Выделить отправку ошибок в отдельный класс `HttpErrorSender` (или `HttpErrorProcessor`). ChainHandler ловит все исключения и делегирует HttpErrorSender формирование правильного error-ответа в зависимости от ситуации. Это убирает из ChainHandler ответственность за формат error-ответа и позволит переиспользовать логику (например, в BoostBeastApplication::handleRequest). `sendError()` переносится в HttpErrorSender, добавляется параметр traceId. Проверка невалидного HTTP-статуса тоже делегируется HttpErrorSender.
+- **Файлы:** Новый `HttpErrorSender.hpp`/`.cpp` в microservice-core, `ChainHandler.cpp` (убрать sendError и error-catch логику)
+- **Тесты:** Unit-тест: HttpErrorSender формирует корректные ответы для HttpError, std::exception, невалидный статус
+- **Связанные задачи:** SRV-40 (имя хэндлера в логах — может логироваться через HttpErrorSender)
+
 ### SRV-23: `getQueryParams()` парсинг при каждом вызове
 - **SP:** 1
 - **Модуль:** microservice-boost
@@ -253,9 +268,9 @@
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
-| P2 Code Quality & Bugs | 2 | 3 |
+| P2 Code Quality & Bugs | 4 | 8 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **21** | **83** |
+| **Итого** | **23** | **88** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-27, SRV-37, SRV-38, SRV-39, SRV-06b

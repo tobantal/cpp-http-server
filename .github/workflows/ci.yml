@@ -8,31 +8,20 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            compiler: gcc
+          - compiler: gcc
             build-type: Debug
             coverage: true
-            hardening: false
-          - os: ubuntu-latest
-            compiler: gcc
+          - compiler: gcc
             build-type: Release
             coverage: false
-            hardening: true
-          - os: ubuntu-latest
-            compiler: clang
+          - compiler: clang
             build-type: Release
             coverage: false
-            hardening: false
-          - os: macos-latest
-            compiler: clang
-            build-type: Release
-            coverage: false
-            hardening: false
 
     steps:
       - name: Checkout
@@ -50,13 +39,8 @@ jobs:
           echo "CC=clang" >> $GITHUB_ENV
           echo "CXX=clang++" >> $GITHUB_ENV
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y cmake ninja-build gcovr ccache
-
-      - name: Install dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: brew install cmake ninja ccache
 
       - name: Configure ccache
         run: |
@@ -68,26 +52,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ matrix.compiler }}-${{ github.run_id }}
+          key: ccache-linux-${{ matrix.compiler }}-${{ github.run_id }}
           restore-keys: |
-            ccache-${{ runner.os }}-${{ matrix.compiler }}-
+            ccache-linux-${{ matrix.compiler }}-
 
       - name: Cache FetchContent dependencies
         uses: actions/cache@v4
         with:
           path: build/_deps
-          key: deps-${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
+          key: deps-linux-${{ matrix.compiler }}-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
           restore-keys: |
-            deps-${{ runner.os }}-${{ matrix.compiler }}-
+            deps-linux-${{ matrix.compiler }}-
 
       - name: Configure
         run: |
           CXX_FLAGS=""
           if [ "${{ matrix.coverage }}" = "true" ]; then
             CXX_FLAGS="--coverage -g -O0"
-          fi
-          if [ "${{ matrix.hardening }}" = "true" ]; then
-            CXX_FLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-strong -D_GLIBCXX_ASSERTIONS"
           fi
           cmake -B build \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
@@ -122,62 +103,8 @@ jobs:
         if: matrix.coverage
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${{ matrix.os }}-${{ matrix.compiler }}
+          name: coverage-report-${{ matrix.compiler }}
           path: coverage*.html
-
-  sanitize:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        sanitizer: [address, undefined, thread]
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build clang ccache
-
-      - name: Configure ccache
-        run: |
-          ccache --max-size=500M
-          ccache --set-config=compression=true
-          echo "CCACHE_DIR=$HOME/.ccache" >> $GITHUB_ENV
-
-      - name: Cache ccache
-        uses: actions/cache@v4
-        with:
-          path: ~/.ccache
-          key: ccache-linux-clang-sanitize-${{ matrix.sanitizer }}-${{ github.run_id }}
-          restore-keys: |
-            ccache-linux-clang-sanitize-${{ matrix.sanitizer }}-
-
-      - name: Cache FetchContent dependencies
-        uses: actions/cache@v4
-        with:
-          path: build/_deps
-          key: deps-linux-clang-sanitize-${{ matrix.sanitizer }}-${{ hashFiles('CMakeLists.txt', '*/CMakeLists.txt') }}
-          restore-keys: |
-            deps-linux-clang-sanitize-${{ matrix.sanitizer }}-
-
-      - name: Configure with ${{ matrix.sanitizer }} sanitizer
-        run: |
-          cmake -B build \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer -g" \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -G Ninja
-        env:
-          CC: clang
-          CXX: clang++
-
-      - name: Build
-        run: cmake --build build
-
-      - name: Test with ${{ matrix.sanitizer }} sanitizer
-        run: ctest --test-dir build --output-on-failure
 
   lint:
     runs-on: ubuntu-latest

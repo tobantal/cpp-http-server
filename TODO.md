@@ -185,6 +185,7 @@
 - **Файлы:** Новый `MetricsHandler.hpp`, `IMetricsCollector.hpp` в microservice-core
 - **Тесты:** Unit-тест: record metrics → Prometheus format output
 - **Ссылка:** trading-platform MET-01
+- **Замечание:** В идеале перенести всю логику с метриками из микроервисов торговой платформы в библиотеку сервера, сделать настраиваемые метрики, а не захардкоденные как сейчас. Нужен глуюокий анализ. Отталкиваться от Actuator в SpringBoot: там подключаются endpoint-вы /metrics, /heath, /httprace, можно придумать свои. Общая задача - создать аналог Actuator на C++ для нашего проекта.
 
 ### SRV-31: HTTPS/TLS support
 - **SP:** 8
@@ -192,6 +193,8 @@
 - **Что:** Добавить HTTPS сервер: Boost.Asio SSL stream + сертификат/ключ через ServerSettings. Режимы: HTTP only, HTTPS only, HTTP→HTTPS redirect. В trading-platform SEC-04 (TLS in K8s) — но TLS может быть на load balancer, а не на сервере. Однако для standalone deployment HTTPS полезен.
 - **Файлы:** `BoostBeastApplication.hpp`/`.cpp`, `ServerSettings.hpp`, новый `SslSettings.hpp`
 - **Тесты:** Integration-тест: HTTPS connection → корректный response; self-signed cert → warning
+- **Замечание:** Проверить актульность данной доработки. У нас точка входа через Ingress попадаем на api-gateway (это микросервис trading-service). Сейчас вроде как можно достучаться извне на все три текущие микросевиса (auth, trading, broker), но можно инфраструктурно запретить "стучаться" напрямую в broker-service по http. Идея такая - только trading-service может по http дергать broker-service. Тогда доработка не нужна. Плюс в будущем http-замениться на обмен сообщениями или websocket. Так что рефакторинг в любом случае временный. Провести исследования.
+Задача важна для общего случая, если использовать библиотеку в других проектах. Но конкретный сценарий вроде как неактуальный.
 
 ### SRV-32: Async HTTP client
 - **SP:** 8

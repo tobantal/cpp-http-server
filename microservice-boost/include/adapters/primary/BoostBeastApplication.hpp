@@ -5,6 +5,7 @@
 #include "ports/output/ILogger.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include "application/ChainHandler.hpp"
+#include "version.hpp"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/http.hpp>
@@ -46,6 +47,15 @@ public:
     explicit BoostBeastApplication(
         std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
     virtual ~BoostBeastApplication();
+
+    /**
+     * @brief Get library version string
+     * @return Version string (e.g., "0.3.0")
+     */
+    static std::string getVersion()
+    {
+        return CPP_HTTP_SERVER_VERSION;
+    }
 
     /**
      * @brief Register endpoint with auto-created ChainHandler

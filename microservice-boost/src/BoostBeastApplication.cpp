@@ -1,4 +1,5 @@
 #include "adapters/primary/BoostBeastApplication.hpp"
+#include "version.hpp"
 #include "adapters/primary/BeastRequestAdapter.hpp"
 #include "adapters/primary/BeastResponseAdapter.hpp"
 #include "adapters/secondary/Environment.hpp"
@@ -244,7 +245,7 @@ void BoostBeastApplication::start()
                              "/" + std::to_string(maxConnections_) + "). Sending 503.");
 
                 http::response<http::string_body> res{http::status::service_unavailable, 11};
-                res.set(http::field::server, "BoostBeast");
+                res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({"error": "Service unavailable. Connection limit reached."})";
                 res.prepare_payload();
@@ -311,7 +312,7 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
                          "Request body too large: " + std::to_string(req.body().size()) +
                          " bytes (max: " + std::to_string(maxRequestBodySize_) + ")");
             http::response<http::string_body> res{http::status::payload_too_large, req.version()};
-            res.set(http::field::server, "BoostBeast");
+            res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
             res.set(http::field::content_type, "application/json");
             res.body() = R"({"error": "Payload too large"})";
             res.prepare_payload();
@@ -325,7 +326,7 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
                      std::string(req.method_string()) + " " + std::string(req.target()));
 
         http::response<http::string_body> res{http::status::ok, req.version()};
-        res.set(http::field::server, "BoostBeast");
+        res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
         res.keep_alive(req.keep_alive());
 
         handleBeastRequest(req, res, clientIp, localPort);

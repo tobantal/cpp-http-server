@@ -115,6 +115,11 @@ struct BeastResponseAdapter : IResponse
         setResult(toInt(status), contentType, body);
     }
 
+    void setTraceId(const std::string& id) override
+    {
+        setHeader("X-Trace-ID", id);
+    }
+
 private:
     boost::beast::http::response<boost::beast::http::string_body>& res_;
 };

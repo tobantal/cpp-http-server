@@ -189,6 +189,24 @@ struct SimpleRequest : IRequest
         return std::nullopt;
     }
 
+    std::string getTraceId() const override
+    {
+        auto existing = getAttribute("traceId");
+        if (existing)
+        {
+            return *existing;
+        }
+        auto header = getHeader("X-Trace-ID");
+        std::string id = header.value_or(StringUtils::generateUuid());
+        const_cast<SimpleRequest*>(this)->setAttribute("traceId", id);
+        return id;
+    }
+
+    void setTraceId(const std::string& id) override
+    {
+        setAttribute("traceId", id);
+    }
+
     void setMethod(const std::string& method) { method_ = method; }
     void setPath(const std::string& path) { path_ = path; }
     void setIp(const std::string& ip) { ip_ = ip; }

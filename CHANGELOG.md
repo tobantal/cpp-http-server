@@ -100,6 +100,18 @@
 - 16 новых тестов (HttpStatus enum values, getReasonPhrase, setStatus(HttpStatus), setResult(HttpStatus), setCookie variants)
 - **Backward compatible:** `setStatus(int)` и `setResult(int, ...)` по-прежнему работают
 
+#### SRV-18: Tracing middleware — X-Trace-ID в ChainHandler
+- `IRequest::getTraceId()` — извлекает `X-Trace-ID` из заголовка или генерирует UUID (ленивый, кешируется в атрибуте `traceId`)
+- `IRequest::setTraceId(id)` — ручная установка trace ID (редкий случай)
+- `IResponse::setTraceId(id)` — устанавливает `X-Trace-ID` в ответ
+- `StringUtils::generateUuid()` — thread-safe UUID v4 (timestamp XOR random + counter XOR random, 32 hex chars, адаптирован из trading-platform)
+- **ChainHandler автоматически**: (а) извлекает/генерирует trace ID через `req.getTraceId()`, (б) прокидывает `res.setTraceId()` в конце цепочки и при ошибках, (в) включает `[traceId]` в логи ошибок
+- Реализовано в `SimpleRequest`, `SimpleResponse`, `BeastRequestAdapter`, `BeastResponseAdapter`
+- Отдельный `TraceHandler` middleware НЕ нужен — ChainHandler выполняет эту функцию
+- 8 новых тестов (3 `generateUuid` + 5 `ChainHandlerTraceId`)
+- 276/276 tests pass
+- **Backward compatible:** `getTraceId()` и `setTraceId()` — новые virtual методы, существующий код не ломается
+
 #### SRV-16b: Logger refactoring — constructor injection, remove setLogger/getLogger
 - **IWebApplication**: removed `setLogger()`, `getLogger()`, `logger_` member, `#include "NullLogger.hpp"` from interface — interfaces should not contain implementation details
 - **BoostBeastApplication**: `logger_` is now a private member initialized via constructor `explicit BoostBeastApplication(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())` — like trading-platform pattern

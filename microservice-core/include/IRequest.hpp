@@ -300,4 +300,30 @@ struct IRequest {
      * @return Значение или nullopt если не установлен
      */
     virtual std::optional<std::string> getAttribute(const std::string& name) const = 0;
+
+
+    // =========================================================================
+    // TRACE ID — сквозная идентификация запроса
+    // =========================================================================
+
+
+    /**
+     * @brief Получить trace ID запроса
+     * @return Существующий X-Trace-ID или сгенерированный UUID v4
+     * 
+     * @note При первом вызове извлекает X-Trace-ID из заголовка (если есть)
+     *       или генерирует новый UUID. Результат кешируется в атрибуте "traceId".
+     *       Последующие вызовы возвращают кешированное значение.
+     */
+    virtual std::string getTraceId() const = 0;
+
+
+    /**
+     * @brief Установить trace ID запроса
+     * @param id Trace ID
+     * 
+     * @note Обычно вызывается ChainHandler автоматически.
+     *       Ручная установка — редкий случай.
+     */
+    virtual void setTraceId(const std::string& id) = 0;
 };

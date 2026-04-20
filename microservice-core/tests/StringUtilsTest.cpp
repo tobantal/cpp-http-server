@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "StringUtils.hpp"
 #include "PathParamExtractor.hpp"
+#include <set>
 
 TEST(StringUtilsTest, ToLowerEmpty)
 {
@@ -205,4 +206,33 @@ TEST(StringUtilsTest, UrlDecode_InvalidHex)
 TEST(StringUtilsTest, UrlDecode_EmptyString)
 {
     EXPECT_EQ(StringUtils::urlDecode(""), "");
+}
+
+// --- StringUtils::generateUuid ---
+
+TEST(StringUtilsTest, GenerateUuid_NonEmpty)
+{
+    auto id = StringUtils::generateUuid();
+    EXPECT_FALSE(id.empty());
+    EXPECT_EQ(id.size(), 32u);
+}
+
+TEST(StringUtilsTest, GenerateUuid_Unique)
+{
+    std::set<std::string> ids;
+    for (int i = 0; i < 1000; ++i)
+    {
+        ids.insert(StringUtils::generateUuid());
+    }
+    EXPECT_EQ(ids.size(), 1000u);
+}
+
+TEST(StringUtilsTest, GenerateUuid_HexOnly)
+{
+    auto id = StringUtils::generateUuid();
+    for (char c : id)
+    {
+        bool isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+        EXPECT_TRUE(isHex) << "Non-hex character: " << c;
+    }
 }

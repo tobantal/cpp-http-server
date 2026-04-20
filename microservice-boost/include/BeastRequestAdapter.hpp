@@ -223,6 +223,24 @@ struct BeastRequestAdapter : IRequest
         return std::nullopt;
     }
 
+    std::string getTraceId() const override
+    {
+        auto existing = getAttribute("traceId");
+        if (existing)
+        {
+            return *existing;
+        }
+        auto header = getHeader("X-Trace-ID");
+        std::string id = header.value_or(StringUtils::generateUuid());
+        const_cast<BeastRequestAdapter*>(this)->setAttribute("traceId", id);
+        return id;
+    }
+
+    void setTraceId(const std::string& id) override
+    {
+        setAttribute("traceId", id);
+    }
+
 private:
     const boost::beast::http::request<boost::beast::http::string_body>& req_;
     std::string ip_;

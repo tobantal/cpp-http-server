@@ -117,21 +117,7 @@
 
 ### ~~SRV-17~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
-### SRV-18: Tracing middleware — X-Trace-ID в ChainHandler
-- **SP:** 3
-- **Модуль:** microservice-core + microservice-boost
-- **Что:** Встроить поддержку X-Trace-ID в библиотеку. Архитектура (обсуждено):
-  1. `IRequest::getTraceId()` — извлечь `X-Trace-ID` из заголовка или сгенерировать UUID v4 (lazy, кешируется через `setAttribute/getAttribute`)
-  2. `IRequest::setTraceId(id)` — ручная установка (редко нужно)
-  3. `IResponse::setTraceId(id)` — установить `X-Trace-ID` в ответ
-  4. `StringUtils::generateUuid()` — UUID v4 (copy-paste из trading-platform, без внешних зависимостей)
-  5. **ChainHandler** автоматически: (а) извлекает/генерирует trace ID, (б) прокидывает `setTraceId` в ответ, (в) включает trace ID в лог ошибок — отдельный TraceHandler middleware НЕ нужен
-  6. Обработчики получают trace ID через `req.getTraceId()` — для исходящих HTTP-вызовов
-  7. HttpClient::send() НЕ пробрасывает trace ID автоматически (явное лучше неявного)
-- **Файлы:** `IRequest.hpp`, `IResponse.hpp`, `SimpleRequest.hpp`, `SimpleResponse.hpp`, `BeastRequestAdapter.hpp`, `BeastResponseAdapter.hpp`, `ChainHandler.hpp`/`.cpp`, `StringUtils.hpp`/`.cpp`
-- **Тесты:** Unit-тест: request с X-Trace-ID → response с тем же ID; request без → response с новым UUID; ChainHandler автоматически пробрасывает
-- **Зависит от:** SRV-16b (рефакторинг логера — конструкторная инъекция, после неё ChainHandler будет логировать через logger_ без null-проверок)
-- **Ссылка:** trading-platform OBS-02
+### ~~SRV-18~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### SRV-19: Health check с dependency checks
 - **SP:** 2
@@ -267,10 +253,10 @@
 | P0 Critical | 1 | 3 |
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
-| P2 Observability & DX | 2 | 5 |
+| P2 Observability & DX | 1 | 2 |
 | P2 Code Quality & Bugs | 2 | 3 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 4 | 7 |
-| **Итого** | **23** | **87** |
+| **Итого** | **22** | **84** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-22, SRV-27, SRV-38, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-27, SRV-38, SRV-39, SRV-06b

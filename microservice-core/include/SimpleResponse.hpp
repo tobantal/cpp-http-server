@@ -106,6 +106,11 @@ public:
         setResult(toInt(status), contentType, body);
     }
 
+    void setTraceId(const std::string& id) override
+    {
+        setHeader("X-Trace-ID", id);
+    }
+
 private:
     int status_;
     std::string body_;

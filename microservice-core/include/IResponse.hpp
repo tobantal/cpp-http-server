@@ -123,4 +123,16 @@ struct IResponse {
     virtual void setResult(HttpStatus status,
                            const std::string& contentType,
                            const std::string& body) = 0;
+
+    // =========================================================================
+    // TRACE ID — сквозная идентификация запроса
+    // =========================================================================
+
+    /**
+     * @brief Установить X-Trace-ID в ответ
+     * @param id Trace ID
+     * 
+     * @note Обычно вызывается ChainHandler автоматически после обработки цепочки.
+     */
+    virtual void setTraceId(const std::string& id) = 0;
 };

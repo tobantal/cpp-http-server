@@ -191,3 +191,63 @@ TEST_F(ChainHandlerTest, StdExceptionMessage_NotExposedInResponse)
     EXPECT_EQ(res.getStatus(), 500);
     EXPECT_EQ(res.getBody(), R"({"error": "Internal server error"})");
 }
+
+// --- ChainHandler: X-Trace-ID ---
+
+TEST_F(ChainHandlerTest, TraceId_GeneratesUuidWhenNoHeader)
+{
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    auto traceHeader = res.getHeader("X-Trace-ID");
+    ASSERT_TRUE(traceHeader.has_value());
+    EXPECT_EQ(traceHeader->size(), 32u);
+}
+
+TEST_F(ChainHandlerTest, TraceId_UsesExistingHeader)
+{
+    req.setHeader("X-Trace-ID", "my-custom-trace-id");
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    auto traceHeader = res.getHeader("X-Trace-ID");
+    ASSERT_TRUE(traceHeader.has_value());
+    EXPECT_EQ(traceHeader.value(), "my-custom-trace-id");
+}
+
+TEST_F(ChainHandlerTest, TraceId_GetTraceIdReturnsSameValue)
+{
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    std::string first = req.getTraceId();
+    std::string second = req.getTraceId();
+    EXPECT_EQ(first, second);
+}
+
+TEST_F(ChainHandlerTest, TraceId_SetTraceIdOverrides)
+{
+    req.setTraceId("overridden-id");
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    auto traceHeader = res.getHeader("X-Trace-ID");
+    ASSERT_TRUE(traceHeader.has_value());
+    EXPECT_EQ(traceHeader.value(), "overridden-id");
+}
+
+TEST_F(ChainHandlerTest, TraceId_IncludedOnError)
+{
+    req.setHeader("X-Trace-ID", "error-trace-123");
+    auto handler = std::make_shared<ThrowingHandler>();
+    ChainHandler chain(handler);
+    chain.handle(req, res);
+
+    auto traceHeader = res.getHeader("X-Trace-ID");
+    ASSERT_TRUE(traceHeader.has_value());
+    EXPECT_EQ(traceHeader.value(), "error-trace-123");
+}

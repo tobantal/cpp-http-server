@@ -23,6 +23,12 @@
 - 1 новый тест: `GetQueryParams_CachedOnSecondCall`
 - **Backward compatible:** поведение идентично, только быстрее при повторных вызовах
 
+#### SRV-42: ENV-переменные — .env.example и документация настроек
+- `.env.example` — все 9 ENV-переменных с описанием и значениями по умолчанию
+- `docs/configuration.md` — таблица настроек: ENV variable, config.json key, тип, default, описание
+- Приоритет конфигурации: ENV > config.json > default
+- Архитектурное правило: при добавлении новой ENV-переменной — обновлять `.env.example` и `docs/configuration.md`
+
 #### Новый функционал
 - `MetricsHandler` — эндпоинт для Prometheus метрик
 

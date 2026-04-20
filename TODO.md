@@ -201,7 +201,7 @@
 - **Файлы:** Новый `MetricsHandler.hpp`, `IMetricsCollector.hpp` в microservice-core
 - **Тесты:** Unit-тест: record metrics → Prometheus format output
 - **Ссылка:** trading-platform MET-01
-- **Замечание:** В идеале перенести всю логику с метриками из микроервисов торговой платформы в библиотеку сервера, сделать настраиваемые метрики, а не захардкоденные как сейчас. Нужен глуюокий анализ. Отталкиваться от Actuator в SpringBoot: там подключаются endpoint-вы /metrics, /heath, /httprace, можно придумать свои. Общая задача - создать аналог Actuator на C++ для нашего проекта.
+- **Замечание:** Перенести всю логику с метриками из микроервисов торговой платформы в библиотеку сервера, сделать настраиваемые метрики, а не захардкоденные как сейчас. Нужен глубокий анализ. Отталкиваться от Actuator в SpringBoot: там подключаются endpoint-вы /metrics, /heath, /httprace, можно придумать свои. Общая задача - создать аналог Actuator на C++ для нашего проекта.
 
 ### SRV-31: HTTPS/TLS support
 - **SP:** 8
@@ -232,11 +232,13 @@
 
 ## P3 — Documentation & DX
 
+### ~~SRV-42~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
+
 ### SRV-35: API Reference документация
 - **SP:** 3
 - **Модуль:** docs
-- **Что:** Разделить README на отдельные документы: docs/api.md (IRequest/IResponse API), docs/routing.md (RouteMatcher, named params, wildcards), docs/middleware.md (ChainHandler, creating middleware), docs/configuration.md (ServerSettings, config.json), docs/deployment.md (CMake integration, FetchContent, Docker). README оставить как quick start.
-- **Файлы:** Новый `docs/api.md`, `docs/routing.md`, `docs/middleware.md`, `docs/configuration.md`, `docs/deployment.md`
+- **Что:** Разделить README на отдельные документы: docs/api.md (IRequest/IResponse API), docs/routing.md (RouteMatcher, named params, wildcards), docs/middleware.md (ChainHandler, creating middleware), docs/deployment.md (CMake integration, FetchContent, Docker). README оставить как quick start. `docs/configuration.md` уже создан в SRV-42.
+- **Файлы:** Новый `docs/api.md`, `docs/routing.md`, `docs/middleware.md`, `docs/deployment.md`
 - **Ссылка:** CHANGELOG.md v0.3.0 — "Разделение README"
 
 ### SRV-36: Миграционный guide с v0.2.0 на v0.3.0
@@ -273,4 +275,4 @@
 | P3 Documentation & DX | 3 | 6 |
 | **Итого** | **22** | **87** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-37, SRV-38, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-37, SRV-38, SRV-39, SRV-42, SRV-06b

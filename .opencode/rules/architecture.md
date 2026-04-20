@@ -84,3 +84,6 @@ cpp-http-server/
 - microservice-core **НЕ** зависит от Boost, nlohmann/json, или любой сторонней библиотеки
 - microservice-boost зависит от microservice-core + Boost + nlohmann/json
 - Consumer-проекты зависят только от нужных им модулей
+
+## Правило: ENV-переменные
+При добавлении новой ENV-переменной — сразу обновлять `.env.example` и `docs/configuration.md`. Каждая настройка: название, тип, значение по умолчанию, описание.

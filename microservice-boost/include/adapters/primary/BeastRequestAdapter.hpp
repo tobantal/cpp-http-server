@@ -57,12 +57,20 @@ struct BeastRequestAdapter : IRequest
 
     std::map<std::string, std::string> getQueryParams() const override
     {
+        if (cachedQueryParams_.has_value())
+        {
+            return cachedQueryParams_.value();
+        }
+
         std::map<std::string, std::string> params = queryParams_;
 
         auto target = std::string(req_.target());
         auto pos = target.find('?');
         if (pos == std::string::npos)
+        {
+            cachedQueryParams_ = params;
             return params;
+        }
 
         std::string query = target.substr(pos + 1);
         size_t start = 0;
@@ -86,6 +94,7 @@ struct BeastRequestAdapter : IRequest
                 break;
             start = amp + 1;
         }
+        cachedQueryParams_ = params;
         return params;
     }
 
@@ -257,6 +266,7 @@ private:
     std::string body_;
     std::string pathPattern_;
     std::map<std::string, std::string> queryParams_;
+    mutable std::optional<std::map<std::string, std::string>> cachedQueryParams_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> attributes_;
 };

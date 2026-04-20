@@ -157,7 +157,7 @@
 - **Файлы:** Новый `IHttpErrorHandler.hpp` + `HttpErrorSender.hpp`/`.cpp` в microservice-core, `ChainHandler.hpp`/`.cpp` (убрать sendError, добавить errorHandler_)
 - **Тесты:** Unit-тест: HttpErrorSender формирует корректные ответы для HttpError; ChainHandler делегирует errorHandler_; mock IHttpErrorHandler в тестах ChainHandler
 
-### SRV-23: `getQueryParams()` парсинг при каждом вызове
+### ~~SRV-23~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 - **SP:** 1
 - **Модуль:** microservice-boost
 - **Что:** `BeastRequestAdapter::getQueryParams()` перепарсит URL при каждом вызове. Кэшировать результат в `mutable std::optional<QueryParams>` с lazy initialization.
@@ -268,9 +268,9 @@
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
-| P2 Code Quality & Bugs | 4 | 8 |
+| P2 Code Quality & Bugs | 3 | 7 |
 | P3 Performance & Future | 6 | 43 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **23** | **88** |
+| **Итого** | **22** | **87** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-27, SRV-37, SRV-38, SRV-39, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-37, SRV-38, SRV-39, SRV-06b

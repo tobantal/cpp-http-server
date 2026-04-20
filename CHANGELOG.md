@@ -16,6 +16,13 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-23: `getQueryParams()` — кэширование результата
+- `BeastRequestAdapter::getQueryParams()` — lazy кэширование через `mutable std::optional<std::map<...>> cachedQueryParams_`
+- Парсинг query string выполняется один раз, повторные вызовы возвращают кэшированный результат
+- `getQueryParam()` и `getParams()` автоматически используют кэш
+- 1 новый тест: `GetQueryParams_CachedOnSecondCall`
+- **Backward compatible:** поведение идентично, только быстрее при повторных вызовах
+
 #### Новый функционал
 - `MetricsHandler` — эндпоинт для Prometheus метрик
 

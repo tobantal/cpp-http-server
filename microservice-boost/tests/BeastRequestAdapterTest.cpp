@@ -484,3 +484,17 @@ TEST(BeastRequestAdapterTest, GetQueryParams_PlusDecodedAsSpace)
     auto params = adapter.getQueryParams();
     EXPECT_EQ(params.at("q"), "hello world");
 }
+
+TEST(BeastRequestAdapterTest, GetQueryParams_CachedOnSecondCall)
+{
+    http::request<http::string_body> req{http::verb::get, "/search?q=test&page=2", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+
+    auto params1 = adapter.getQueryParams();
+    ASSERT_EQ(params1.size(), 2u);
+    EXPECT_EQ(params1["q"], "test");
+    EXPECT_EQ(params1["page"], "2");
+
+    auto params2 = adapter.getQueryParams();
+    EXPECT_EQ(params2, params1);
+}

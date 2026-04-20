@@ -225,18 +225,21 @@ struct BeastRequestAdapter : IRequest
 
     /**
      * @brief Получить trace ID запроса (X-Trace-ID)
-     * @return Существующий X-Trace-ID или сгенерированный UUID (кешируется)
+     * @return Существующий X-Trace-ID из заголовка или сгенерированный UUID
+     *
+     * Если заголовок X-Trace-ID отсутствует — генерирует UUID и
+     * устанавливает его в заголовок. Повторные вызовы возвращают
+     * значение из заголовка.
      */
     std::string getTraceId() const override
     {
-        auto existing = getAttribute("traceId");
-        if (existing)
-        {
-            return *existing;
-        }
         auto header = getHeader("X-Trace-ID");
-        std::string id = header.value_or(StringUtils::generateUuid());
-        const_cast<BeastRequestAdapter*>(this)->setAttribute("traceId", id);
+        if (header)
+        {
+            return *header;
+        }
+        std::string id = StringUtils::generateUuid();
+        const_cast<BeastRequestAdapter*>(this)->setHeader("X-Trace-ID", id);
         return id;
     }
 
@@ -246,7 +249,7 @@ struct BeastRequestAdapter : IRequest
      */
     void setTraceId(const std::string& id) override
     {
-        setAttribute("traceId", id);
+        setHeader("X-Trace-ID", id);
     }
 
 private:

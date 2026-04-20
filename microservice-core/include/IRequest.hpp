@@ -309,11 +309,17 @@ struct IRequest {
 
     /**
      * @brief Получить trace ID запроса
-     * @return Существующий X-Trace-ID или сгенерированный UUID v4
+     * @return Существующий X-Trace-ID из заголовка или сгенерированный UUID v4
      * 
      * @note При первом вызове извлекает X-Trace-ID из заголовка (если есть)
-     *       или генерирует новый UUID. Результат кешируется в атрибуте "traceId".
-     *       Последующие вызовы возвращают кешированное значение.
+     *       или генерирует новый UUID и устанавливает в заголовок.
+     *       Повторные вызовы возвращают значение из заголовка.
+     * 
+     * @todo SRV-18b: Защита от перезаписи trace ID хэндлером.
+     *       Варианты: (1) immutable после первого getTraceId() — setTraceId
+     *       игнорирует если уже установлен; (2) separate mark-incoming —
+     *       хранить флаг что trace ID пришёл извне и не подлежит изменению;
+     *       (3) логировать Warning при перезаписи входящего trace ID.
      */
     virtual std::string getTraceId() const = 0;
 
@@ -322,8 +328,8 @@ struct IRequest {
      * @brief Установить trace ID запроса
      * @param id Trace ID
      * 
-     * @note Обычно вызывается ChainHandler автоматически.
-     *       Ручная установка — редкий случай.
+     * @note Устанавливает заголовок X-Trace-ID. Обычно вызывается
+     *       ChainHandler автоматически или при входящем запросе без trace ID.
      */
     virtual void setTraceId(const std::string& id) = 0;
 };

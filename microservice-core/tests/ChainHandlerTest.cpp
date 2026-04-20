@@ -227,18 +227,18 @@ TEST_F(ChainHandlerTest, TraceId_GetTraceIdReturnsSameValue)
     std::string first = req.getTraceId();
     std::string second = req.getTraceId();
     EXPECT_EQ(first, second);
+    EXPECT_EQ(req.getHeader("X-Trace-ID").value_or(""), first);
 }
 
-TEST_F(ChainHandlerTest, TraceId_SetTraceIdOverrides)
+TEST_F(ChainHandlerTest, TraceId_SetsHeader)
 {
-    req.setTraceId("overridden-id");
+    req.setTraceId("set-via-header");
     auto handler = std::make_shared<OkHandler>();
     ChainHandler chain(handler);
     chain.handle(req, res);
 
-    auto traceHeader = res.getHeader("X-Trace-ID");
-    ASSERT_TRUE(traceHeader.has_value());
-    EXPECT_EQ(traceHeader.value(), "overridden-id");
+    EXPECT_EQ(req.getHeader("X-Trace-ID").value_or(""), "set-via-header");
+    EXPECT_EQ(res.getHeader("X-Trace-ID").value_or(""), "set-via-header");
 }
 
 TEST_F(ChainHandlerTest, TraceId_IncludedOnError)

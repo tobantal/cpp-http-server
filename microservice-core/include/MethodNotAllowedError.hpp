@@ -1,2 +1,3 @@
 #pragma once
-#include "error/MethodNotAllowedError.hpp"
+// DEPRECATED — include "domain/error/MethodNotAllowedError.hpp" instead
+#include "domain/error/MethodNotAllowedError.hpp"

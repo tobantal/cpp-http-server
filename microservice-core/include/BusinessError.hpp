@@ -1,2 +1,3 @@
 #pragma once
-#include "error/BusinessError.hpp"
+// DEPRECATED — include "domain/error/BusinessError.hpp" instead
+#include "domain/error/BusinessError.hpp"

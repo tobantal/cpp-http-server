@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "BoostBeastApplication.hpp"
-#include "Environment.hpp"
+#include "adapters/primary/BoostBeastApplication.hpp"
+#include "adapters/secondary/Environment.hpp"
 
 class TestApp : public BoostBeastApplication
 {

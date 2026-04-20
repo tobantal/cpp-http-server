@@ -1,2 +1,3 @@
 #pragma once
-#include "error/JsonParseError.hpp"
+// DEPRECATED — include "domain/error/JsonParseError.hpp" instead
+#include "domain/error/JsonParseError.hpp"

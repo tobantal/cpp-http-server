@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "JsonValidator.hpp"
-#include "ChainHandler.hpp"
-#include "SimpleRequest.hpp"
-#include "SimpleResponse.hpp"
+#include "adapters/primary/handler/JsonValidator.hpp"
+#include "application/ChainHandler.hpp"
+#include "adapters/secondary/SimpleRequest.hpp"
+#include "adapters/secondary/SimpleResponse.hpp"
 
 class JsonValidatorTest : public ::testing::Test
 {

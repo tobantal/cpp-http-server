@@ -1,3 +1,3 @@
 #pragma once
-// DEPRECATED — use handler/ChainHandler.hpp
-#include "handler/ChainHandler.hpp"
+// DEPRECATED — include "application/ChainHandler.hpp" instead
+#include "application/ChainHandler.hpp"

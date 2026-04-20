@@ -3,7 +3,7 @@
 #include <cstdlib>
 
 #include "settings/ServerSettings.hpp"
-#include "Environment.hpp"
+#include "adapters/secondary/Environment.hpp"
 
 TEST(ServerSettingsTest, LoadFromEnvironment)
 {

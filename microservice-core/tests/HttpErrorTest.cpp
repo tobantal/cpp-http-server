@@ -1,15 +1,15 @@
 #include <gtest/gtest.h>
-#include "HttpError.hpp"
-#include "BadRequestError.hpp"
-#include "UnauthorizedError.hpp"
-#include "ForbiddenError.hpp"
-#include "NotFoundError.hpp"
-#include "ConflictError.hpp"
-#include "InternalError.hpp"
-#include "ServiceUnavailableError.hpp"
-#include "BusinessError.hpp"
-#include "AuthError.hpp"
-#include "MethodNotAllowedError.hpp"
+#include "domain/error/HttpError.hpp"
+#include "domain/error/BadRequestError.hpp"
+#include "domain/error/UnauthorizedError.hpp"
+#include "domain/error/ForbiddenError.hpp"
+#include "domain/error/NotFoundError.hpp"
+#include "domain/error/ConflictError.hpp"
+#include "domain/error/InternalError.hpp"
+#include "domain/error/ServiceUnavailableError.hpp"
+#include "domain/error/BusinessError.hpp"
+#include "domain/error/AuthError.hpp"
+#include "domain/error/MethodNotAllowedError.hpp"
 
 TEST(HttpErrorTest, BaseErrorStatusCode)
 {

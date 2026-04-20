@@ -1,17 +1,23 @@
-#include "BoostBeastApplication.hpp"
-#include "BeastRequestAdapter.hpp"
-#include "BeastResponseAdapter.hpp"
-#include "Environment.hpp"
-#include "RouteMatcher.hpp"
-#include "HttpError.hpp"
-#include "MethodNotAllowedError.hpp"
-#include "StringUtils.hpp"
+#include "adapters/primary/BoostBeastApplication.hpp"
+#include "adapters/primary/BeastRequestAdapter.hpp"
+#include "adapters/primary/BeastResponseAdapter.hpp"
+#include "adapters/secondary/Environment.hpp"
+#include "adapters/primary/RouteMatcher.hpp"
+#include "domain/HttpError.hpp"
+#include "domain/error/MethodNotAllowedError.hpp"
+#include "util/StringUtils.hpp"
 #include "settings/ServerSettings.hpp"
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <fstream>
 #include <thread>
+
+/**
+ * @file BoostBeastApplication.cpp
+ * @brief BoostBeastApplication implementation
+ * @author Anton Tobolkin
+ */
 
 using json = nlohmann::json;
 

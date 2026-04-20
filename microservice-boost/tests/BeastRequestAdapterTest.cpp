@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <boost/beast/http.hpp>
-#include "BeastRequestAdapter.hpp"
+#include "adapters/primary/BeastRequestAdapter.hpp"
 
 /**
  * @file BeastRequestAdapterTest.cpp

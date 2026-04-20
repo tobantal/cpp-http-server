@@ -1,2 +1,3 @@
 #pragma once
-#include "error/BadRequestError.hpp"
+// DEPRECATED — include "domain/error/BadRequestError.hpp" instead
+#include "domain/error/BadRequestError.hpp"

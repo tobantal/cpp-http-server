@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <boost/beast/http.hpp>
-#include "BeastResponseAdapter.hpp"
-#include "HttpStatus.hpp"
+#include "adapters/primary/BeastResponseAdapter.hpp"
+#include "domain/HttpStatus.hpp"
 
 /**
  * @file BeastResponseAdapterTest.cpp

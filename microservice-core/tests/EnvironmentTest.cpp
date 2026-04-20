@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "Environment.hpp"
+#include "adapters/secondary/Environment.hpp"
 
 class EnvironmentTest : public ::testing::Test {
 protected:

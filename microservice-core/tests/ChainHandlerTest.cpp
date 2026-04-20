@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
-#include "ChainHandler.hpp"
-#include "SimpleRequest.hpp"
-#include "SimpleResponse.hpp"
-#include "TestLogger.hpp"
-#include "NotFoundError.hpp"
-#include "UnauthorizedError.hpp"
-#include "BadRequestError.hpp"
-#include "InternalError.hpp"
+#include "application/ChainHandler.hpp"
+#include "adapters/secondary/SimpleRequest.hpp"
+#include "adapters/secondary/SimpleResponse.hpp"
+#include "adapters/secondary/TestLogger.hpp"
+#include "domain/error/NotFoundError.hpp"
+#include "domain/error/UnauthorizedError.hpp"
+#include "domain/error/BadRequestError.hpp"
+#include "domain/error/InternalError.hpp"
 
 class OkHandler : public IHttpHandler
 {

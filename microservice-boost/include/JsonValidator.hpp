@@ -1,3 +1,3 @@
 #pragma once
-
-#include "handler/JsonValidator.hpp"
+// DEPRECATED — include "adapters/primary/handler/JsonValidator.hpp" instead
+#include "adapters/primary/handler/JsonValidator.hpp"

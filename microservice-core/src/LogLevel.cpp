@@ -1,4 +1,10 @@
-#include "ILogger.hpp"
+#include "ports/output/ILogger.hpp"
+
+/**
+ * @file LogLevel.cpp
+ * @brief LogLevel utility implementation
+ * @author Anton Tobolkin
+ */
 
 std::string_view logLevelToString(LogLevel level) noexcept
 {

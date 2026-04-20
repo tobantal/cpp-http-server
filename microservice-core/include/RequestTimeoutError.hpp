@@ -1,2 +1,3 @@
 #pragma once
-#include "error/RequestTimeoutError.hpp"
+// DEPRECATED — include "domain/error/RequestTimeoutError.hpp" instead
+#include "domain/error/RequestTimeoutError.hpp"

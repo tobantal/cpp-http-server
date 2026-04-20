@@ -1,15 +1,6 @@
 #include <gtest/gtest.h>
-#include "SimpleResponse.hpp"
-#include "HttpStatus.hpp"
-
-/**
- * @file SimpleResponseTest.cpp
- * @brief Unit-тесты для SimpleResponse v2
- */
-
-// =============================================================================
-// BASIC TESTS
-// =============================================================================
+#include "adapters/secondary/SimpleResponse.hpp"
+#include "domain/HttpStatus.hpp"
 
 TEST(SimpleResponseTest, DefaultConstructor)
 {
@@ -27,10 +18,6 @@ TEST(SimpleResponseTest, ConstructorWithParams)
     EXPECT_EQ(res.getStatus(), 404);
     EXPECT_EQ(res.getBody(), "Not Found");
 }
-
-// =============================================================================
-// SETTERS TESTS
-// =============================================================================
 
 TEST(SimpleResponseTest, SetStatusAndBody)
 {
@@ -76,10 +63,6 @@ TEST(SimpleResponseTest, MultipleHeaders)
     EXPECT_EQ(headers["Cache-Control"], "no-cache");
 }
 
-// =============================================================================
-// GETTERS TESTS
-// =============================================================================
-
 TEST(SimpleResponseTest, GetHeaderCaseInsensitive)
 {
     SimpleResponse res;
@@ -104,10 +87,6 @@ TEST(SimpleResponseTest, GetHeaderNotFound)
     auto header = res.getHeader("X-Missing");
     EXPECT_FALSE(header.has_value());
 }
-
-// =============================================================================
-// CONVENIENCE METHODS TESTS
-// =============================================================================
 
 TEST(SimpleResponseTest, SetResult)
 {
@@ -154,10 +133,6 @@ TEST(SimpleResponseTest, SetResultOverwrite)
     EXPECT_EQ(res.getBody(), "second");
 }
 
-// =============================================================================
-// INTERFACE COMPLIANCE TESTS
-// =============================================================================
-
 TEST(SimpleResponseTest, InterfaceCompliance)
 {
     IResponse* res = new SimpleResponse();
@@ -175,10 +150,6 @@ TEST(SimpleResponseTest, InterfaceCompliance)
     
     delete res;
 }
-
-// =============================================================================
-// HttpStatus ENUM TESTS
-// =============================================================================
 
 TEST(HttpStatusTest, EnumValuesCanBeConvertedToInt)
 {
@@ -229,10 +200,6 @@ TEST(HttpStatusTest, GetReasonPhrase_UnknownCode)
     EXPECT_EQ(getReasonPhrase(999), "Unknown");
 }
 
-// =============================================================================
-// HttpStatus IN SimpleResponse TESTS
-// =============================================================================
-
 TEST(SimpleResponseTest, SetStatusWithEnum)
 {
     SimpleResponse res;
@@ -258,10 +225,6 @@ TEST(SimpleResponseTest, SetResultWithEnumConflict)
     EXPECT_EQ(res.getStatus(), 409);
     EXPECT_EQ(res.getBody(), R"({"error": "duplicate"})");
 }
-
-// =============================================================================
-// setCookie TESTS
-// =============================================================================
 
 TEST(SimpleResponseTest, SetCookie_Basic)
 {

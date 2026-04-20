@@ -4,10 +4,10 @@
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
 
-#include "HttpClient.hpp"
-#include "SimpleRequest.hpp"
-#include "SimpleResponse.hpp"
-#include "HttpClientError.hpp"
+#include "adapters/secondary/HttpClient.hpp"
+#include "adapters/secondary/SimpleRequest.hpp"
+#include "adapters/secondary/SimpleResponse.hpp"
+#include "domain/HttpClientError.hpp"
 
 using tcp = boost::asio::ip::tcp;
 namespace http = boost::beast::http;

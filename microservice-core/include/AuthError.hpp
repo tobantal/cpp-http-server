@@ -1,2 +1,3 @@
 #pragma once
-#include "error/AuthError.hpp"
+// DEPRECATED — include "domain/error/AuthError.hpp" instead
+#include "domain/error/AuthError.hpp"

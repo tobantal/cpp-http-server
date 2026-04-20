@@ -6,8 +6,18 @@
 #include <stdexcept>
 #include <chrono>
 #include "settings/IServerSettings.hpp"
-#include "IEnvironment.hpp"
+#include "ports/output/IEnvironment.hpp"
 
+/**
+ * @file ServerSettings.hpp
+ * @brief Server settings implementation
+ * @author Anton Tobolkin
+ */
+
+/**
+ * @class ServerSettings
+ * @brief Server configuration loaded from environment and config
+ */
 class ServerSettings : public IServerSettings {
 private:
     std::string host_;
@@ -37,9 +47,13 @@ private:
     static constexpr size_t kDefaultMaxRequestBodySize = 1048576;
     static constexpr int kDefaultReadTimeoutMs = 30000;
     static constexpr int kDefaultWriteTimeoutMs = 30000;
-    static constexpr size_t kDefaultMaxConnections = 0; // 0 = unlimited
+    static constexpr size_t kDefaultMaxConnections = 0;
 
 public:
+    /**
+     * @brief Construct ServerSettings from environment
+     * @param env Environment interface
+     */
     explicit ServerSettings(std::shared_ptr<IEnvironment> env)
         : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
           readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),

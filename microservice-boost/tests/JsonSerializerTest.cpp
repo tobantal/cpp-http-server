@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "JsonSerializer.hpp"
-#include "JsonParseError.hpp"
+#include "adapters/secondary/JsonSerializer.hpp"
+#include "domain/error/JsonParseError.hpp"
 #include <string>
 
 struct UserDto

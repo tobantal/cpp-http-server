@@ -1,5 +1,11 @@
-#include "HttpClient.hpp"
+#include "adapters/secondary/HttpClient.hpp"
 #include <cstdlib>
+
+/**
+ * @file HttpClient.cpp
+ * @brief HttpClient implementation
+ * @author Anton Tobolkin
+ */
 
 using tcp = boost::asio::ip::tcp;
 namespace beast = boost::beast;

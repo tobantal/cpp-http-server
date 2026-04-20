@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include "ILogger.hpp"
-#include "ConsoleLogger.hpp"
-#include "NullLogger.hpp"
-#include "TestLogger.hpp"
+#include "ports/output/ILogger.hpp"
+#include "adapters/secondary/ConsoleLogger.hpp"
+#include "adapters/secondary/NullLogger.hpp"
+#include "adapters/secondary/TestLogger.hpp"
 
 TEST(LogLevelTest, EnumValues)
 {

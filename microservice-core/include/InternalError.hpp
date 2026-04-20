@@ -1,2 +1,3 @@
 #pragma once
-#include "error/InternalError.hpp"
+// DEPRECATED — include "domain/error/InternalError.hpp" instead
+#include "domain/error/InternalError.hpp"

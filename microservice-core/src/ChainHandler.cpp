@@ -1,4 +1,10 @@
-#include "handler/ChainHandler.hpp"
+#include "application/ChainHandler.hpp"
+
+/**
+ * @file ChainHandler.cpp
+ * @brief ChainHandler implementation
+ * @author Anton Tobolkin
+ */
 
 void ChainHandler::handle(IRequest &req, IResponse &res)
 {

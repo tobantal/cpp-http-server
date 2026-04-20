@@ -1,4 +1,10 @@
-#include "TestLogger.hpp"
+#include "adapters/secondary/TestLogger.hpp"
+
+/**
+ * @file TestLogger.cpp
+ * @brief TestLogger implementation
+ * @author Anton Tobolkin
+ */
 
 void TestLogger::log(LogLevel level, std::string_view category, std::string_view message)
 {

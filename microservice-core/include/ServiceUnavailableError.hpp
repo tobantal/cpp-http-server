@@ -1,2 +1,3 @@
 #pragma once
-#include "error/ServiceUnavailableError.hpp"
+// DEPRECATED — include "domain/error/ServiceUnavailableError.hpp" instead
+#include "domain/error/ServiceUnavailableError.hpp"

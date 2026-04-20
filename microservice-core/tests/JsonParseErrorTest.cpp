@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "JsonParseError.hpp"
+#include "domain/error/JsonParseError.hpp"
 
 TEST(JsonParseErrorTest, DefaultMessage)
 {

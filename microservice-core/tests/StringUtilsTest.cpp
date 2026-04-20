@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "StringUtils.hpp"
-#include "PathParamExtractor.hpp"
+#include "util/StringUtils.hpp"
+#include "util/PathParamExtractor.hpp"
 #include <set>
 
 TEST(StringUtilsTest, ToLowerEmpty)
@@ -108,8 +108,6 @@ TEST(PathParamExtractorTest, WildcardIndexOutOfRange)
     EXPECT_FALSE(result.has_value());
 }
 
-// --- StringUtils::escapeJson ---
-
 TEST(StringUtilsTest, EscapeJson_PlainString)
 {
     EXPECT_EQ(StringUtils::escapeJson("hello"), "hello");
@@ -166,8 +164,6 @@ TEST(StringUtilsTest, EscapeJson_JsonInjectionAttack)
     EXPECT_EQ(StringUtils::escapeJson(malicious), expected);
 }
 
-// --- StringUtils::urlDecode ---
-
 TEST(StringUtilsTest, UrlDecode_PlainString)
 {
     EXPECT_EQ(StringUtils::urlDecode("/api/v1/orders"), "/api/v1/orders");
@@ -207,8 +203,6 @@ TEST(StringUtilsTest, UrlDecode_EmptyString)
 {
     EXPECT_EQ(StringUtils::urlDecode(""), "");
 }
-
-// --- StringUtils::generateUuid ---
 
 TEST(StringUtilsTest, GenerateUuid_NonEmpty)
 {

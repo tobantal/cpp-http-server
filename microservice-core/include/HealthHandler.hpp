@@ -1,2 +1,3 @@
 #pragma once
-#include "handler/HealthHandler.hpp"
+// DEPRECATED — include "adapters/primary/HealthHandler.hpp" instead
+#include "adapters/primary/HealthHandler.hpp"

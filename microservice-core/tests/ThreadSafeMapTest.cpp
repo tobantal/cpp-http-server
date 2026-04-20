@@ -1,13 +1,7 @@
 #include <gtest/gtest.h>
-#include "ThreadSafeMap.hpp"
+#include "util/ThreadSafeMap.hpp"
 #include <algorithm>
 
-/**
- * @file ThreadSafeMapTest.cpp
- * @brief Unit-тесты для ThreadSafeMap
- */
-
-// insert + find
 TEST(ThreadSafeMapTest, InsertAndFind)
 {
     ThreadSafeMap<int, std::string> map;
@@ -18,14 +12,12 @@ TEST(ThreadSafeMapTest, InsertAndFind)
     EXPECT_EQ(*v, "hello");
 }
 
-// find неизвестного ключа
 TEST(ThreadSafeMapTest, FindNonExistent)
 {
     ThreadSafeMap<int, std::string> map;
     EXPECT_EQ(map.find(42), nullptr);
 }
 
-// contains работает корректно
 TEST(ThreadSafeMapTest, ContainsCheck)
 {
     ThreadSafeMap<int, std::string> map;
@@ -35,7 +27,6 @@ TEST(ThreadSafeMapTest, ContainsCheck)
     EXPECT_FALSE(map.contains(11));
 }
 
-// remove удаляет элемент
 TEST(ThreadSafeMapTest, RemoveKey)
 {
     ThreadSafeMap<int, std::string> map;
@@ -48,7 +39,6 @@ TEST(ThreadSafeMapTest, RemoveKey)
     EXPECT_EQ(map.find(5), nullptr);
 }
 
-// clear очищает карту
 TEST(ThreadSafeMapTest, ClearMap)
 {
     ThreadSafeMap<int, std::string> map;
@@ -62,7 +52,6 @@ TEST(ThreadSafeMapTest, ClearMap)
     EXPECT_TRUE(map.getAll().empty());
 }
 
-// getAll возвращает все значения
 TEST(ThreadSafeMapTest, GetAllValues)
 {
     ThreadSafeMap<int, std::string> map;
@@ -81,7 +70,6 @@ TEST(ThreadSafeMapTest, GetAllValues)
     EXPECT_NE(std::find(vals.begin(), vals.end(), "c"), vals.end());
 }
 
-// перезапись существующего ключа
 TEST(ThreadSafeMapTest, OverwriteExistingKey)
 {
     ThreadSafeMap<int, std::string> map;

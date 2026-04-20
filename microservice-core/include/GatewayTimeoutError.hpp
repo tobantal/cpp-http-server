@@ -1,2 +1,3 @@
 #pragma once
-#include "error/GatewayTimeoutError.hpp"
+// DEPRECATED — include "domain/error/GatewayTimeoutError.hpp" instead
+#include "domain/error/GatewayTimeoutError.hpp"

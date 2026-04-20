@@ -1,14 +1,5 @@
 #include <gtest/gtest.h>
-#include "SimpleRequest.hpp"
-
-/**
- * @file SimpleRequestTest.cpp
- * @brief Unit-тесты для SimpleRequest v2
- */
-
-// =============================================================================
-// BASIC TESTS
-// =============================================================================
+#include "adapters/secondary/SimpleRequest.hpp"
 
 TEST(SimpleRequestTest, BasicProperties)
 {
@@ -46,10 +37,6 @@ TEST(SimpleRequestTest, NoHeaders)
     EXPECT_TRUE(req.getHeaders().empty());
 }
 
-// =============================================================================
-// PATH TESTS
-// =============================================================================
-
 TEST(SimpleRequestTest, GetPathSegments)
 {
     SimpleRequest req("GET", "/api/v1/orders/123", "", "127.0.0.1", 80);
@@ -69,10 +56,6 @@ TEST(SimpleRequestTest, GetPathSegmentsRoot)
     auto segments = req.getPathSegments();
     EXPECT_TRUE(segments.empty());
 }
-
-// =============================================================================
-// PATH PARAMETERS TESTS
-// =============================================================================
 
 TEST(SimpleRequestTest, PathPattern)
 {
@@ -111,10 +94,6 @@ TEST(SimpleRequestTest, GetPathParamNoPattern)
     EXPECT_FALSE(req.getPathParam(0).has_value());
 }
 
-// =============================================================================
-// QUERY PARAMETERS TESTS
-// =============================================================================
-
 TEST(SimpleRequestTest, QueryParams)
 {
     SimpleRequest req;
@@ -140,7 +119,6 @@ TEST(SimpleRequestTest, GetQueryParams)
     EXPECT_EQ(params["b"], "2");
 }
 
-// Deprecated alias
 TEST(SimpleRequestTest, GetParamsAlias)
 {
     SimpleRequest req;
@@ -149,10 +127,6 @@ TEST(SimpleRequestTest, GetParamsAlias)
     auto params = req.getParams();
     EXPECT_EQ(params["test"], "value");
 }
-
-// =============================================================================
-// HEADERS TESTS
-// =============================================================================
 
 TEST(SimpleRequestTest, GetHeaderCaseInsensitive)
 {
@@ -189,10 +163,6 @@ TEST(SimpleRequestTest, HeadersAreCopied)
     EXPECT_EQ(reqHeaders["Accept"], "text/plain");
 }
 
-// =============================================================================
-// BODY TESTS
-// =============================================================================
-
 TEST(SimpleRequestTest, SetBody)
 {
     SimpleRequest req;
@@ -200,10 +170,6 @@ TEST(SimpleRequestTest, SetBody)
 
     EXPECT_EQ(req.getBody(), "new body content");
 }
-
-// =============================================================================
-// CONVENIENCE METHODS TESTS
-// =============================================================================
 
 TEST(SimpleRequestTest, GetBearerToken)
 {
@@ -263,10 +229,6 @@ TEST(SimpleRequestTest, GetContentTypeMissing)
     EXPECT_EQ(req.getContentType(), "");
 }
 
-// =============================================================================
-// ATTRIBUTES TESTS
-// =============================================================================
-
 TEST(SimpleRequestTest, Attributes)
 {
     SimpleRequest req;
@@ -278,10 +240,6 @@ TEST(SimpleRequestTest, Attributes)
     EXPECT_EQ(*req.getAttribute("role"), "admin");
     EXPECT_FALSE(req.getAttribute("missing").has_value());
 }
-
-// =============================================================================
-// SETTERS TESTS
-// =============================================================================
 
 TEST(SimpleRequestTest, TestSetters)
 {

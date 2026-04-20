@@ -26,7 +26,9 @@ void HttpClient::loadTimeoutFromEnv(const char* envVar, std::chrono::millisecond
             if (ms > 0) {
                 target = std::chrono::milliseconds(ms);
             }
-        } catch (...) {
+        } catch (const std::exception& e) {
+            logger_->log(LogLevel::Warn, "HttpClient",
+                         std::string("Invalid timeout value in ") + envVar + ": " + e.what());
         }
     }
 }
@@ -58,7 +60,7 @@ HttpClientResult HttpClient::connect(beast::tcp_stream& stream,
         }
     });
 
-    beast::error_code connectEc;
+    beast::error_code connectEc{};
     asio::async_connect(stream.socket(), results,
         [&](const beast::error_code& ec, const tcp::endpoint&) {
             timer.cancel();

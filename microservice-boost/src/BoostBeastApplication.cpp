@@ -215,15 +215,10 @@ void BoostBeastApplication::start()
         logger_->log(LogLevel::Info, "Server",
                      "Listening on " + host + ":" + std::to_string(port));
 
-        if (maxConnections_ > 0)
-        {
-            logger_->log(LogLevel::Info, "Server",
-                         "Max connections limit: " + std::to_string(maxConnections_));
-        }
-        else
-        {
-            logger_->log(LogLevel::Info, "Server", "Max connections: unlimited");
-        }
+        std::string maxConnMsg = (maxConnections_ > 0)
+            ? "Max connections limit: " + std::to_string(maxConnections_)
+            : "Max connections: unlimited";
+        logger_->log(LogLevel::Info, "Server", maxConnMsg);
 
         logger_->log(LogLevel::Info, "Server", "Server is ready to accept connections!");
 

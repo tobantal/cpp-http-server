@@ -231,7 +231,7 @@ struct BeastRequestAdapter : IRequest
      * устанавливает его в заголовок. Повторные вызовы возвращают
      * значение из заголовка.
      */
-    std::string getTraceId() const override
+    std::string getTraceId() override
     {
         auto header = getHeader("X-Trace-ID");
         if (header)
@@ -239,7 +239,7 @@ struct BeastRequestAdapter : IRequest
             return *header;
         }
         std::string id = StringUtils::generateUuid();
-        const_cast<BeastRequestAdapter*>(this)->setHeader("X-Trace-ID", id);
+        setHeader("X-Trace-ID", id);
         return id;
     }
 
@@ -253,7 +253,7 @@ struct BeastRequestAdapter : IRequest
     }
 
 private:
-    const boost::beast::http::request<boost::beast::http::string_body>& req_;
+    const boost::beast::http::request<boost::beast::http::string_body>& req_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
     std::string ip_;
     int port_;
     std::string body_;

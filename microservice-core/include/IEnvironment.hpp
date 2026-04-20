@@ -61,7 +61,7 @@ public:
         {
             return std::any_cast<T>(getProperty(key));
         }
-        catch (...)
+        catch (const std::exception&)
         {
             return defaultValue;
         }

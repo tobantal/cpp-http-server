@@ -321,7 +321,7 @@ struct IRequest {
      *       хранить флаг что trace ID пришёл извне и не подлежит изменению;
      *       (3) логировать Warning при перезаписи входящего trace ID.
      */
-    virtual std::string getTraceId() const = 0;
+    virtual std::string getTraceId() = 0;
 
 
     /**

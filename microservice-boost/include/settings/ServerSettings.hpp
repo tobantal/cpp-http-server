@@ -27,7 +27,7 @@ private:
         if (value) {
             try {
                 return std::stoul(value);
-            } catch (...) {
+            } catch (const std::exception&) {
                 return defaultValue;
             }
         }
@@ -51,7 +51,7 @@ public:
         if (host_.empty()) {
             try {
                 host_ = env->get<std::string>("server.host");
-            } catch (...) {
+            } catch (const std::exception&) {
                 host_ = "0.0.0.0";
             }
         }
@@ -60,13 +60,13 @@ public:
         if (portEnv) {
             try {
                 port_ = std::stoi(portEnv);
-            } catch (...) {
+            } catch (const std::exception&) {
                 port_ = 8080;
             }
         } else {
             try {
                 port_ = env->get<int>("server.port");
-            } catch (...) {
+            } catch (const std::exception&) {
                 port_ = 8080;
             }
         }
@@ -77,7 +77,7 @@ public:
         } else {
             try {
                 maxRequestBodySize_ = env->get<size_t>("server.maxRequestBodySize");
-            } catch (...) {
+            } catch (const std::exception&) {
                 maxRequestBodySize_ = kDefaultMaxRequestBodySize;
             }
         }
@@ -88,7 +88,7 @@ public:
         } else {
             try {
                 readTimeout_ = std::chrono::milliseconds(env->get<int>("server.readTimeoutMs"));
-            } catch (...) {
+            } catch (const std::exception&) {
                 readTimeout_ = std::chrono::milliseconds(kDefaultReadTimeoutMs);
             }
         }
@@ -99,7 +99,7 @@ public:
         } else {
             try {
                 writeTimeout_ = std::chrono::milliseconds(env->get<int>("server.writeTimeoutMs"));
-            } catch (...) {
+            } catch (const std::exception&) {
                 writeTimeout_ = std::chrono::milliseconds(kDefaultWriteTimeoutMs);
             }
         }
@@ -110,7 +110,7 @@ public:
         } else {
             try {
                 maxConnections_ = env->get<size_t>("server.maxConnections");
-            } catch (...) {
+            } catch (const std::exception&) {
                 maxConnections_ = kDefaultMaxConnections;
             }
         }

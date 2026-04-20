@@ -117,3 +117,13 @@ enum class LogLevel : uint8_t { Debug, Info, Warn, Error };
 
 - Дублирование `toLower()` и `splitPath()` в 4 файлах — вынести в общий utility (`StringUtils.hpp` в core)
 - Дублирование `getPathParam()` логики — вынести в общий helper или mixin
+
+## Предкоммитная проверка чистоты кода
+
+Перед каждым коммитом запускать clang-tidy на изменённых файлах:
+```bash
+clang-tidy -p build --warnings-as-errors='*' <изменённые файлы>
+```
+Если есть замечания — исправить перед коммитом. clang-tidy конфиг в `.clang-tidy`.
+
+Известные подавления (в `.clang-tidy`): `pro-type-member-init`, `special-member-functions`, `use-nodiscard`, `enum-size`, `convert-member-functions-to-static`, `implicit-bool-conversion`, `named-parameter`, `easily-swappable-parameters`.

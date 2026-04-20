@@ -197,7 +197,7 @@ struct SimpleRequest : IRequest
      * устанавливает его в заголовок. Повторные вызовы возвращают
      * значение из заголовка.
      */
-    std::string getTraceId() const override
+    std::string getTraceId() override
     {
         auto header = getHeader("X-Trace-ID");
         if (header)
@@ -205,7 +205,7 @@ struct SimpleRequest : IRequest
             return *header;
         }
         std::string id = StringUtils::generateUuid();
-        const_cast<SimpleRequest*>(this)->setHeader("X-Trace-ID", id);
+        setHeader("X-Trace-ID", id);
         return id;
     }
 

@@ -125,5 +125,5 @@ struct BeastResponseAdapter : IResponse
     }
 
 private:
-    boost::beast::http::response<boost::beast::http::string_body>& res_;
+    boost::beast::http::response<boost::beast::http::string_body>& res_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 };

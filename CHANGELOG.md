@@ -143,6 +143,15 @@
 - Версия проекта: `project(cpp-http-server VERSION 0.3.0)` вместо `MicroservicesProject VERSION 1.0.0`
 - microservice-core по-прежнему не имеет внешних зависимостей (header-only + RouteMatcher.cpp)
 
+#### SRV-37: Versioning и semver для библиотеки
+- `project(cpp-http-server VERSION 0.3.0)` — semver в корневом CMakeLists.txt
+- `version.hpp.in` → `configure_file()` → `version.hpp` с макросами `CPP_HTTP_SERVER_VERSION_MAJOR/MINOR/PATCH` и строкой `CPP_HTTP_SERVER_VERSION`
+- `BoostBeastApplication::getVersion()` — статический метод для программного доступа к версии
+- `Server` header: `cpp-http-server/0.3.0` во всех HTTP-ответах (200, 413, 503)
+- Consumer проверяет совместимость через CMake `PROJECT_VERSION`
+- 3 теста VersionTest (MacroValuesAreValid, VersionStringFormat, VersionStringMatchesMacros)
+- **Backward compatible:** новый функционал, не ломает существующий код
+
 #### SRV-27: JSON injection vulnerability — ChainHandler::sendError экранирование
 - `StringUtils::escapeJson()` — новый метод для экранирования спецсимволов JSON: `"`, `\`, `\n`, `\r`, `\t`, control characters (< 0x20 → `\uXXXX`)
 - `ChainHandler::sendError()` использует `escapeJson()` для message — закрывает уязвимость JSON injection

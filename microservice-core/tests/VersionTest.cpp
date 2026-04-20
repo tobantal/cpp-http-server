@@ -13,7 +13,7 @@ TEST(VersionTest, VersionStringFormat)
 {
     std::string version = CPP_HTTP_SERVER_VERSION;
     EXPECT_FALSE(version.empty());
-    EXPECT_EQ(version.find('.'), std::string::npos == false ? version.find('.') : 0);
+    EXPECT_NE(version.find('.'), std::string::npos);
 }
 
 TEST(VersionTest, VersionStringMatchesMacros)

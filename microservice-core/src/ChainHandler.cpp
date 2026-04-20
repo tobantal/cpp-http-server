@@ -8,7 +8,11 @@ void ChainHandler::handle(IRequest &req, IResponse &res)
     {
         try
         {
+            logger_->log(LogLevel::Debug, "ChainHandler",
+                         "[" + traceId + "] Handler started");
             h->handle(req, res);
+            logger_->log(LogLevel::Debug, "ChainHandler",
+                         "[" + traceId + "] Handler finished with status " + std::to_string(res.getStatus()));
         }
         catch (const HttpError &e)
         {

@@ -2,6 +2,7 @@
 #include "ChainHandler.hpp"
 #include "SimpleRequest.hpp"
 #include "SimpleResponse.hpp"
+#include "TestLogger.hpp"
 #include "NotFoundError.hpp"
 #include "UnauthorizedError.hpp"
 #include "BadRequestError.hpp"
@@ -250,4 +251,82 @@ TEST_F(ChainHandlerTest, TraceId_IncludedOnError)
     auto traceHeader = res.getHeader("X-Trace-ID");
     ASSERT_TRUE(traceHeader.has_value());
     EXPECT_EQ(traceHeader.value(), "error-trace-123");
+}
+
+// --- ChainHandler: logging with TestLogger ---
+
+TEST_F(ChainHandlerTest, DebugLog_TraceIdInSuccessPath)
+{
+    auto logger = std::make_shared<TestLogger>();
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(std::static_pointer_cast<ILogger>(logger), handler);
+    chain.handle(req, res);
+
+    std::string traceId = req.getTraceId();
+    ASSERT_GE(logger->size(), 2u);
+    EXPECT_EQ(logger->at(0).level, LogLevel::Debug);
+    EXPECT_EQ(logger->at(0).category, "ChainHandler");
+    EXPECT_EQ(logger->at(0).message, "[" + traceId + "] Handler started");
+    EXPECT_EQ(logger->at(1).level, LogLevel::Debug);
+    EXPECT_EQ(logger->at(1).category, "ChainHandler");
+    EXPECT_EQ(logger->at(1).message, "[" + traceId + "] Handler finished with status 200");
+}
+
+TEST_F(ChainHandlerTest, DebugLog_MultipleHandlers)
+{
+    auto logger = std::make_shared<TestLogger>();
+    auto h1 = std::make_shared<OkHandler>();
+    auto h2 = std::make_shared<OkHandler>();
+    ChainHandler chain(std::static_pointer_cast<ILogger>(logger), h1, h2);
+    chain.handle(req, res);
+
+    std::string traceId = req.getTraceId();
+    ASSERT_GE(logger->size(), 4u);
+    EXPECT_EQ(logger->at(0).message, "[" + traceId + "] Handler started");
+    EXPECT_EQ(logger->at(1).message, "[" + traceId + "] Handler finished with status 200");
+    EXPECT_EQ(logger->at(2).message, "[" + traceId + "] Handler started");
+    EXPECT_EQ(logger->at(3).message, "[" + traceId + "] Handler finished with status 200");
+}
+
+TEST_F(ChainHandlerTest, ErrorLog_TraceIdInHttpError)
+{
+    auto logger = std::make_shared<TestLogger>();
+    req.setHeader("X-Trace-ID", "err-001");
+    auto handler = std::make_shared<ThrowingHandler>();
+    ChainHandler chain(std::static_pointer_cast<ILogger>(logger), handler);
+    chain.handle(req, res);
+
+    ASSERT_GE(logger->size(), 2u);
+    EXPECT_EQ(logger->at(0).level, LogLevel::Debug);
+    EXPECT_EQ(logger->at(0).message, "[err-001] Handler started");
+    EXPECT_EQ(logger->at(1).level, LogLevel::Error);
+    EXPECT_EQ(logger->at(1).message, "[err-001] HttpError: 404 - User not found");
+}
+
+TEST_F(ChainHandlerTest, ErrorLog_TraceIdInStdException)
+{
+    auto logger = std::make_shared<TestLogger>();
+    req.setHeader("X-Trace-ID", "exc-002");
+    auto handler = std::make_shared<StdExceptionHandler>();
+    ChainHandler chain(std::static_pointer_cast<ILogger>(logger), handler);
+    chain.handle(req, res);
+
+    ASSERT_GE(logger->size(), 2u);
+    EXPECT_EQ(logger->at(0).level, LogLevel::Debug);
+    EXPECT_EQ(logger->at(0).message, "[exc-002] Handler started");
+    EXPECT_EQ(logger->at(1).level, LogLevel::Error);
+    EXPECT_EQ(logger->at(1).category, "ChainHandler");
+}
+
+TEST_F(ChainHandlerTest, DebugLog_UsesExistingTraceId)
+{
+    auto logger = std::make_shared<TestLogger>();
+    req.setHeader("X-Trace-ID", "incoming-trace-42");
+    auto handler = std::make_shared<OkHandler>();
+    ChainHandler chain(std::static_pointer_cast<ILogger>(logger), handler);
+    chain.handle(req, res);
+
+    ASSERT_GE(logger->size(), 2u);
+    EXPECT_TRUE(logger->at(0).message.find("[incoming-trace-42]") != std::string::npos);
+    EXPECT_TRUE(logger->at(1).message.find("[incoming-trace-42]") != std::string::npos);
 }

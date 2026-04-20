@@ -146,16 +146,16 @@
 - **SP:** 2
 - **Модуль:** microservice-core
 - **Что:** В логах ChainHandler передавать имя хэндлера (class name) в Handler started/finished — чтобы понимать какой хэндлер сейчас в работе. Также передавать время обработки `handle(req, res)` — чтобы выявлять долгие обработчики (slow handler detection). Формат лога: `[traceId] ClassName started/finished (Nms)`.
-- **Файлы:** `ChainHandler.cpp`, `IHttpHandler.hpp` (возможно `virtual std::string name() const`)
+- **Решение:** `virtual std::string name() const` в `IHttpHandler` — каждый хэндлер реализует. Не RTTI (`typeid`), т.к. зависит от компилятора (mangled name), не портабельно и ломается при `-fno-rtti`.
+- **Файлы:** `IHttpHandler.hpp` (добавить `virtual name()`), `ChainHandler.cpp`
 - **Тесты:** Unit-тест: log entry содержит имя хэндлера и время
 
 ### SRV-41: HttpErrorSender — вынести обработку ошибок из ChainHandler
 - **SP:** 3
 - **Модуль:** microservice-core
-- **Что:** Выделить отправку ошибок в отдельный класс `HttpErrorSender` (или `HttpErrorProcessor`). ChainHandler ловит все исключения и делегирует HttpErrorSender формирование правильного error-ответа в зависимости от ситуации. Это убирает из ChainHandler ответственность за формат error-ответа и позволит переиспользовать логику (например, в BoostBeastApplication::handleRequest). `sendError()` переносится в HttpErrorSender, добавляется параметр traceId. Проверка невалидного HTTP-статуса тоже делегируется HttpErrorSender.
-- **Файлы:** Новый `HttpErrorSender.hpp`/`.cpp` в microservice-core, `ChainHandler.cpp` (убрать sendError и error-catch логику)
-- **Тесты:** Unit-тест: HttpErrorSender формирует корректные ответы для HttpError, std::exception, невалидный статус
-- **Связанные задачи:** SRV-40 (имя хэндлера в логах — может логироваться через HttpErrorSender)
+- **Что:** Выделить отправку ошибок из ChainHandler в `IHttpErrorHandler` + `HttpErrorSender`. Сигнатура: `handleError(IResponse& res, const HttpError& e)`. traceId берётся из `res.getTraceId()`, не передаётся параметром. Для std::exception и невалидного статуса — создаём `HttpError(500, "...")` и вызываем тот же `handleError`. `sendError()` убирается из ChainHandler. Один метод вместо двух — никаких `handleInvalidStatus`. Это убирает из ChainHandler ответственность за формат error-ответа и позволяет переиспользовать логику (mock в тестах, кастомный формат ошибок в consumer).
+- **Файлы:** Новый `IHttpErrorHandler.hpp` + `HttpErrorSender.hpp`/`.cpp` в microservice-core, `ChainHandler.hpp`/`.cpp` (убрать sendError, добавить errorHandler_)
+- **Тесты:** Unit-тест: HttpErrorSender формирует корректные ответы для HttpError; ChainHandler делегирует errorHandler_; mock IHttpErrorHandler в тестах ChainHandler
 
 ### SRV-23: `getQueryParams()` парсинг при каждом вызове
 - **SP:** 1

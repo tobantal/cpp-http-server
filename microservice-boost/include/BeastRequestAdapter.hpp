@@ -223,6 +223,10 @@ struct BeastRequestAdapter : IRequest
         return std::nullopt;
     }
 
+    /**
+     * @brief Получить trace ID запроса (X-Trace-ID)
+     * @return Существующий X-Trace-ID или сгенерированный UUID (кешируется)
+     */
     std::string getTraceId() const override
     {
         auto existing = getAttribute("traceId");
@@ -236,6 +240,10 @@ struct BeastRequestAdapter : IRequest
         return id;
     }
 
+    /**
+     * @brief Установить trace ID запроса
+     * @param id Trace ID
+     */
     void setTraceId(const std::string& id) override
     {
         setAttribute("traceId", id);

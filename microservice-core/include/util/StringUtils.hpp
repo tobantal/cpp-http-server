@@ -123,6 +123,13 @@ public:
         return result;
     }
 
+    /**
+     * @brief Сгенерировать UUID v4 (thread-safe)
+     * @return 32-символьная hex-строка (128 бит: timestamp XOR random + counter XOR random)
+     *
+     * Адаптировано из trading-platform (common::utils::UuidGenerator).
+     * Формат: 32 hex-символа без дефисов (не стандартный UUID формат).
+     */
     static std::string generateUuid()
     {
         thread_local std::mt19937_64 rng(std::random_device{}());

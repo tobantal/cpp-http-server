@@ -115,6 +115,10 @@ struct BeastResponseAdapter : IResponse
         setResult(toInt(status), contentType, body);
     }
 
+    /**
+     * @brief Установить X-Trace-ID в ответ
+     * @param id Trace ID
+     */
     void setTraceId(const std::string& id) override
     {
         setHeader("X-Trace-ID", id);

@@ -1,0 +1,17 @@
+CompileFlags:
+  CompilationDatabase: build
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+  ClangTidy:
+    Remove:
+      - modernize-use-nodiscard
+      - cppcoreguidelines-pro-type-member-init
+      - readability-convert-member-functions-to-static
+      - performance-enum-size
+      - cppcoreguidelines-special-member-functions
+      - modernize-use-c-arrays
+      - readability-implicit-bool-conversion
+      - readability-named-parameter
+      - bugprone-easily-swappable-parameters

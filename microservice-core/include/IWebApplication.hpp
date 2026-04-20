@@ -2,7 +2,6 @@
 
 #include "IEnvironment.hpp"
 #include "IHttpHandler.hpp"
-#include "ChainHandler.hpp"
 #include <memory>
 #include <string>
 
@@ -16,15 +15,6 @@ public:
         loadEnvironment(argc, argv);
         configureInjection();
         start();
-    }
-
-    template <typename... Handlers>
-    void registerEndpoint(const std::string &method,
-                          const std::string &pattern,
-                          Handlers &&...handlers)
-    {
-        registerHandler(method, pattern,
-                        std::make_shared<ChainHandler>(std::forward<Handlers>(handlers)...));
     }
 
 protected:

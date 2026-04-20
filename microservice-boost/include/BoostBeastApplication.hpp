@@ -4,6 +4,7 @@
 #include "IHttpHandler.hpp"
 #include "ILogger.hpp"
 #include "NullLogger.hpp"
+#include "ChainHandler.hpp"
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/http.hpp>
@@ -41,6 +42,23 @@ public:
     explicit BoostBeastApplication(
         std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
     virtual ~BoostBeastApplication();
+
+    /**
+     * @brief Зарегистрировать endpoint с автосозданием ChainHandler
+     * @param method HTTP-метод (GET, POST, ...)
+     * @param pattern URL-шаблон с wildcard (напр. "/api/v1/orders/")
+     * @param handlers Обработчики (shared_ptr<IHttpHandler>)
+     *
+     * Создаёт ChainHandler с logger_ и регистрирует через registerHandler.
+     */
+    template <typename... Handlers>
+    void registerEndpoint(const std::string &method,
+                          const std::string &pattern,
+                          Handlers &&...handlers)
+    {
+        registerHandler(method, pattern,
+                        std::make_shared<ChainHandler>(logger_, std::forward<Handlers>(handlers)...));
+    }
 
     void start() override;
     void stop();

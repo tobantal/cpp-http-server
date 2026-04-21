@@ -74,7 +74,7 @@ public:
     }
 
     void start() override;
-    void stop();
+    void stop() override;
     void shutdown(std::chrono::milliseconds timeoutMs = std::chrono::milliseconds(5000)) override;
     std::string name() const override { return "BoostBeastApplication"; }
     void loadEnvironment(int argc, char *argv[]) override;

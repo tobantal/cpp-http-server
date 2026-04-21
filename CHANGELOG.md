@@ -16,6 +16,14 @@
 
 ### Планируется в v0.3.0
 
+#### DRY-01: Внутренняя обработка сигналов в IWebApplication::run()
+- `IWebApplication::run()` теперь возвращает `int` (exit code) и включает signal handling (SIGINT/SIGTERM) + try/catch
+- `IWebApplication::installSignalHandlers()` — protected virtual, по умолчанию регистрирует SIGINT/SIGTERM → `stop()`
+- `IWebApplication::stop()` — чистый virtual, BoostBeastApplication уже реализует
+- Для signal handler используется static `instance_` указатель на `this`
+- consumer-проекты могут упростить main.cpp до 3 строк: `App app; return app.run(argc, argv);`
+- **Backward compatible:** старые main.cpp с внешним signal handler работают как раньше
+
 #### SRV-43: Timer — утилита для замера времени выполнения
 - `Timer` класс: `start()`, `stop()`, `elapsed(TimeUnit)`, `show(TimeUnit)` — с суффиксами "ms", "ns", "us", "s"
 - `TimeUnit` enum: Nanos, Micros, Millis, Seconds

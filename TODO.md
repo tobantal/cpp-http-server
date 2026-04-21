@@ -13,12 +13,7 @@
 
 ## P1 — DRY (убрать дублирование из consumer-проектов)
 
-### DRY-01: Исследование — включить main.cpp в поставку библиотеки
-- **SP:** 2
-- **Модуль:** microservice-boost
-- **Что:** Проанализировать возможность включить `main()` в поставку cpp-http-server, чтобы consumer-проекты (trading-platform) не дублировали его в каждом микросервисе. Сейчас `main.cpp` во всех трёх сервисах практически идентичен: signal handling (SIGINT/SIGTERM → app.stop()), `app.run(argc, argv)`, try/catch. Signal handling включить в библиотечный main. Варианты поставки: (а) готовый `main()`, вызывающий пользовательский `createApp()` — пользователь только определяет класс App; (б) макрос `DEFINE_APPLICATION(MyApp)` — разворачивается в main + boilerplate; (в) функция-обёртка `runApplication(argc, argv, factory)` — пользователь передаёт фабрику. Исследовать: совпадает ли signal handling, какие различия между сервисами, какой вариант наиболее гибкий и не ломает backward compatibility. Результат — решение + задача на реализацию.
-- **Файлы:** Анализ: `trading-platform/education/*/src/main.cpp` (3 файла), `BoostBeastApplication.hpp`
-- **Результат:** Документ с анализом + рекомендация по варианту (пока документируем, реализация — отдельная задача)
+### ~~DRY-01~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### ~~DRY-03~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
@@ -239,7 +234,7 @@
 
 | Категория | Задач | SP |
 |-----------|-------|-----|
-| P1 DRY | 1 | 0 |
+| P1 DRY | 0 | 0 |
 | P0 Critical | 1 | 3 |
 | P1 Security & Reliability | 2 | 7 |
 | P1 API Improvements | 2 | 4 |
@@ -248,9 +243,9 @@
 | P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
 | P0 Critical | 0 | 0 |
-| **Итого** | **17** | **71** |
+| **Итого** | **16** | **71** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-01, DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b
 
 ---
 
@@ -261,6 +256,13 @@
 - **Модуль:** microservice-core + microservice-boost
 - **Что:** Вынести из BoostBeastApplication в BaseWebApplication (microservice-core): `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `state_`, `logger_`. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволяет тестировать роутинг и обработку запросов без Boost-зависимостей.
 - **Зачем:** Тестировать `findHandler()`/`handleRequest()` без линковки Boost. Итеративная разработка SRV-11/SRV-13 в microservice-core без пересборки Boost.
+
+### DRY-01b: Генерация main.cpp при сборке (CMake)
+- **SP:** 2
+- **Модуль:** microservice-boost (CMake)
+- **Что:** CMake-функция `add_http_service(TARGET MyService APP_CLASS MyNamespace::MyApp)` которая генерирует минимальный main.cpp (3 строки: `#create "MyApp.hpp"; int main(...){ MyApp app; return app.run(argc,argv); }`) и линкует с microservice-boost. Consumer-проекты больше не пишут main.cpp вручную.
+- **Зависимость:** DRY-01 (выполнена — signal handling внутри IWebApplication::run())
+- **Backward compatible:** старые main.cpp продолжают работать
 - **Файлы:** Новый `BaseWebApplication.hpp`/`.cpp` в microservice-core, `BoostBeastApplication` — только Boost-specific код
 - **Зависимости:** Должна быть выполнена **до** SRV-11 и SRV-13 (чтобы не переделывать роутинг дважды)
 - **Backward compatible:** consumer-проекты не меняются (наследуют BoostBeastApplication как раньше)

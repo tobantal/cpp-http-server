@@ -163,12 +163,7 @@
 - **Тесты:** Integration-тесты: concurrent connections, load testing (wrk/hey/ab), graceful shutdown
 - **Зависит от:** SRV-04 (connection limit уже реализован, thread pool добавляется здесь)
 
-### SRV-29: Keep-alive support
-- **SP:** 3
-- **Модуль:** microservice-boost
-- **Что:** Текущая модель: одно соединение → один запрос → закрыть. boost.Beast поддерживает keep-alive через `res.keep_alive(req.keep_alive())`, но `handleSession` не реализует persist-connection loop. Добавить: read request → process → write response → если keep_alive → читать следующий request. Лимит: maxRequestsPerConnection (default: 100).
-- **Файлы:** `BoostBeastApplication.cpp`
-- **Тесты:** Integration-тест: keep-alive → несколько запросов на одном соединении; maxRequests → close
+### ~~SRV-29~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### ~~SRV-30~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
@@ -240,12 +235,12 @@
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
 | P2 Code Quality & Bugs | 1 | 0 |
-| P3 Performance & Future | 5 | 40 |
+| P3 Performance & Future | 4 | 37 |
 | P3 Documentation & DX | 3 | 6 |
 | P0 Critical | 0 | 0 |
-| **Итого** | **16** | **71** |
+| **Итого** | **15** | **68** |
 
-> Выполненные задачи (в CHANGELOG): DRY-01, DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-01, DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-29, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b
 
 ---
 

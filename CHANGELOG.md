@@ -16,6 +16,17 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-29: Keep-alive support
+- `handleSession()` теперь читает запросы в цикле: пока `req.keep_alive()` true и `requestCount < maxRequestsPerConnection`
+- `res.keep_alive(req.keep_alive())` уже было — теперь фактически работает
+- `maxRequestsPerConnection` (default: 100) — лимит запросов на одно соединение
+- ENV: `SERVER_MAX_REQUESTS_PER_CONNECTION`, config.json: `server.maxRequestsPerConnection`
+- `IServerSettings::getMaxRequestsPerConnection()` — новый метод интерфейса
+- `buffer.consume(buffer.size())` между запросами — очистка буфера
+- 413 ответ закрывает соединение (`keep_alive(false)`)
+- HTTP/1.0 клиенты (keep_alive=false) работают как раньше — один запрос, закрытие
+- **Backward compatible**
+
 #### DRY-01: Внутренняя обработка сигналов в IWebApplication::run()
 - `IWebApplication::run()` теперь возвращает `int` (exit code) и включает signal handling (SIGINT/SIGTERM) + try/catch
 - `IWebApplication::installSignalHandlers()` — protected virtual, по умолчанию регистрирует SIGINT/SIGTERM → `stop()`

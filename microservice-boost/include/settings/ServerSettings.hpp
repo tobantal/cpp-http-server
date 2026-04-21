@@ -26,6 +26,7 @@ private:
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
     size_t maxConnections_;
+    size_t maxRequestsPerConnection_;
 
     static std::string getEnvOrDefault(const char* name, const std::string& defaultValue) {
         const char* value = std::getenv(name);
@@ -48,6 +49,7 @@ private:
     static constexpr int kDefaultReadTimeoutMs = 30000;
     static constexpr int kDefaultWriteTimeoutMs = 30000;
     static constexpr size_t kDefaultMaxConnections = 0;
+    static constexpr size_t kDefaultMaxRequestsPerConnection = 100;
 
 public:
     /**
@@ -56,8 +58,9 @@ public:
      */
     explicit ServerSettings(std::shared_ptr<IEnvironment> env)
         : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
-          readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),
-          maxConnections_(kDefaultMaxConnections)
+           readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),
+           maxConnections_(kDefaultMaxConnections),
+           maxRequestsPerConnection_(kDefaultMaxRequestsPerConnection)
     {
         host_ = getEnvOrDefault("SERVER_HOST", "");
         port_ = 0;
@@ -124,8 +127,19 @@ public:
         } else {
             try {
                 maxConnections_ = env->get<size_t>("server.maxConnections");
-            } catch (const std::exception&) {
+            }             catch (const std::exception&) {
                 maxConnections_ = kDefaultMaxConnections;
+            }
+        }
+
+        size_t envMaxReqs = getEnvOrDefaultSize("SERVER_MAX_REQUESTS_PER_CONNECTION", 0);
+        if (envMaxReqs > 0) {
+            maxRequestsPerConnection_ = envMaxReqs;
+        } else {
+            try {
+                maxRequestsPerConnection_ = env->get<size_t>("server.maxRequestsPerConnection");
+            } catch (const std::exception&) {
+                maxRequestsPerConnection_ = kDefaultMaxRequestsPerConnection;
             }
         }
     }
@@ -152,5 +166,9 @@ public:
 
     size_t getMaxConnections() const override {
         return maxConnections_;
+    }
+
+    size_t getMaxRequestsPerConnection() const override {
+        return maxRequestsPerConnection_;
     }
 };

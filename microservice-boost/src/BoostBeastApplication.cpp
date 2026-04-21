@@ -214,6 +214,7 @@ void BoostBeastApplication::start()
         readTimeout_ = serverSettings.getReadTimeout();
         writeTimeout_ = serverSettings.getWriteTimeout();
         maxConnections_ = serverSettings.getMaxConnections();
+        maxRequestsPerConnection_ = serverSettings.getMaxRequestsPerConnection();
 
         logger_->log(LogLevel::Info, "App", "Starting HTTP server...");
 
@@ -303,44 +304,67 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     }
 
     beast::flat_buffer buffer{maxRequestBodySize_};
+    int requestCount = 0;
 
     try
     {
-        stream.expires_after(readTimeout_);
-
-        http::request<http::string_body> req;
-        http::read(stream, buffer, req);
-
-        if (req.body().size() > maxRequestBodySize_)
+        while (static_cast<size_t>(requestCount) < maxRequestsPerConnection_)
         {
-            logger_->log(LogLevel::Error, "Session",
-                         "Request body too large: " + std::to_string(req.body().size()) +
-                         " bytes (max: " + std::to_string(maxRequestBodySize_) + ")");
-            http::response<http::string_body> res{http::status::payload_too_large, req.version()};
+            stream.expires_after(readTimeout_);
+
+            http::request<http::string_body> req;
+            http::read(stream, buffer, req);
+
+            requestCount++;
+            logger_->log(LogLevel::Info, "Session",
+                         "Request #" + std::to_string(requestCount) + " on keep-alive connection from " + clientIp);
+
+            if (req.body().size() > maxRequestBodySize_)
+            {
+                logger_->log(LogLevel::Error, "Session",
+                             "Request body too large: " + std::to_string(req.body().size()) +
+                             " bytes (max: " + std::to_string(maxRequestBodySize_) + ")");
+                http::response<http::string_body> res{http::status::payload_too_large, req.version()};
+                res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({"error": "Payload too large"})";
+                res.prepare_payload();
+                res.keep_alive(false);
+                stream.expires_after(writeTimeout_);
+                http::write(stream, res);
+                return;
+            }
+
+            logger_->log(LogLevel::Info, "Session",
+                         std::string("Received request: ") +
+                         std::string(req.method_string()) + " " + std::string(req.target()));
+
+            http::response<http::string_body> res{http::status::ok, req.version()};
             res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
-            res.set(http::field::content_type, "application/json");
-            res.body() = R"({"error": "Payload too large"})";
-            res.prepare_payload();
+            res.keep_alive(req.keep_alive());
+
+            handleBeastRequest(req, res, clientIp, localPort);
+
             stream.expires_after(writeTimeout_);
             http::write(stream, res);
-            return;
+
+            logger_->log(LogLevel::Info, "Session",
+                         "Response sent with status: " + std::to_string(res.result_int()));
+
+            if (!req.keep_alive())
+            {
+                break;
+            }
+
+            buffer.consume(buffer.size());
         }
 
-        logger_->log(LogLevel::Info, "Session",
-                     std::string("Received request: ") +
-                     std::string(req.method_string()) + " " + std::string(req.target()));
-
-        http::response<http::string_body> res{http::status::ok, req.version()};
-        res.set(http::field::server, "cpp-http-server/" CPP_HTTP_SERVER_VERSION);
-        res.keep_alive(req.keep_alive());
-
-        handleBeastRequest(req, res, clientIp, localPort);
-
-        stream.expires_after(writeTimeout_);
-        http::write(stream, res);
-
-        logger_->log(LogLevel::Info, "Session",
-                     "Response sent with status: " + std::to_string(res.result_int()));
+        if (static_cast<size_t>(requestCount) >= maxRequestsPerConnection_)
+        {
+            logger_->log(LogLevel::Info, "Session",
+                         "Max requests per connection reached (" + std::to_string(requestCount) +
+                         "/" + std::to_string(maxRequestsPerConnection_) + "), closing");
+        }
     }
     catch (const beast::system_error &se)
     {

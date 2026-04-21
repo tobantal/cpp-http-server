@@ -21,6 +21,7 @@ ENV variable > config.json key > default value
 | `SERVER_READ_TIMEOUT_MS` | `server.readTimeoutMs` | int | `30000` | Read timeout in ms |
 | `SERVER_WRITE_TIMEOUT_MS` | `server.writeTimeoutMs` | int | `30000` | Write timeout in ms |
 | `SERVER_MAX_CONNECTIONS` | `server.maxConnections` | size_t | `0` | Max concurrent connections. 0 = unlimited. Returns 503 if exceeded |
+| `SERVER_MAX_REQUESTS_PER_CONNECTION` | `server.maxRequestsPerConnection` | size_t | `100` | Max requests per keep-alive connection. Connection closes after limit |
 
 ## HTTP Client Settings (outgoing requests)
 
@@ -40,7 +41,8 @@ ENV variable > config.json key > default value
     "maxRequestBodySize": 1048576,
     "readTimeoutMs": 30000,
     "writeTimeoutMs": 30000,
-    "maxConnections": 0
+    "maxConnections": 0,
+    "maxRequestsPerConnection": 100
   }
 }
 ```

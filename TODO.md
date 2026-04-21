@@ -44,10 +44,9 @@
 
 ## P0 — Critical (блокирует производство)
 
-### SRV-02c: Промежуточная абстракция BaseWebApplication
-- **SP:** 5
-- **Модуль:** microservice-core
-- **Что:** Вынести boost-независимую логику из BoostBeastApplication в BaseWebApplication: `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `started_` флаг. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволит в будущем создать вторую реализацию на другой HTTP-библиотеке без дублирования routing/error-handling логики.
+(нет задач)
+
+---
 
 ### ~~SRV-04~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
@@ -60,6 +59,7 @@
 - **Модуль:** microservice-boost
 - **Что:** Добавить заголовок `Allow: GET, POST` в 405 ответ. Требует хранить allowed methods для каждого маршрута и передавать в MethodNotAllowedError. Низкий приоритет — внутренний API не использует Allow.
 - **Файлы:** `MethodNotAllowedError.hpp`, `BoostBeastApplication.cpp`
+- **Замечание:** Наверно нужно править `HttpErrorSender`, а не `BoostBeastApplication.cpp`
 
 ### ~~SRV-08~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 - **Ссылка:** trading-platform REL-08 (ICloseable + ShutdownManager — будет использовать IShutdown из библиотеки)
@@ -247,6 +247,20 @@
 | P2 Code Quality & Bugs | 1 | 0 |
 | P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
+| P0 Critical | 0 | 0 |
 | **Итого** | **17** | **71** |
 
 > Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b
+
+---
+
+## v0.4.0 (запланировано)
+
+### SRV-02c: BaseWebApplication — вынести boost-независимую логику
+- **SP:** 5
+- **Модуль:** microservice-core + microservice-boost
+- **Что:** Вынести из BoostBeastApplication в BaseWebApplication (microservice-core): `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `state_`, `logger_`. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволяет тестировать роутинг и обработку запросов без Boost-зависимостей.
+- **Зачем:** Тестировать `findHandler()`/`handleRequest()` без линковки Boost. Итеративная разработка SRV-11/SRV-13 в microservice-core без пересборки Boost.
+- **Файлы:** Новый `BaseWebApplication.hpp`/`.cpp` в microservice-core, `BoostBeastApplication` — только Boost-specific код
+- **Зависимости:** Должна быть выполнена **до** SRV-11 и SRV-13 (чтобы не переделывать роутинг дважды)
+- **Backward compatible:** consumer-проекты не меняются (наследуют BoostBeastApplication как раньше)

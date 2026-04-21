@@ -16,6 +16,12 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-43: Timer — утилита для замера времени выполнения
+- `Timer` класс: `start()`, `stop()`, `elapsed(TimeUnit)`, `show(TimeUnit)` — с суффиксами "ms", "ns", "us", "s"
+- `TimeUnit` enum: Nanos, Micros, Millis, Seconds
+- ChainHandler и ShutdownManager используют Timer вместо ручного `std::chrono::steady_clock::now()`
+- 9 тестов: elapsed после start/stop, show format для всех юнитов, running state, reset, unit conversion
+
 #### SRV-08: Graceful shutdown (IShutdown + ShutdownManager)
 - `IShutdown` — интерфейс: `shutdown(timeoutMs)`, `name()`. Зависимость: `std::chrono`, нулевые внешние зависимости
 - `ShutdownManager` — регистрирует `IShutdown`-компоненты, shutdown в LIFO-порядке. Default timeout: 5s. Логирует каждый шаг (Info/Warn при timeout). Thread-safe (`std::mutex`)

@@ -2,11 +2,11 @@
 
 #include "ports/output/IShutdown.hpp"
 #include "ports/output/ILogger.hpp"
+#include "util/Timer.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include <vector>
 #include <mutex>
 #include <chrono>
-#include <thread>
 #include <algorithm>
 #include <memory>
 
@@ -59,22 +59,20 @@ public:
             logger_->log(LogLevel::Info, "ShutdownManager",
                          "Shutting down " + component->name() + "...");
 
-            auto start = std::chrono::steady_clock::now();
+            Timer timer;
+            timer.start();
             component->shutdown(defaultTimeout_);
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                               std::chrono::steady_clock::now() - start);
+            timer.stop();
 
-            if (elapsed >= defaultTimeout_)
+            if (timer.elapsed() >= defaultTimeout_.count())
             {
                 logger_->log(LogLevel::Warn, "ShutdownManager",
-                             component->name() + " shutdown timed out after " +
-                                 std::to_string(elapsed.count()) + "ms");
+                             component->name() + " shutdown timed out after " + timer.show());
             }
             else
             {
                 logger_->log(LogLevel::Info, "ShutdownManager",
-                             component->name() + " shut down in " +
-                                 std::to_string(elapsed.count()) + "ms");
+                             component->name() + " shut down in " + timer.show());
             }
         }
 

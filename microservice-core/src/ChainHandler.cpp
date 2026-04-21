@@ -1,5 +1,5 @@
 #include "application/ChainHandler.hpp"
-#include <chrono>
+#include "util/Timer.hpp"
 
 /**
  * @file ChainHandler.cpp
@@ -16,20 +16,19 @@ void ChainHandler::handle(IRequest &req, IResponse &res)
         try
         {
             std::string handlerName = h->name();
-            auto start = std::chrono::steady_clock::now();
+            Timer timer;
+            timer.start();
 
             logger_->log(LogLevel::Debug, "ChainHandler",
                          "[" + traceId + "] " + handlerName + " started");
 
             h->handle(req, res);
 
-            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                               std::chrono::steady_clock::now() - start)
-                               .count();
+            timer.stop();
 
             logger_->log(LogLevel::Debug, "ChainHandler",
                          "[" + traceId + "] " + handlerName + " finished (" +
-                             std::to_string(elapsed) + "ms) with status " +
+                             timer.show() + ") with status " +
                              std::to_string(res.getStatus()));
         }
         catch (const HttpError &e)

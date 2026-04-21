@@ -136,6 +136,8 @@
 
 ### ~~SRV-41~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
+### ~~SRV-43~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
+
 ### ~~SRV-23~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 - **SP:** 1
 - **Модуль:** microservice-boost
@@ -245,6 +247,6 @@
 | P2 Code Quality & Bugs | 1 | 0 |
 | P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **18** | **71** |
+| **Итого** | **17** | **71** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-43, SRV-06b

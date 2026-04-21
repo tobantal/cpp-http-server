@@ -19,6 +19,7 @@ add_library(microservice-core
     src/MetricsObserverHandler.cpp
     src/NullLogger.cpp
     src/RouteMatcher.cpp
+    src/Timer.cpp
     src/TestLogger.cpp
 )
 

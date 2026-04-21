@@ -11,6 +11,7 @@ add_executable(microservice-core-test
     JsonParseErrorTest.cpp
     VersionTest.cpp
     MetricsCollectorTest.cpp
+    HttpErrorSenderTest.cpp
 )
 
 target_link_libraries(microservice-core-test

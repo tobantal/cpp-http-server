@@ -2,6 +2,7 @@
 
 #include "domain/IRequest.hpp"
 #include "domain/IResponse.hpp"
+#include <string>
 
 /**
  * @file IHttpHandler.hpp
@@ -27,4 +28,13 @@ public:
      * @param res HTTP response
      */
     virtual void handle(IRequest &req, IResponse &res) = 0;
+
+    /**
+     * @brief Get handler name for logging and metrics
+     * @return Handler name (default: "UnnamedHandler")
+     */
+    virtual std::string name() const
+    {
+        return "UnnamedHandler";
+    }
 };

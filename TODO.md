@@ -142,20 +142,9 @@
 
 ## P2 — Code Quality & Bug Fixes
 
-### SRV-40: ChainHandler — логирование с именем хэндлера и временем обработки
-- **SP:** 2
-- **Модуль:** microservice-core
-- **Что:** В логах ChainHandler передавать имя хэндлера (class name) в Handler started/finished — чтобы понимать какой хэндлер сейчас в работе. Также передавать время обработки `handle(req, res)` — чтобы выявлять долгие обработчики (slow handler detection). Формат лога: `[traceId] ClassName started/finished (Nms)`.
-- **Решение:** `virtual std::string name() const` в `IHttpHandler` — каждый хэндлер реализует. Не RTTI (`typeid`), т.к. зависит от компилятора (mangled name), не портабельно и ломается при `-fno-rtti`.
-- **Файлы:** `IHttpHandler.hpp` (добавить `virtual name()`), `ChainHandler.cpp`
-- **Тесты:** Unit-тест: log entry содержит имя хэндлера и время
+### ~~SRV-40~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
-### SRV-41: HttpErrorSender — вынести обработку ошибок из ChainHandler
-- **SP:** 3
-- **Модуль:** microservice-core
-- **Что:** Выделить отправку ошибок из ChainHandler в `IHttpErrorHandler` + `HttpErrorSender`. Сигнатура: `handleError(IResponse& res, const HttpError& e)`. traceId берётся из `res.getTraceId()`, не передаётся параметром. Для std::exception и невалидного статуса — создаём `HttpError(500, "...")` и вызываем тот же `handleError`. `sendError()` убирается из ChainHandler. Один метод вместо двух — никаких `handleInvalidStatus`. Это убирает из ChainHandler ответственность за формат error-ответа и позволяет переиспользовать логику (mock в тестах, кастомный формат ошибок в consumer).
-- **Файлы:** Новый `IHttpErrorHandler.hpp` + `HttpErrorSender.hpp`/`.cpp` в microservice-core, `ChainHandler.hpp`/`.cpp` (убрать sendError, добавить errorHandler_)
-- **Тесты:** Unit-тест: HttpErrorSender формирует корректные ответы для HttpError; ChainHandler делегирует errorHandler_; mock IHttpErrorHandler в тестах ChainHandler
+### ~~SRV-41~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### ~~SRV-23~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 - **SP:** 1
@@ -263,9 +252,9 @@
 | P1 Security & Reliability | 3 | 12 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
-| P2 Code Quality & Bugs | 3 | 7 |
+| P2 Code Quality & Bugs | 1 | 0 |
 | P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **21** | **84** |
+| **Итого** | **19** | **76** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-42, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-06b

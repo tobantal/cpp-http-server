@@ -16,6 +16,18 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-41: IHttpErrorHandler + HttpErrorSender — вынести обработку ошибок из ChainHandler
+- `IHttpErrorHandler` — интерфейс: `handleError(IResponse&, const HttpError&)`. traceId берётся из response
+- `HttpErrorSender` — реализация: JSON `{"error": "message"}` с `StringUtils::escapeJson()`, Content-Type `application/json`, traceId
+- `ChainHandler` — `sendError()` удалён, ошибки делегируются `errorHandler_` (default: `HttpErrorSender`). 3-аргументный конструктор: `(logger, errorHandler, handlers)`
+- Backward compatible: 1-арг и 2-арг конструкторы используют `HttpErrorSender` по умолчанию
+- 7 новых тестов: HttpErrorSender (NotFoundError, BadRequestError, generic, JSON escape, Content-Type, traceId)
+
+#### SRV-40: ChainHandler — имя хэндлера и время обработки в логах
+- `IHttpHandler::name()` — virtual метод с default `return "UnnamedHandler"`. Каждый хэндлер может переопределить
+- ChainHandler логирует: `[traceId] HandlerName started`, `[traceId] HandlerName finished (Nms) with status XXX`
+- Не RTTI — explicit virtual method, работает при `-fno-rtti`
+
 #### SRV-30: IMetricsCollector + MetricsObserverHandler + MetricsHandler
 - `IMetricsCollector` — интерфейс: `increment()` (counter), `set()` (gauge), `observe()` (histogram), `toPrometheusFormat()`
 - `MetricsCollector` — thread-safe реализация: `shared_mutex` + `atomic<int64_t>` для counter/gauge, `mutex` + bucket array для histogram

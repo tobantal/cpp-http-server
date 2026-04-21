@@ -1,48 +1,53 @@
-# 🌐 cpp-http-server
+# cpp-http-server
 
-Современная библиотека HTTP-сервера на C++17 с чистой архитектурой и двумя модульными компонентами.
+Современная библиотека HTTP-сервера на C++17 с чистой архитектурой (hexagonal/ports-and-adapters).
 
 #### Автор: Тоболкин Антон
 
 ---
 
-## 📦 Архитектура
+## Архитектура
 
-Библиотека состоит из **двух независимых модулей**:
+Библиотека состоит из **двух модулей**:
 
-### 🎯 Core Module (`http-server-core`)
-**Чистые абстракции и интерфейсы** — нулевые зависимости, header-only.
+### Core Module (`microservice-core`)
+
+Чистые абстракции и утилиты — **нулевые зависимости** (header-only + RouteMatcher.cpp).
 
 | Компонент | Назначение |
 |-----------|-----------|
-| `IRequest` | Интерфейс HTTP-запроса с поддержкой path parameters, query params, headers, attributes |
-| `IResponse` | Интерфейс HTTP-ответа с геттерами и convenience методами |
-| `IWebApplication` | Базовый класс приложения с паттерном Template Method |
-| `IHttpHandler` | Интерфейс обработчика маршрутов |
+| `IRequest` / `IResponse` | HTTP-запрос и ответ: path params, query params, headers, body, trace ID |
+| `IHttpHandler` | Обработчик маршрутов с `name()` для логирования |
+| `IWebApplication` | Template Method: `run()` → signal handling, loadEnvironment, configureInjection, start |
+| `IShutdown` / `ShutdownManager` | Graceful shutdown в LIFO-порядке с timeout |
+| `IHttpErrorHandler` / `HttpErrorSender` | Обработка ошибок: `handleError(res, HttpError)` |
+| `IMetricsCollector` / `MetricsCollector` | Counter, gauge, histogram → Prometheus format |
+| `MetricsObserverHandler` | Декоратор: обёртка над handler chain, записывает http_requests_total + duration |
+| `MetricsHandler` | `GET /metrics` — Prometheus text format |
+| `ChainHandler` | Middleware chain с IHttpErrorHandler injection |
+| `RouteMatcher` | Сопоставление маршрутов с wildcards |
+| `IIdGenerator` / `UuidGenerator` | Thread-safe генератор ID (DIP: mockable в тестах) |
+| `IEnvironment` / `Environment` | Type-safe конфигурация (ENV → config.json → default) |
 | `IHttpClient` | HTTP-клиент для межсервисной коммуникации |
-| `IEnvironment` | Интерфейс управления конфигурацией |
-| `RouteMatcher` | Сопоставление маршрутов с подстановочными символами |
-| `Environment` | Объект конфигурации с type-safe геттерами |
-| `SimpleRequest/Response` | Полнофункциональные реализации для тестирования |
+| `Timer` | Утилита замера времени (start/stop/elapsed/show) |
+| `SimpleRequest` / `SimpleResponse` | Test doubles для IRequest/IResponse |
 
-**Зачем отдельно?** Используйте core-интерфейсы в своих сервисах без линковки Boost.
+### Boost Module (`microservice-boost`)
 
-### ⚡ Boost Module (`http-server-boost`)
-**Production-ready HTTP-сервер** на основе Boost.Beast и Boost.Asio.
+Production-ready HTTP-сервер на Boost.Beast/Asio.
 
 | Компонент | Назначение |
 |-----------|-----------|
-| `BoostBeastApplication` | Полнофункциональный HTTP-сервер с поддержкой path parameters |
-| `BeastRequestAdapter` | Адаптер Beast-запросов к `IRequest` с case-insensitive headers |
-| `BeastResponseAdapter` | Адаптер Beast-ответов к `IResponse` с геттерами |
-| `HttpClient` | HTTP-клиент на Beast для сервис-сервис коммуникации |
-| `ServerSettings` | Конфигурация хоста/порта сервера (ENV → config.json → дефолт) |
+| `BoostBeastApplication` | HTTP-сервер: keep-alive, connection limits, timeouts, version header |
+| `BeastRequestAdapter` / `BeastResponseAdapter` | Адаптеры Beast → IRequest/IResponse |
+| `HttpClient` | Исходящий HTTP-клиент (connect/read/write timeout) |
+| `ServerSettings` | Конфигурация: ENV → config.json → default |
 
 ---
 
-## 🚀 Установка
+## Установка
 
-### Через CMake FetchContent
+### CMake FetchContent
 
 ```cmake
 cmake_minimum_required(VERSION 3.14)
@@ -56,8 +61,7 @@ FetchContent_Declare(
     GIT_TAG v0.3.0
 )
 
-# Если ваш проект уже подтягивает Boost/nlohmann_json через свой FetchContent,
-# установите CPP_HTTP_SERVER_FETCH_DEPS=OFF чтобы избежать двойного скачивания:
+# Если ваш проект уже подтягивает Boost/nlohmann_json:
 # set(CPP_HTTP_SERVER_FETCH_DEPS OFF)
 
 FetchContent_MakeAvailable(cpp-http-server)
@@ -70,13 +74,10 @@ target_link_libraries(my_app microservice-boost)
 
 - **C++17** или выше
 - **CMake 3.14+**
-- **Boost 1.70+** (для модуля microservice-boost)
-  - `Boost.Asio`, `Boost.Beast`, `Boost.System`
-- **nlohmann/json** 3.9+ (для парсинга JSON конфигурации в microservice-boost)
+- **Boost 1.70+** (Asio, Beast, System)
+- **nlohmann/json** 3.9+ (для config.json в microservice-boost)
 
-При standalone-сборке (по умолчанию `CPP_HTTP_SERVER_FETCH_DEPS=ON`) все зависимости подтягиваются автоматически через FetchContent. Если ваш проект уже предоставляет Boost и nlohmann_json — установите `CPP_HTTP_SERVER_FETCH_DEPS=OFF`, и библиотека будет искать их через `find_package`.
-
-### Сборка из исходников
+### Сборка и тесты
 
 ```bash
 git clone https://github.com/tobantal/cpp-http-server.git
@@ -88,571 +89,176 @@ cd build && ctest --verbose
 
 ---
 
-## 💡 Быстрый старт
+## Быстрый старт
 
-### 1️⃣ Создайте класс приложения
+### 1. Приложение
 
 ```cpp
 #include "BoostBeastApplication.hpp"
-#include "IHttpHandler.hpp"
-#include "IRequest.hpp"
-#include "IResponse.hpp"
+#include "ChainHandler.hpp"
+#include "HealthHandler.hpp"
 
 class MyWebApp : public BoostBeastApplication {
 public:
     void configureInjection() override {
-        // Регистрируем обработчики маршрутов
-        registerHandler("GET", "/status",
-            std::make_shared<StatusHandler>());
-        
-        registerHandler("POST", "/api/users",
-            std::make_shared<CreateUserHandler>());
-        
-        // Path parameters с wildcards
-        registerHandler("GET", "/api/users/*",
-            std::make_shared<GetUserHandler>());
-        
-        registerHandler("GET", "/api/orders/*/items/*",
-            std::make_shared<GetOrderItemHandler>());
-    }
-
-protected:
-    void registerHandler(const std::string& method,
-                        const std::string& path,
-                        std::shared_ptr<IHttpHandler> handler) {
-        handlers_[getHandlerKey(method, path)] = handler;
+        registerEndpoint("GET", "/status", std::make_shared<HealthHandler>());
+        registerEndpoint("GET", "/api/users", std::make_shared<GetUsersHandler>());
     }
 };
 ```
 
-### 2️⃣ Реализуйте обработчики
+### 2. main.cpp — 3 строки (signal handling встроен)
 
 ```cpp
-#include "IHttpHandler.hpp"
+#include "MyWebApp.hpp"
 
-class StatusHandler : public IHttpHandler {
-public:
-    void handle(IRequest& req, IResponse& res) override {
-        // Используем convenience метод setResult()
-        res.setResult(200, "application/json", R"({"status":"running"})");
-    }
-};
-
-class GetUserHandler : public IHttpHandler {
-public:
-    void handle(IRequest& req, IResponse& res) override {
-        // Извлекаем path parameter (userId из /api/users/*)
-        auto userId = req.getPathParam(0);
-        
-        if (!userId) {
-            res.setResult(400, "application/json", R"({"error":"Missing user ID"})");
-            return;
-        }
-        
-        // Проверяем Bearer токен
-        auto token = req.getBearerToken();
-        if (!token) {
-            res.setResult(401, "application/json", R"({"error":"Unauthorized"})");
-            return;
-        }
-        
-        // Получаем query параметры
-        auto fields = req.getQueryParam("fields");  // ?fields=name,email
-        
-        // Формируем ответ
-        res.setResult(200, "application/json", 
-            R"({"id":")" + *userId + R"(","name":"John"})");
-    }
-};
-
-class GetOrderItemHandler : public IHttpHandler {
-public:
-    void handle(IRequest& req, IResponse& res) override {
-        // Несколько path parameters: /api/orders/*/items/*
-        auto orderId = req.getPathParam(0);  // ord-123
-        auto itemId = req.getPathParam(1);   // item-456
-        
-        if (!orderId || !itemId) {
-            res.setResult(400, "application/json", R"({"error":"Missing parameters"})");
-            return;
-        }
-        
-        res.setResult(200, "application/json",
-            R"({"orderId":")" + *orderId + R"(","itemId":")" + *itemId + R"("})");
-    }
-};
+int main(int argc, char* argv[]) {
+    MyWebApp app;
+    return app.run(argc, argv);
+}
 ```
 
-### 3️⃣ Middleware с атрибутами
+Signal handling (SIGINT/SIGTERM) встроен в `IWebApplication::run()`. Try/catch тоже внутри.
 
-```cpp
-class AuthMiddleware : public IHttpHandler {
-public:
-    AuthMiddleware(std::shared_ptr<IHttpHandler> next) : next_(next) {}
-    
-    void handle(IRequest& req, IResponse& res) override {
-        auto token = req.getBearerToken();
-        if (!token) {
-            res.setResult(401, "application/json", R"({"error":"Unauthorized"})");
-            return;
-        }
-        
-        // Валидируем токен и сохраняем данные в атрибутах
-        auto userId = validateToken(*token);
-        req.setAttribute("user_id", userId);
-        req.setAttribute("account_id", "acc-456");
-        
-        // Передаём управление следующему handler
-        next_->handle(req, res);
-    }
+### 3. Конфигурация
 
-private:
-    std::shared_ptr<IHttpHandler> next_;
-};
-
-class OrderHandler : public IHttpHandler {
-public:
-    void handle(IRequest& req, IResponse& res) override {
-        // Получаем данные из middleware
-        auto userId = req.getAttribute("user_id");
-        auto accountId = req.getAttribute("account_id");
-        
-        if (!userId || !accountId) {
-            res.setResult(500, "application/json", R"({"error":"Auth data missing"})");
-            return;
-        }
-        
-        // Используем userId и accountId...
-        res.setResult(200, "application/json", R"({"user":")" + *userId + R"("})");
-    }
-};
-```
-
-### 4️⃣ Файл конфигурации
-
-**config.json**
+**config.json:**
 ```json
 {
   "server": {
     "host": "0.0.0.0",
-    "port": 8080
-  },
-  "db": {
-    "host": "localhost",
-    "port": 5432,
-    "name": "myapp",
-    "user": "postgres",
-    "password": "secret"
+    "port": 8080,
+    "maxRequestBodySize": 1048576,
+    "readTimeoutMs": 30000,
+    "writeTimeoutMs": 30000,
+    "maxConnections": 0,
+    "maxRequestsPerConnection": 100
   }
 }
 ```
 
-### 5️⃣ Функция main
+См. [docs/configuration.md](docs/configuration.md) для полного списка настроек и [.env.example](.env.example) для ENV-переменных.
+
+---
+
+## Ключевые возможности v0.3.0
+
+### Graceful Shutdown
 
 ```cpp
-#include <iostream>
+auto app = std::make_shared<MyWebApp>();
+auto shutdownMgr = std::make_shared<ShutdownManager>(logger);
+shutdownMgr->registerComponent(app);  // app implements IShutdown
+// SIGINT/SIGTERM → ShutdownManager::shutdownAll() в LIFO-порядке
+```
 
-int main(int argc, char* argv[]) {
-    try {
-        MyWebApp app;
-        app.run(argc, argv);  // Блокирует до остановки сервера
-    } catch (const std::exception& e) {
-        std::cerr << "Ошибка: " << e.what() << std::endl;
-        return 1;
+### Metrics (Prometheus)
+
+```cpp
+auto metrics = std::make_shared<MetricsCollector>();
+auto observer = std::make_shared<MetricsObserverHandler>(chainHandler, metrics, "my-service");
+// observer оборачивает handler chain, записывает http_requests_total + duration
+
+auto metricsHandler = std::make_shared<MetricsHandler>(metrics);
+registerEndpoint("GET", "/metrics", metricsHandler);
+```
+
+### Error Handling (IHttpErrorHandler)
+
+```cpp
+// HttpErrorSender — default, JSON error responses
+// Можно внедрить свой формат:
+class XmlErrorHandler : public IHttpErrorHandler {
+    void handleError(IResponse& res, const HttpError& e) override {
+        res.setResult(e.statusCode(), "application/xml",
+            "<error>" + e.message() + "</error>");
     }
-    return 0;
-}
-```
-
----
-
-## 📡 Справка по API
-
-### Интерфейс запроса (IRequest)
-
-```cpp
-struct IRequest {
-    // === PATH ===
-    virtual std::string getPath() const = 0;                    // "/api/users" (без query string)
-    virtual std::vector<std::string> getPathSegments() const = 0;  // ["api", "users"]
-    
-    // === PATH PARAMETERS ===
-    virtual std::string getPathPattern() const = 0;             // "/api/users/*"
-    virtual void setPathPattern(const std::string& pattern) = 0;
-    virtual std::optional<std::string> getPathParam(size_t index) const = 0;  // Wildcard по индексу
-    
-    // === QUERY PARAMETERS ===
-    virtual std::map<std::string, std::string> getQueryParams() const = 0;
-    virtual std::optional<std::string> getQueryParam(const std::string& name) const = 0;
-    virtual void setQueryParam(const std::string& name, const std::string& value) = 0;
-    
-    // === HEADERS (case-insensitive) ===
-    virtual std::map<std::string, std::string> getHeaders() const = 0;
-    virtual std::optional<std::string> getHeader(const std::string& name) const = 0;
-    virtual void setHeader(const std::string& name, const std::string& value) = 0;
-    virtual void setHeaders(const std::map<std::string, std::string>& headers) = 0;
-    
-    // === BODY ===
-    virtual std::string getBody() const = 0;
-    virtual void setBody(const std::string& body) = 0;
-    
-    // === METHOD & CONNECTION ===
-    virtual std::string getMethod() const = 0;                  // "GET", "POST", etc.
-    virtual std::string getIp() const = 0;
-    virtual int getPort() const = 0;
-    
-    // === CONVENIENCE METHODS ===
-    virtual std::optional<std::string> getBearerToken() const = 0;  // Из Authorization header
-    virtual bool isJson() const = 0;                            // Content-Type содержит "json"
-    virtual std::string getContentType() const = 0;
-    
-    // === ATTRIBUTES (для middleware) ===
-    virtual void setAttribute(const std::string& name, const std::string& value) = 0;
-    virtual std::optional<std::string> getAttribute(const std::string& name) const = 0;
-    
-    // === DEPRECATED ===
-    virtual std::map<std::string, std::string> getParams() const;  // Используйте getQueryParams()
 };
 ```
 
-### Интерфейс ответа (IResponse)
+### Trace ID + Handler Names in Logs
 
-```cpp
-struct IResponse {
-    // === SETTERS ===
-    virtual void setStatus(int code) = 0;
-    virtual void setBody(const std::string& body) = 0;
-    virtual void setHeader(const std::string& name, const std::string& value) = 0;
-    
-    // === GETTERS ===
-    virtual int getStatus() const = 0;
-    virtual std::string getBody() const = 0;
-    virtual std::map<std::string, std::string> getHeaders() const = 0;
-    virtual std::optional<std::string> getHeader(const std::string& name) const = 0;  // case-insensitive
-    
-    // === CONVENIENCE ===
-    virtual void setResult(int code, const std::string& contentType, const std::string& body) = 0;
-};
+```
+[trace-abc123] HealthHandler started
+[trace-abc123] HealthHandler finished (2ms) with status 200
+[trace-abc123] ChainHandler started
 ```
 
-### Интерфейс обработчика
+### Keep-Alive
 
-```cpp
-class IHttpHandler {
-public:
-    virtual void handle(IRequest& req, IResponse& res) = 0;
-};
-```
+Множественные запросы на одном TCP-соединении (до `SERVER_MAX_REQUESTS_PER_CONNECTION=100`).
+
+### Connection Limits
+
+- `SERVER_MAX_CONNECTIONS=0` — unlimited, при превышении → 503
+- `SERVER_MAX_REQUEST_BODY_SIZE=1048576` — при превышении → 413
+- Timeouts: `SERVER_READ_TIMEOUT_MS`, `SERVER_WRITE_TIMEOUT_MS`
 
 ---
 
-## 🛣️ Сопоставление маршрутов и Path Parameters
+## SOLID принципы
 
-### Паттерны с wildcards
-
-```cpp
-registerHandler("GET", "/api/users/123", handler);           // Точное совпадение
-registerHandler("GET", "/api/users/*", handler);             // Один path parameter
-registerHandler("GET", "/api/orders/*/items/*", handler);    // Несколько параметров
-```
-
-### Извлечение Path Parameters
-
-```cpp
-void handle(IRequest& req, IResponse& res) override {
-    // Паттерн: /api/orders/*/items/*
-    // Путь:    /api/orders/ord-123/items/item-456
-    
-    auto orderId = req.getPathParam(0);  // → "ord-123"
-    auto itemId = req.getPathParam(1);   // → "item-456"
-    auto missing = req.getPathParam(2);  // → nullopt
-    
-    // Проверка паттерна
-    std::string pattern = req.getPathPattern();  // → "/api/orders/*/items/*"
-}
-```
-
-### Примеры сопоставления
-
-| Паттерн | Совпадает | Не совпадает |
-|---------|-----------|-------------|
-| `/api/users` | `/api/users` | `/api/users/123` |
-| `/api/users/*` | `/api/users/123` | `/api/users/123/edit` |
-| `/api/*/details` | `/api/users/details` | `/api/users/123/details` |
-| `/*/orders/*/items/*` | `/v1/orders/123/items/456` | `/orders/123/items` |
+- **S** — один класс = одна ответственность (ChainHandler = middleware, MetricsObserverHandler = metrics, etc.)
+- **O** — расширение через интерфейсы: `IHttpHandler`, `IMetricsCollector`, `IHttpErrorHandler`, `IShutdown`, `IIdGenerator`
+- **L** — реализации взаимозаменяемы: `UuidGenerator` ↔ deterministic mock в тестах
+- **I** — `INameable` выделен отдельно от `IHttpHandler` и `IShutdown`
+- **D** — зависимости от абстракций: `ChainHandler` зависит от `IHttpErrorHandler`, не от `HttpErrorSender`
 
 ---
 
-## 🔑 Работа с заголовками
-
-### Case-insensitive доступ
-
-```cpp
-// Все варианты вернут одно значение
-auto ct1 = req.getHeader("Content-Type");
-auto ct2 = req.getHeader("content-type");
-auto ct3 = req.getHeader("CONTENT-TYPE");
-
-// Проверка JSON
-if (req.isJson()) {
-    auto body = req.getBody();
-    // Парсим JSON...
-}
-
-// Извлечение Bearer токена
-auto token = req.getBearerToken();  // Из "Authorization: Bearer xxx"
-```
-
-### Установка заголовков
-
-```cpp
-// Один заголовок
-req.setHeader("X-Custom", "value");
-
-// Несколько заголовков
-req.setHeaders({
-    {"X-Request-Id", "123"},
-    {"X-Trace-Id", "abc"}
-});
-```
-
----
-
-## 📨 HTTP-клиент (Межсервисная коммуникация)
-
-```cpp
-#include "HttpClient.hpp"
-#include "SimpleRequest.hpp"
-#include "SimpleResponse.hpp"
-
-HttpClient client;
-
-// Создаём запрос с новым API
-SimpleRequest request;
-request.setMethod("POST");
-request.setPath("/api/internal/notify");
-request.setIp("other-service.local");
-request.setPort(8080);
-request.setHeader("Authorization", "Bearer TOKEN");
-request.setHeader("Content-Type", "application/json");
-request.setBody(R"({"event":"user_created"})");
-
-SimpleResponse response;
-
-if (client.send(request, response)) {
-    int status = response.getStatus();
-    std::string body = response.getBody();
-    auto contentType = response.getHeader("Content-Type");
-} else {
-    std::cerr << "Запрос не удался" << std::endl;
-}
-```
-
----
-
-## ⚙️ Конфигурация
-
-### Приоритет настроек сервера
-
-`ServerSettings` определяет хост и порт с приоритетом:
-
-1. **ENV переменные** — `SERVER_HOST`, `SERVER_PORT`
-2. **config.json** — `server.host`, `server.port`
-3. **Дефолты** — `0.0.0.0:8080`
-
-Это упрощает деплой в Kubernetes: задавайте хост/порт через Deployment manifest, а остальные настройки — через config.json.
-
-```bash
-# K8s Deployment
-env:
-  - name: SERVER_HOST
-    value: "0.0.0.0"
-  - name: SERVER_PORT
-    value: "8080"
-```
-
-### Environment-based конфигурация
-
-```cpp
-auto settings = std::make_shared<ServerSettings>(env_);
-std::string host = settings->getHost();   // ENV SERVER_HOST или config.json или "0.0.0.0"
-int port = settings->getPort();            // ENV SERVER_PORT или config.json или 8080
-```
-
-### Ручной доступ
-
-```cpp
-std::string apiKey = env_->get<std::string>("api.key");
-int timeout = env_->get<int>("server.timeout", 30);  // С дефолтом
-```
-
----
-
-## 🧪 Тестирование
-
-### Запуск unit-тестов
-
-```bash
-cd build
-cmake ..
-cmake --build .
-ctest --verbose
-```
-
-### Покрытие тестами
-
-- ✅ **BeastRequestAdapter** — path segments, path parameters, query params, case-insensitive headers, Bearer token, isJson
-- ✅ **BeastResponseAdapter** — getters, setResult, case-insensitive getHeader
-- ✅ **SimpleRequest** — полная реализация IRequest v2
-- ✅ **SimpleResponse** — полная реализация IResponse v2
-- ✅ **RouteMatcher** — wildcard matching
-- ✅ **ServerSettings** — ENV приоритет, config.json fallback, дефолты, ошибки парсинга
-
-### Пример теста с новым API
-
-```cpp
-#include <gtest/gtest.h>
-#include "SimpleRequest.hpp"
-#include "SimpleResponse.hpp"
-
-TEST(MyHandler, ExtractsPathParameters) {
-    SimpleRequest req("GET", "/api/orders/ord-123/items/item-456", "", "127.0.0.1", 80);
-    req.setPathPattern("/api/orders/*/items/*");
-    
-    SimpleResponse res;
-    
-    MyHandler handler;
-    handler.handle(req, res);
-    
-    EXPECT_EQ(res.getStatus(), 200);
-    EXPECT_EQ(*res.getHeader("Content-Type"), "application/json");
-}
-
-TEST(MyHandler, ChecksBearerToken) {
-    SimpleRequest req("GET", "/api/protected", "", "127.0.0.1", 80);
-    req.setHeader("Authorization", "Bearer valid-token");
-    
-    auto token = req.getBearerToken();
-    ASSERT_TRUE(token.has_value());
-    EXPECT_EQ(*token, "valid-token");
-}
-
-TEST(MyHandler, UsesAttributes) {
-    SimpleRequest req;
-    
-    req.setAttribute("user_id", "user-123");
-    req.setAttribute("role", "admin");
-    
-    EXPECT_EQ(*req.getAttribute("user_id"), "user-123");
-    EXPECT_EQ(*req.getAttribute("role"), "admin");
-    EXPECT_FALSE(req.getAttribute("missing").has_value());
-}
-```
-
----
-
-## 🏗️ Паттерны проектирования
-
-### 🔌 Паттерн Adapter
-`BeastRequestAdapter` и `BeastResponseAdapter` преобразуют объекты Beast в чистые интерфейсы.
-
-### 📋 Паттерн Template Method
-`IWebApplication::run()` определяет последовательность запуска:
-
-```cpp
-void run(int argc, char* argv[]) {
-    loadEnvironment(argc, argv);
-    configureInjection();
-    start();
-}
-```
-
-### 🔗 Dependency Injection
-Обработчики и настройки регистрируются в `configureInjection()`.
-
----
-
-## 📚 Структура проекта
+## Структура проекта
 
 ```
 cpp-http-server/
-├── microservice-core/
+├── microservice-core/               # Нулевые зависимости
 │   ├── include/
-│   │   ├── IRequest.hpp          # Расширенный интерфейс v2
-│   │   ├── IResponse.hpp         # С геттерами и setResult()
-│   │   ├── IHttpHandler.hpp
-│   │   ├── IWebApplication.hpp
-│   │   ├── IEnvironment.hpp
-│   │   ├── Environment.hpp
-│   │   ├── RouteMatcher.hpp
-│   │   ├── SimpleRequest.hpp     # Полная реализация v2
-│   │   └── SimpleResponse.hpp    # Полная реализация v2
-│   ├── src/
-│   │   └── RouteMatcher.cpp
-│   └── tests/
-├── microservice-boost/
+│   │   ├── domain/                 # Доменные типы: HttpError, INameable, IResponse
+│   │   ├── error/                   # NotFoundError, BadRequestError, MethodNotAllowedError
+│   │   ├── ports/input/             # IHttpHandler, IHttpErrorHandler, IWebApplication
+│   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector
+│   │   ├── application/            # ChainHandler, ShutdownManager
+│   │   ├── handler/                # HealthHandler, MetricsHandler, MetricsObserverHandler, HttpErrorSender
+│   │   ├── metrics/                # MetricsCollector, PrometheusSerializer
+│   │   ├── util/                   # StringUtils, Timer, IIdGenerator, UuidGenerator, PathParamExtractor
+│   │   ├── settings/               # IServerSettings, Environment
+│   │   └── adapters/secondary/    # SimpleRequest, SimpleResponse, NullLogger, TestLogger
+│   └── src/
+├── microservice-boost/             # Boost.Beast + Asio
 │   ├── include/
-│   │   ├── BoostBeastApplication.hpp  # HandlerMatch, path parameters
-│   │   ├── BeastRequestAdapter.hpp    # Case-insensitive headers
-│   │   ├── BeastResponseAdapter.hpp   # С геттерами
+│   │   ├── BoostBeastApplication.hpp
+│   │   ├── BeastRequestAdapter.hpp
+│   │   ├── BeastResponseAdapter.hpp
 │   │   ├── HttpClient.hpp
-│   │   └── settings/
-│   ├── src/
-│   │   └── BoostBeastApplication.cpp
-│   └── tests/
+│   │   └── settings/ServerSettings.hpp
+│   └── src/
+├── docs/
+│   ├── configuration.md
+│   └── ci-extended-configuration.md
+├── .env.example
 ├── CMakeLists.txt
-├── config.json
 ├── CHANGELOG.md
 └── README.md
 ```
 
 ---
 
-## 🔄 Миграция с v0.0.5
+## Конфигурация
 
-### Изменения API
+См. [docs/configuration.md](docs/configuration.md) для полной таблицы настроек.
 
-| Было (v0.0.5) | Стало (v0.1.0) |
-|---------------|----------------|
-| `getParams()` | `getQueryParams()` (старый метод deprecated) |
-| Нет | `getQueryParam(name)` |
-| Нет | `getPathParam(index)` |
-| Нет | `getHeader(name)` — case-insensitive |
-| Нет | `getBearerToken()` |
-| Нет | `isJson()` |
-| Нет | `setAttribute()` / `getAttribute()` |
-| Нет | `setResult(code, contentType, body)` |
-
-### Обратная совместимость
-
-- `getParams()` продолжает работать как alias для `getQueryParams()`
-- Все существующие handlers работают без изменений
+Приоритет: **ENV** > **config.json** > **default**.
 
 ---
 
-## 📄 Лицензия
+## Покрытие тестами
 
-MIT License.
+322+ тестов. Покрытие по модулям:
 
----
-
-## 👨‍💻 Вклад
-
-Контрибьюции приветствуются! Пожалуйста:
-
-1. Сделайте fork репозитория
-2. Создайте ветку функции (`git checkout -b feature/amazing-feature`)
-3. Коммитьте изменения (`git commit -m 'Add amazing feature'`)
-4. Отправьте в ветку (`git push origin feature/amazing-feature`)
-5. Откройте Pull Request
+- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, Version
+- **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient
 
 ---
 
-## 📞 Поддержка
+## Лицензия
 
-- 🐛 [Сообщить об ошибке](https://github.com/tobantal/cpp-http-server/issues)
-- 💬 [Обсуждения](https://github.com/tobantal/cpp-http-server/discussions)
-
----
-
-**Сделано с ❤️ к микросервисной архитектуре**
+MIT License. См. [LICENSE](LICENSE) для деталей.

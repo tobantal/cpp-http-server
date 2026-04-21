@@ -16,6 +16,14 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-30: IMetricsCollector + MetricsObserverHandler + MetricsHandler
+- `IMetricsCollector` — интерфейс: `increment()` (counter), `set()` (gauge), `observe()` (histogram), `toPrometheusFormat()`
+- `MetricsCollector` — thread-safe реализация: `shared_mutex` + `atomic<int64_t>` для counter/gauge, `mutex` + bucket array для histogram
+- `MetricsObserverHandler` — IHttpHandler декоратор: оборачивает inner handler, после выполнения читает `res.getStatus()` и записывает `http_requests_total{method, path, status}` + `http_request_duration_seconds` histogram
+- `MetricsHandler` — `GET /metrics` endpoint: отдаёт `toPrometheusFormat()` с Content-Type `text/plain; version=0.0.4; charset=utf-8`
+- Динамическая регистрация метрик — никаких предзаданных ключей (в отличие от trading-platform)
+- 14 тестов: counter/gauge/histogram, Prometheus format, observer decorator, service name label
+
 #### SRV-23: `getQueryParams()` — кэширование результата
 - `BeastRequestAdapter::getQueryParams()` — lazy кэширование через `mutable std::optional<std::map<...>> cachedQueryParams_`
 - Парсинг query string выполняется один раз, повторные вызовы возвращают кэшированный результат

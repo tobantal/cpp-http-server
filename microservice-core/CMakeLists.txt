@@ -14,6 +14,9 @@ add_library(microservice-core
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
     src/LogLevel.cpp
+    src/MetricsCollector.cpp
+    src/MetricsHandler.cpp
+    src/MetricsObserverHandler.cpp
     src/NullLogger.cpp
     src/RouteMatcher.cpp
     src/TestLogger.cpp

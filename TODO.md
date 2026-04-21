@@ -194,14 +194,7 @@
 - **Файлы:** `BoostBeastApplication.cpp`
 - **Тесты:** Integration-тест: keep-alive → несколько запросов на одном соединении; maxRequests → close
 
-### SRV-30: MetricsHandler — Prometheus endpoint
-- **SP:** 3
-- **Модуль:** microservice-core
-- **Что:** `MetricsHandler` в CHANGELOG.md v0.3.0, но не реализован. Добавить `MetricsHandler : IHttpHandler` — собирает базовые HTTP метрики (requests total, latency histogram) и отдаёт в Prometheus формате. Интерфейс `IMetricsCollector` для инъекции из consumer-проекта. В trading-platform MET-01 нужен `http_requests_total` с label status_code — сейчас MetricsMiddleware не может получить response status.
-- **Файлы:** Новый `MetricsHandler.hpp`, `IMetricsCollector.hpp` в microservice-core
-- **Тесты:** Unit-тест: record metrics → Prometheus format output
-- **Ссылка:** trading-platform MET-01
-- **Замечание:** Перенести всю логику с метриками из микроервисов торговой платформы в библиотеку сервера, сделать настраиваемые метрики, а не захардкоденные как сейчас. Нужен глубокий анализ. Отталкиваться от Actuator в SpringBoot: там подключаются endpoint-вы /metrics, /heath, /httprace, можно придумать свои. Общая задача - создать аналог Actuator на C++ для нашего проекта.
+### ~~SRV-30~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 
 ### SRV-31: HTTPS/TLS support
 - **SP:** 8
@@ -271,8 +264,8 @@
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
 | P2 Code Quality & Bugs | 3 | 7 |
-| P3 Performance & Future | 6 | 43 |
+| P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **22** | **87** |
+| **Итого** | **21** | **84** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-37, SRV-38, SRV-39, SRV-42, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-42, SRV-06b

@@ -16,6 +16,13 @@
 
 ### Планируется в v0.3.0
 
+#### SRV-08: Graceful shutdown (IShutdown + ShutdownManager)
+- `IShutdown` — интерфейс: `shutdown(timeoutMs)`, `name()`. Зависимость: `std::chrono`, нулевые внешние зависимости
+- `ShutdownManager` — регистрирует `IShutdown`-компоненты, shutdown в LIFO-порядке. Default timeout: 5s. Логирует каждый шаг (Info/Warn при timeout). Thread-safe (`std::mutex`)
+- `BoostBeastApplication` реализует `IShutdown`: `shutdown()` делегирует `stop()`. `name()` = "BoostBeastApplication"
+- Consumer-проекты регистрируют свои подсистемы (RabbitMQAdapter, ConnectionPool) в тот же ShutdownManager
+- 5 новых тестов: LIFO порядок, single component, empty manager, size, IShutdown interface
+
 #### SRV-41: IHttpErrorHandler + HttpErrorSender — вынести обработку ошибок из ChainHandler
 - `IHttpErrorHandler` — интерфейс: `handleError(IResponse&, const HttpError&)`. traceId берётся из response
 - `HttpErrorSender` — реализация: JSON `{"error": "message"}` с `StringUtils::escapeJson()`, Content-Type `application/json`, traceId

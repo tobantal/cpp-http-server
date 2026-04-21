@@ -61,17 +61,7 @@
 - **Что:** Добавить заголовок `Allow: GET, POST` в 405 ответ. Требует хранить allowed methods для каждого маршрута и передавать в MethodNotAllowedError. Низкий приоритет — внутренний API не использует Allow.
 - **Файлы:** `MethodNotAllowedError.hpp`, `BoostBeastApplication.cpp`
 
-### SRV-08: Graceful shutdown (IShutdown + ShutdownManager)
-- **SP:** 5
-- **Модуль:** microservice-core + microservice-boost
-- **Что:** При SIGTERM/SIGINT: прекратить приём новых соединений, доработать текущие запросы (с таймаутом), закрыть все подсистемы в обратном порядке. Решение:
-  1. **`IShutdown` интерфейс** (microservice-core): `virtual void shutdown() = 0` + виртуальный деструктор. Все подсистемы, требующие graceful shutdown (HTTP-сервер, connection pool, background workers), реализуют этот интерфейс.
-  2. **`ShutdownManager`** (microservice-core): регистрирует `IShutdown`-объекты в порядке старта. При shutdown вызывает `shutdown()` в обратном порядке (LIFO). Таймаут на каждый `shutdown()` (default: 5s). Если таймаут истёк — логировать warning и продолжить.
-  3. **`BoostBeastApplication`**: реализует `IShutdown`. `shutdown()` = close acceptor + drain current requests + join threads + stop io_context.
-  4. **Signal handler**: SIGTERM/SIGINT → `ShutdownManager::shutdownAll()`. Wire в `run()` или `start()`.
-  5. Consumer-проекты регистрируют свои подсистемы (RabbitMQAdapter, ConnectionPool, BackgroundTicker) в тот же ShutdownManager — единая точка graceful shutdown для всего приложения.
-- **Файлы:** Новый `IShutdown.hpp`, `ShutdownManager.hpp` в microservice-core; `BoostBeastApplication.hpp`/`.cpp` (реализует IShutdown, signal handler)
-- **Тесты:** Unit-тест: ShutdownManager LIFO order + timeout; Integration-тест: SIGTERM → graceful shutdown → текущий запрос завершается
+### ~~SRV-08~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
 - **Ссылка:** trading-platform REL-08 (ICloseable + ShutdownManager — будет использовать IShutdown из библиотеки)
 
 ### ~~SRV-09~~ ✅ ВЫПОЛНЕНО — см. CHANGELOG
@@ -249,12 +239,12 @@
 |-----------|-------|-----|
 | P1 DRY | 1 | 0 |
 | P0 Critical | 1 | 3 |
-| P1 Security & Reliability | 3 | 12 |
+| P1 Security & Reliability | 2 | 7 |
 | P1 API Improvements | 2 | 4 |
 | P2 Observability & DX | 1 | 2 |
 | P2 Code Quality & Bugs | 1 | 0 |
 | P3 Performance & Future | 5 | 40 |
 | P3 Documentation & DX | 3 | 6 |
-| **Итого** | **19** | **76** |
+| **Итого** | **18** | **71** |
 
-> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-06b
+> Выполненные задачи (в CHANGELOG): DRY-02, DRY-03, DRY-04, DRY-05, DRY-07, DRY-08, SRV-01, SRV-02, SRV-03, SRV-04, SRV-05, SRV-02b, SRV-06, SRV-07, SRV-08, SRV-09, SRV-14, SRV-16, SRV-16a, SRV-16b, SRV-17, SRV-18, SRV-22, SRV-23, SRV-27, SRV-30, SRV-37, SRV-38, SRV-39, SRV-40, SRV-41, SRV-42, SRV-06b

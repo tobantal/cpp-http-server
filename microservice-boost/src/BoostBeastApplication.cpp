@@ -76,6 +76,11 @@ void BoostBeastApplication::stop()
     }
 }
 
+void BoostBeastApplication::shutdown(std::chrono::milliseconds /*timeoutMs*/)
+{
+    stop();
+}
+
 void BoostBeastApplication::registerHandler(
     const std::string &method,
     const std::string &pattern,

@@ -2,6 +2,7 @@
 
 #include "application/IWebApplication.hpp"
 #include "ports/input/IHttpHandler.hpp"
+#include "ports/output/IShutdown.hpp"
 #include "ports/output/ILogger.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include "application/ChainHandler.hpp"
@@ -41,7 +42,7 @@ class IResponse;
  * @version 2.1
  * @author Anton Tobolkin
  */
-class BoostBeastApplication : public IWebApplication
+class BoostBeastApplication : public IWebApplication, public IShutdown
 {
 public:
     explicit BoostBeastApplication(
@@ -74,6 +75,8 @@ public:
 
     void start() override;
     void stop();
+    void shutdown(std::chrono::milliseconds timeoutMs = std::chrono::milliseconds(5000)) override;
+    std::string name() const override { return "BoostBeastApplication"; }
     void loadEnvironment(int argc, char *argv[]) override;
 
 protected:

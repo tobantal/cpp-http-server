@@ -16,6 +16,11 @@
 
 ### Планируется в v0.3.0
 
+#### DX-01: Cursor IDE — C++ плагины и настройки
+- Скопированы расширения из VS Code в Cursor: clangd, cpptools, cmake-tools, vscode-lldb, clang-format
+- Settings.json обновлён: formatOnSave, clang-format как default formatter, clangd (disabled C_Cpp intelliSense), C++17 fallback flags
+- `cursor --install-extension` не работал (зависает) — расширения скопированы вручную из `~/.vscode/extensions/` в `~/.cursor/extensions/`
+
 #### SRV-29: Keep-alive support
 - `handleSession()` теперь читает запросы в цикле: пока `req.keep_alive()` true и `requestCount < maxRequestsPerConnection`
 - `res.keep_alive(req.keep_alive())` уже было — теперь фактически работает

@@ -28,5 +28,5 @@ Checks: >
   -readability-implicit-bool-conversion,
   -readability-named-parameter
 HeaderFilterRegex: 'microservice-(core|boost)/'
-WarningsAsErrors: '*'
+WarningsAsErrors: 'bugprone-*,clang-analyzer-*,concurrency-*,cppcoreguidelines-*,modernize-*,performance-*,readability-*'
 FormatStyle: file

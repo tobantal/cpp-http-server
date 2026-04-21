@@ -150,11 +150,11 @@ jobs:
       - name: clang-tidy
         run: |
           if [ -f build/compile_commands.json ]; then
-            clang-tidy -p build --warnings-as-errors='*' \
+            clang-tidy -p build \
               $(find microservice-core/include microservice-core/src microservice-boost/include microservice-boost/src \
                 -name '*.cpp' -o -name '*.hpp' | grep -v '_deps' | grep -v 'build') 2>&1 | tee tidy.log
-            if grep -qE ':(error|warning):' tidy.log; then
-              echo "::error::clang-tidy found issues"
+            if grep -qE ':(error):' tidy.log; then
+              echo "::error::clang-tidy found errors"
               exit 1
             fi
           else

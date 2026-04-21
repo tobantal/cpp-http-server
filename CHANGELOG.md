@@ -16,6 +16,15 @@
 
 ### Планируется в v0.3.0
 
+#### SOLID-08: IIdGenerator interface + UuidGenerator (DIP)
+- `IIdGenerator` — интерфейс с методом `generate()` в microservice-core. Следует DIP: высокоуровневые модули зависят от абстракции
+- `UuidGenerator` — thread-local реализация (mt19937_64, без mutex). WARNING: не RFC 4122/9562 compliant (нет version nibble, variant bits, hyphens)
+- `BeastRequestAdapter` и `SimpleRequest` принимают `shared_ptr<IIdGenerator>` в конструкторе (default: UuidGenerator)
+- `StringUtils::generateUuid()` удалён — заменён на IIdGenerator injection
+- В тестах: mock IIdGenerator для детерминированных traceId
+- 5 новых тестов: NonEmpty, Unique, HexOnly, ThreadSafety, Polymorphism
+- **Backward compatible:** default параметр UuidGenerator сохраняет текущее поведение
+
 #### DX-01: Cursor IDE — C++ плагины и настройки
 - Скопированы расширения из VS Code в Cursor: clangd, cpptools, cmake-tools, vscode-lldb, clang-format
 - Settings.json обновлён: formatOnSave, clang-format как default formatter, clangd (disabled C_Cpp intelliSense), C++17 fallback flags

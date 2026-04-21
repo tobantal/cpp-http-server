@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
 #include "util/StringUtils.hpp"
+#include "util/UuidGenerator.hpp"
 #include "util/PathParamExtractor.hpp"
 #include <set>
+#include <thread>
+#include <mutex>
+#include <vector>
 
 TEST(StringUtilsTest, ToLowerEmpty)
 {
@@ -204,29 +208,68 @@ TEST(StringUtilsTest, UrlDecode_EmptyString)
     EXPECT_EQ(StringUtils::urlDecode(""), "");
 }
 
-TEST(StringUtilsTest, GenerateUuid_NonEmpty)
+TEST(UuidGeneratorTest, Generate_NonEmpty)
 {
-    auto id = StringUtils::generateUuid();
+    UuidGenerator gen;
+    auto id = gen.generate();
     EXPECT_FALSE(id.empty());
     EXPECT_EQ(id.size(), 32u);
 }
 
-TEST(StringUtilsTest, GenerateUuid_Unique)
+TEST(UuidGeneratorTest, Generate_Unique)
 {
+    UuidGenerator gen;
     std::set<std::string> ids;
     for (int i = 0; i < 1000; ++i)
     {
-        ids.insert(StringUtils::generateUuid());
+        ids.insert(gen.generate());
     }
     EXPECT_EQ(ids.size(), 1000u);
 }
 
-TEST(StringUtilsTest, GenerateUuid_HexOnly)
+TEST(UuidGeneratorTest, Generate_HexOnly)
 {
-    auto id = StringUtils::generateUuid();
+    UuidGenerator gen;
+    auto id = gen.generate();
     for (char c : id)
     {
         bool isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
         EXPECT_TRUE(isHex) << "Non-hex character: " << c;
     }
+}
+
+TEST(UuidGeneratorTest, Generate_ThreadSafety)
+{
+    UuidGenerator gen;
+    std::vector<std::string> allIds;
+    std::mutex mutex;
+    std::vector<std::thread> threads;
+
+    for (int t = 0; t < 4; ++t)
+    {
+        threads.emplace_back([&gen, &allIds, &mutex]() {
+            std::vector<std::string> localIds;
+            for (int i = 0; i < 500; ++i)
+            {
+                localIds.push_back(gen.generate());
+            }
+            std::lock_guard<std::mutex> lock(mutex);
+            allIds.insert(allIds.end(), localIds.begin(), localIds.end());
+        });
+    }
+
+    for (auto &t : threads)
+    {
+        t.join();
+    }
+
+    std::set<std::string> uniqueIds(allIds.begin(), allIds.end());
+    EXPECT_EQ(uniqueIds.size(), allIds.size());
+}
+
+TEST(UuidGeneratorTest, Interface_Polymorphism)
+{
+    std::shared_ptr<IIdGenerator> gen = std::make_shared<UuidGenerator>();
+    std::string id = gen->generate();
+    EXPECT_EQ(id.size(), 32u);
 }

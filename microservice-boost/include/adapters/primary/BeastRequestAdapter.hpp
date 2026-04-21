@@ -1,7 +1,8 @@
 #pragma once
 
 #include "domain/IRequest.hpp"
-#include "util/StringUtils.hpp"
+#include "util/IIdGenerator.hpp"
+#include "util/UuidGenerator.hpp"
 #include "util/PathParamExtractor.hpp"
 #include <boost/beast/http.hpp>
 #include <map>
@@ -24,8 +25,9 @@ struct BeastRequestAdapter : IRequest
     BeastRequestAdapter(
         const boost::beast::http::request<boost::beast::http::string_body>& req,
         const std::string& clientIp,
-        int port = 80)
-        : req_(req), ip_(clientIp), port_(port), body_(req.body()) {}
+        int port = 80,
+        std::shared_ptr<IIdGenerator> idGenerator = std::make_shared<UuidGenerator>())
+        : req_(req), ip_(clientIp), port_(port), body_(req.body()), idGenerator_(std::move(idGenerator)) {}
 
     std::string getPath() const override
     {
@@ -249,7 +251,7 @@ struct BeastRequestAdapter : IRequest
         {
             return *header;
         }
-        std::string id = StringUtils::generateUuid();
+        std::string id = idGenerator_->generate();
         setHeader("X-Trace-ID", id);
         return id;
     }
@@ -269,4 +271,5 @@ private:
     mutable std::optional<std::map<std::string, std::string>> cachedQueryParams_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> attributes_;
+    std::shared_ptr<IIdGenerator> idGenerator_;
 };

@@ -247,6 +247,13 @@
 - **Что:** Вынести из BoostBeastApplication в BaseWebApplication (microservice-core): `handlers_`, `findHandler()`, `handleRequest()` (HttpError catch), `registerHandler()` (с проверкой started), `state_`, `logger_`. BoostBeastApplication наследует BaseWebApplication и добавляет только Boost-specific код (io_context, acceptor, handleSession). Это позволяет тестировать роутинг и обработку запросов без Boost-зависимостей.
 - **Зачем:** Тестировать `findHandler()`/`handleRequest()` без линковки Boost. Итеративная разработка SRV-11/SRV-13 в microservice-core без пересборки Boost.
 
+### SRV-44: Миграция на UUID v7 (RFC 9562)
+- **SP:** 3
+- **Модуль:** microservice-core
+- **Что:** Текущий `UuidGenerator` не соответствует RFC 4122/RFC 9562 (нет version nibble, variant bits, hyphens). Мигрировать на UUID v7: 48-bit ms timestamp + 74 random bits. Это даёт time-sortable IDs, B-tree friendly indexing, стандартный формат (8-4-4-4-12 с hyphens). Реализация: `Uuid7Generator : public IIdGenerator`. Старый `UuidGenerator` оставить как опцию.
+- **Файлы:** Новый `Uuid7Generator.hpp`/`.cpp` в microservice-core
+- **Приоритет:** P3
+
 ### DRY-01b: Генерация main.cpp при сборке (CMake)
 - **SP:** 2
 - **Модуль:** microservice-boost (CMake)

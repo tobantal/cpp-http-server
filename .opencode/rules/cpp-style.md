@@ -118,6 +118,99 @@ enum class LogLevel : uint8_t { Debug, Info, Warn, Error };
 - Дублирование `toLower()` и `splitPath()` в 4 файлах — вынести в общий utility (`StringUtils.hpp` в core)
 - Дублирование `getPathParam()` логики — вынести в общий helper или mixin
 
+## Doxygen-документирование
+
+Все публичные заголовки (`.hpp`) в `include/` обязаны содержать Doxygen-комментарии.
+
+### Файл-комментарий
+
+Каждый `.hpp` начинается с `@file`, `@brief`, `@author` (или `@version` при необходимости):
+
+```cpp
+/**
+ * @file ChainHandler.hpp
+ * @brief Middleware chain handler
+ * @author Anton Tobolkin
+ */
+```
+
+### Классы и структуры
+
+Каждый класс/struct — `@class` (или `@struct`) + `@brief` + развёрнутое описание если нужно:
+
+```cpp
+/**
+ * @class ChainHandler
+ * @brief Middleware chain — executes handlers sequentially
+ *
+ * Executes each handler in order of addition. On HttpError,
+ * delegates to IHttpErrorHandler. On std::exception — delegates with HttpError(500, ...).
+ */
+```
+
+### Методы и функции
+
+Публичные и защищённые методы — `@brief`, `@param`, `@return` при необходимости:
+
+```cpp
+/**
+ * @brief Register HTTP handler for method and path pattern
+ * @param method HTTP method (GET, POST, etc.)
+ * @param pattern URL pattern, supports * wildcard
+ * @param handler Handler instance
+ */
+void registerHandler(const std::string &method,
+                     const std::string &pattern,
+                     std::shared_ptr<IHttpHandler> handler);
+```
+
+Приватные методы — краткий `@brief` в одну строку:
+
+```cpp
+/** @brief Find handler by method and path (exact match first, then wildcard) */
+std::optional<HandlerMatch> findHandler(const std::string &method, const std::string &path);
+```
+
+### Поля
+
+Публичные и защищённые поля — краткий `@brief`:
+
+```cpp
+std::shared_ptr<ILogger> logger_;  ///< @brief Application logger
+std::atomic<ServerState> state_{ServerState::NotStarted};  ///< @brief Atomic server state
+```
+
+Или многострочный если требуется контекст:
+
+```cpp
+/** @brief Route registry: pattern → HTTP method → handler */
+std::map<std::string, std::map<std::string, std::shared_ptr<IHttpHandler>>> handlers_;
+```
+
+### Enum
+
+Enum class — `@enum` + `@brief`, каждое значение — однострочный комментарий:
+
+```cpp
+/**
+ * @enum ServerState
+ * @brief Server lifecycle states
+ */
+enum class ServerState : uint8_t
+{
+    NotStarted,  ///< Not started yet
+    Running,     ///< Server is running
+    Stopped      ///< Server has been stopped
+};
+```
+
+### Чего НЕ делать
+
+- Не дублировать имя метода в `@brief`: `@brief handleRequest` — избыточно
+- Не документировать `override`-методы если они не добавляют семантики по сравнению с базовым классом (но документируй если поведение отличается)
+- Не ставить `@author` на каждый метод — только на файл
+- Не использовать `///` вместо `/** */` — стиль проекта: Qt-стиль (`/** */`)
+
 ## Предкоммитная проверка чистоты кода
 
 Перед каждым коммитом запускать clang-tidy на изменённых файлах:

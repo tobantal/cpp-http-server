@@ -39,7 +39,12 @@ struct SimpleRequest : IRequest
     {
     }
 
-    std::string getPath() const override { return path_; }
+    std::string getPath() const override
+    {
+        auto pos = path_.find('?');
+        std::string pathOnly = (pos == std::string::npos) ? path_ : path_.substr(0, pos);
+        return StringUtils::urlDecode(pathOnly);
+    }
 
     std::vector<std::string> getPathSegments() const override
     {

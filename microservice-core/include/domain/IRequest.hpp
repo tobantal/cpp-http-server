@@ -24,7 +24,20 @@ struct IRequest {
 
     /**
      * @brief Get request path without query string, URL-decoded
-     * @return Decoded path, e.g. "/api/v1/orders/my order"
+     *
+     * Contract:
+     * - Path component only (everything before '?' is stripped)
+     * - URL-decoded (%20 → space, %C3%BC → ü, + → space)
+     * - No trailing slash normalization (preserved as-is)
+     * - Leading '/' is always present
+     *
+     * Examples:
+     *   Request target              → getPath() result
+     *   /api/v1/orders               → /api/v1/orders
+     *   /api/v1/my%20order?id=5     → /api/v1/my order
+     *   /api/v1/orders?sort=asc     → /api/v1/orders
+     *
+     * @return URL-decoded path without query string
      */
     virtual std::string getPath() const = 0;
 

@@ -184,10 +184,23 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
     {
         if (pathExists(path))
         {
-            throw MethodNotAllowedError("Method " + method + " not allowed for " + path);
+            auto allowed = getAllowedMethods(path);
+            std::string allowValue;
+            for (size_t i = 0; i < allowed.size(); ++i)
+            {
+                if (i > 0) allowValue += ", ";
+                allowValue += allowed[i];
+            }
+            res.setHeader("Allow", allowValue);
+            res.setResult(405, "application/json",
+                          R"({"error": ")" + StringUtils::escapeJson(
+                              "Method " + method + " not allowed for " + path) + R"("})");
         }
-        logger_->log(LogLevel::Warn, "App", "No handler found");
-        res.setResult(404, "application/json", "{\"error\": \"Not found\"}");
+        else
+        {
+            logger_->log(LogLevel::Warn, "App", "No handler found");
+            res.setResult(404, "application/json", "{\"error\": \"Not found\"}");
+        }
     }
 }
 
@@ -476,4 +489,29 @@ void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::stri
             logger_->log(LogLevel::Debug, "App", "Skipping array: " + key);
         }
     }
+}
+
+std::vector<std::string> BoostBeastApplication::getAllowedMethods(const std::string &path)
+{
+    auto exactIt = handlers_.find(path);
+    if (exactIt != handlers_.end())
+    {
+        std::vector<std::string> methods;
+        for (const auto &[method, _] : exactIt->second)
+            methods.push_back(method);
+        return methods;
+    }
+
+    for (const auto &[pattern, methodHandlers] : handlers_)
+    {
+        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
+        {
+            std::vector<std::string> methods;
+            for (const auto &[method, _] : methodHandlers)
+                methods.push_back(method);
+            return methods;
+        }
+    }
+
+    return {};
 }

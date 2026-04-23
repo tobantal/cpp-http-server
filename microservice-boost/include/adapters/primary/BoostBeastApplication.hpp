@@ -99,6 +99,7 @@ private:
 
     std::optional<HandlerMatch> findHandler(const std::string &method, const std::string &path);
     bool pathExists(const std::string &path);
+    std::vector<std::string> getAllowedMethods(const std::string &path);
 
     std::unique_ptr<boost::asio::io_context> ioContext_;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;

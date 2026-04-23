@@ -11,6 +11,7 @@ configure_file(
 )
 
 add_library(microservice-core
+    src/BaseWebApplication.cpp
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
     src/IWebApplication.cpp

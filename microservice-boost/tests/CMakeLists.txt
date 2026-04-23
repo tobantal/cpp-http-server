@@ -3,7 +3,6 @@ add_executable(microservice-boost-test
     BeastResponseAdapterTest.cpp
     JsonValidatorTest.cpp
     ServerSettingsTest.cpp
-    ServerStateTest.cpp
     HttpClientTest.cpp
     JsonSerializerTest.cpp
 )

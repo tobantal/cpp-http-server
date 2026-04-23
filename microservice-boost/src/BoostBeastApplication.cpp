@@ -1,12 +1,7 @@
 #include "adapters/primary/BoostBeastApplication.hpp"
-#include "version.hpp"
 #include "adapters/primary/BeastRequestAdapter.hpp"
 #include "adapters/primary/BeastResponseAdapter.hpp"
 #include "adapters/secondary/Environment.hpp"
-#include "adapters/primary/RouteMatcher.hpp"
-#include "domain/HttpError.hpp"
-#include "domain/error/MethodNotAllowedError.hpp"
-#include "util/StringUtils.hpp"
 #include "settings/ServerSettings.hpp"
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -14,32 +9,23 @@
 #include <fstream>
 #include <thread>
 
-/**
- * @file BoostBeastApplication.cpp
- * @brief BoostBeastApplication implementation
- * @author Anton Tobolkin
- */
-
 using json = nlohmann::json;
-
 namespace beast = boost::beast;
 namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
 BoostBeastApplication::BoostBeastApplication(std::shared_ptr<ILogger> logger)
-    : maxRequestBodySize_(1048576),
+    : BaseWebApplication(std::move(logger)),
+      maxRequestBodySize_(1048576),
       readTimeout_(30000), writeTimeout_(30000),
-      maxConnections_(0), activeConnections_(0),
-      logger_(std::move(logger))
+      maxConnections_(0), activeConnections_(0)
 {
-    logger_->log(LogLevel::Info, "App", "BoostBeastApplication created");
 }
 
 BoostBeastApplication::~BoostBeastApplication()
 {
     stop();
-    logger_->log(LogLevel::Info, "App", "BoostBeastApplication destroyed");
 }
 
 void BoostBeastApplication::stop()
@@ -79,141 +65,6 @@ void BoostBeastApplication::stop()
 void BoostBeastApplication::shutdown(std::chrono::milliseconds /*timeoutMs*/)
 {
     stop();
-}
-
-void BoostBeastApplication::registerHandler(
-    const std::string &method,
-    const std::string &pattern,
-    std::shared_ptr<IHttpHandler> handler)
-{
-    if (state_.load() != ServerState::NotStarted)
-    {
-        throw std::logic_error("Cannot register handler after server has started");
-    }
-
-    handlers_[pattern][method] = handler;
-
-    logger_->log(LogLevel::Info, "App",
-                 "Registered: " + method + " " + pattern);
-}
-
-std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHandler(
-    const std::string &method,
-    const std::string &path)
-{
-    auto exactIt = handlers_.find(path);
-    if (exactIt != handlers_.end())
-    {
-        auto methodIt = exactIt->second.find(method);
-        if (methodIt != exactIt->second.end())
-        {
-            return HandlerMatch{methodIt->second, path};
-        }
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (pattern.find('*') == std::string::npos)
-        {
-            continue;
-        }
-
-        if (RouteMatcher::matches(pattern, path))
-        {
-            auto methodIt = methodHandlers.find(method);
-            if (methodIt != methodHandlers.end())
-            {
-                return HandlerMatch{methodIt->second, pattern};
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-bool BoostBeastApplication::pathExists(const std::string &path)
-{
-    if (handlers_.find(path) != handlers_.end())
-    {
-        return true;
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
-{
-    std::string path = req.getPath();
-    std::string method = req.getMethod();
-
-    logger_->log(LogLevel::Info, "App",
-                 method + " " + path + " from " + req.getIp());
-
-    auto match = findHandler(method, path);
-
-    if (match)
-    {
-        try
-        {
-            req.setPathPattern(match->pattern);
-            match->handler->handle(req, res);
-        }
-        catch (const HttpError &e)
-        {
-            logger_->log(LogLevel::Error, "App",
-                         "HttpError: " + std::to_string(e.statusCode()) + " - " + e.message());
-            res.setResult(e.statusCode(), "application/json",
-                          R"({"error": ")" + StringUtils::escapeJson(e.message()) + R"("})");
-        }
-        catch (const std::exception &e)
-        {
-            logger_->log(LogLevel::Error, "App",
-                         std::string("Handler error: ") + e.what());
-            res.setResult(500, "application/json", "{\"error\": \"Internal server error\"}");
-        }
-    }
-    else
-    {
-        if (pathExists(path))
-        {
-            auto allowed = getAllowedMethods(path);
-            std::string allowValue;
-            for (size_t i = 0; i < allowed.size(); ++i)
-            {
-                if (i > 0) allowValue += ", ";
-                allowValue += allowed[i];
-            }
-            res.setHeader("Allow", allowValue);
-            res.setResult(405, "application/json",
-                          R"({"error": ")" + StringUtils::escapeJson(
-                              "Method " + method + " not allowed for " + path) + R"("})");
-        }
-        else
-        {
-            logger_->log(LogLevel::Warn, "App", "No handler found");
-            res.setResult(404, "application/json", "{\"error\": \"Not found\"}");
-        }
-    }
-}
-
-void BoostBeastApplication::handleBeastRequest(
-    const http::request<http::string_body> &req,
-    http::response<http::string_body> &res,
-    const std::string &clientIp,
-    int port)
-{
-    BeastRequestAdapter requestAdapter(req, clientIp, port);
-    BeastResponseAdapter responseAdapter(res);
-
-    handleRequest(requestAdapter, responseAdapter);
 }
 
 void BoostBeastApplication::start()
@@ -411,6 +262,18 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     activeConnections_--;
 }
 
+void BoostBeastApplication::handleBeastRequest(
+    const http::request<http::string_body> &req,
+    http::response<http::string_body> &res,
+    const std::string &clientIp,
+    int port)
+{
+    BeastRequestAdapter requestAdapter(req, clientIp, port);
+    BeastResponseAdapter responseAdapter(res);
+
+    handleRequest(requestAdapter, responseAdapter);
+}
+
 void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 {
     logger_->log(LogLevel::Info, "App", "Loading environment...");
@@ -489,29 +352,4 @@ void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::stri
             logger_->log(LogLevel::Debug, "App", "Skipping array: " + key);
         }
     }
-}
-
-std::vector<std::string> BoostBeastApplication::getAllowedMethods(const std::string &path)
-{
-    auto exactIt = handlers_.find(path);
-    if (exactIt != handlers_.end())
-    {
-        std::vector<std::string> methods;
-        for (const auto &[method, _] : exactIt->second)
-            methods.push_back(method);
-        return methods;
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
-        {
-            std::vector<std::string> methods;
-            for (const auto &[method, _] : methodHandlers)
-                methods.push_back(method);
-            return methods;
-        }
-    }
-
-    return {};
 }

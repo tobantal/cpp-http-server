@@ -1,6 +1,7 @@
 add_executable(microservice-boost-test
     BeastRequestAdapterTest.cpp
     BeastResponseAdapterTest.cpp
+    DbSettingsTest.cpp
     JsonValidatorTest.cpp
     ServerSettingsTest.cpp
     HttpClientTest.cpp
@@ -10,6 +11,7 @@ add_executable(microservice-boost-test
 target_link_libraries(microservice-boost-test
     PRIVATE
         microservice-boost
+        gtest
         gtest_main
 )
 

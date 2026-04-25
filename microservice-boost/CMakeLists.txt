@@ -4,6 +4,7 @@ add_library(microservice-boost
     src/BoostBeastApplication.cpp
     src/ConnectionPool.cpp
     src/HttpClient.cpp
+    src/PostgresTransactionExecutor.cpp
 )
 
 target_include_directories(microservice-boost

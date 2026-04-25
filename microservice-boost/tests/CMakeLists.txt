@@ -6,6 +6,7 @@ add_executable(microservice-boost-test
     ServerSettingsTest.cpp
     HttpClientTest.cpp
     JsonSerializerTest.cpp
+    PostgresTransactionExecutorTest.cpp
 )
 
 target_link_libraries(microservice-boost-test

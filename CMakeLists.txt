@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
-project(cpp-http-server VERSION 0.3.0 LANGUAGES CXX)
+project(cpp-http-server VERSION 0.4.0 LANGUAGES CXX)
+
+set(PROJECT_VERSION_SUFFIX "-beta" CACHE STRING "Version suffix (e.g. -beta, -rc1, empty for release)")
 
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
@@ -111,7 +113,7 @@ endif()
 # ============================================================================
 message(STATUS "")
 message(STATUS "========================================")
-message(STATUS "  cpp-http-server ${PROJECT_VERSION}")
+message(STATUS "  cpp-http-server ${PROJECT_VERSION}${PROJECT_VERSION_SUFFIX}")
 message(STATUS "========================================")
 message(STATUS "  Build type:     ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ standard:   C++${CMAKE_CXX_STANDARD}")

@@ -16,6 +16,7 @@ add_executable(microservice-core-test
     TimerTest.cpp
     BaseWebApplicationTest.cpp
     InMemoryEventBusTest.cpp
+    Uuid7GeneratorTest.cpp
 )
 
 target_link_libraries(microservice-core-test

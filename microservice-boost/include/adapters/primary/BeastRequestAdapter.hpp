@@ -2,7 +2,7 @@
 
 #include "domain/IRequest.hpp"
 #include "util/IIdGenerator.hpp"
-#include "util/UuidGenerator.hpp"
+#include "util/Uuid7Generator.hpp"
 #include "util/PathParamExtractor.hpp"
 #include <boost/beast/http.hpp>
 #include <map>
@@ -26,7 +26,7 @@ struct BeastRequestAdapter : IRequest
         const boost::beast::http::request<boost::beast::http::string_body>& req,
         const std::string& clientIp,
         int port = 80,
-        std::shared_ptr<IIdGenerator> idGenerator = std::make_shared<UuidGenerator>())
+        std::shared_ptr<IIdGenerator> idGenerator = std::make_shared<Uuid7Generator>())
         : req_(req), ip_(clientIp), port_(port), body_(req.body()), idGenerator_(std::move(idGenerator)) {}
 
     std::string getPath() const override

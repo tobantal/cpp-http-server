@@ -21,6 +21,7 @@ TEST(VersionTest, VersionStringMatchesMacros)
     std::string version = CPP_HTTP_SERVER_VERSION;
     std::string expected = std::to_string(CPP_HTTP_SERVER_VERSION_MAJOR) + "." +
                            std::to_string(CPP_HTTP_SERVER_VERSION_MINOR) + "." +
-                           std::to_string(CPP_HTTP_SERVER_VERSION_PATCH);
+                           std::to_string(CPP_HTTP_SERVER_VERSION_PATCH) +
+                           CPP_HTTP_SERVER_VERSION_SUFFIX;
     EXPECT_EQ(version, expected);
 }

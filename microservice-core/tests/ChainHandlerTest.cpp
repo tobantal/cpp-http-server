@@ -203,7 +203,7 @@ TEST_F(ChainHandlerTest, TraceId_GeneratesUuidWhenNoHeader)
 
     auto traceHeader = res.getHeader("X-Trace-ID");
     ASSERT_TRUE(traceHeader.has_value());
-    EXPECT_EQ(traceHeader->size(), 32u);
+    EXPECT_EQ(traceHeader->size(), 36u);
 }
 
 TEST_F(ChainHandlerTest, TraceId_UsesExistingHeader)

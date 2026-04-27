@@ -2,7 +2,7 @@
 
 #include "domain/IRequest.hpp"
 #include "util/IIdGenerator.hpp"
-#include "util/UuidGenerator.hpp"
+#include "util/Uuid7Generator.hpp"
 #include "util/StringUtils.hpp"
 #include "util/PathParamExtractor.hpp"
 #include <string>
@@ -29,13 +29,13 @@ struct SimpleRequest : IRequest
                   const std::string& ip,
                   int port,
                   const std::map<std::string, std::string>& headers = {},
-                  std::shared_ptr<IIdGenerator> idGenerator = std::make_shared<UuidGenerator>())
+                  std::shared_ptr<IIdGenerator> idGenerator = std::make_shared<Uuid7Generator>())
         : method_(method), path_(path), body_(body), ip_(ip), port_(port), headers_(headers), idGenerator_(std::move(idGenerator))
     {
     }
 
     SimpleRequest()
-        : method_("GET"), path_("/"), body_(""), ip_("127.0.0.1"), port_(80), idGenerator_(std::make_shared<UuidGenerator>())
+        : method_("GET"), path_("/"), body_(""), ip_("127.0.0.1"), port_(80), idGenerator_(std::make_shared<Uuid7Generator>())
     {
     }
 

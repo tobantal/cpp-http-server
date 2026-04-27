@@ -5,6 +5,7 @@
 
 # Build dir
 build/
+build-dev/
 
 # User-specific files
 *.rsuser

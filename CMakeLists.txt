@@ -84,6 +84,29 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # ============================================================================
+# libpqxx
+# ============================================================================
+if(CPP_HTTP_SERVER_FETCH_DEPS)
+    find_package(pqxx 7.0 QUIET)
+endif()
+
+if(pqxx_FOUND)
+    message(STATUS "Using system pqxx ${pqxx_VERSION}")
+else()
+    message(STATUS "pqxx not found, fetching via FetchContent...")
+    find_package(PostgreSQL REQUIRED)
+    set(PQXX_BUILD_TEST OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        pqxx
+        GIT_REPOSITORY https://github.com/jtv/libpqxx.git
+        GIT_TAG 7.9.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(pqxx)
+    message(STATUS "pqxx fetched via FetchContent")
+endif()
+
+# ============================================================================
 # Summary
 # ============================================================================
 message(STATUS "")

@@ -11,8 +11,12 @@ configure_file(
 )
 
 add_library(microservice-core
+    src/BaseWebApplication.cpp
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
+    src/DomainEvent.cpp
+    src/InMemoryEventBus.cpp
+    src/IEventPublisher.cpp
     src/IWebApplication.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp

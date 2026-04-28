@@ -5,6 +5,8 @@ add_executable(microservice-boost-test
     JsonValidatorTest.cpp
     ServerSettingsTest.cpp
     HttpClientTest.cpp
+    HttpLoggerTest.cpp
+    SplunkLoggerTest.cpp
     JsonSerializerTest.cpp
     PostgresTransactionExecutorTest.cpp
 )

@@ -353,6 +353,7 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
 
             handleBeastRequest(req, res, clientIp, localPort);
 
+            res.prepare_payload();
             stream.expires_after(writeTimeout_);
             http::write(stream, res);
 

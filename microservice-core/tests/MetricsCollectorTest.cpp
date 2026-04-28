@@ -192,5 +192,5 @@ TEST(MetricsObserverHandlerTest, PassesThroughToInnerHandler)
     observer.handle(req, res);
 
     EXPECT_EQ(res.getStatus(), 200);
-    EXPECT_NE(res.getBody().find("ok"), std::string::npos);
+    EXPECT_NE(res.getBody().find("healthy"), std::string::npos);
 }

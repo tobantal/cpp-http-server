@@ -251,7 +251,7 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     }
 
     beast::error_code ec;
-    stream.socket().shutdown(tcp::socket::shutdown_send, ec);
+    stream.socket().shutdown(tcp::socket::shutdown_both, ec);
 
     if (ec && ec != beast::errc::not_connected)
     {

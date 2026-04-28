@@ -244,6 +244,21 @@ struct BeastRequestAdapter : IRequest
         return std::nullopt;
     }
 
+    void setObject(const std::string& name, std::shared_ptr<void> obj) override
+    {
+        objects_[name] = obj;
+    }
+
+    std::optional<std::shared_ptr<void>> getObject(const std::string& name) const override
+    {
+        auto it = objects_.find(name);
+        if (it != objects_.end())
+        {
+            return it->second;
+        }
+        return std::nullopt;
+    }
+
     std::string getTraceId() override
     {
         auto header = getHeader("X-Trace-ID");
@@ -271,5 +286,6 @@ private:
     mutable std::optional<std::map<std::string, std::string>> cachedQueryParams_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> attributes_;
+    std::map<std::string, std::shared_ptr<void>> objects_;
     std::shared_ptr<IIdGenerator> idGenerator_;
 };

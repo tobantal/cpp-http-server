@@ -18,6 +18,7 @@ add_library(microservice-core
     src/InMemoryEventBus.cpp
     src/IEventPublisher.cpp
     src/IWebApplication.cpp
+    src/JsonObject.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp
     src/MetricsHandler.cpp
@@ -31,6 +32,10 @@ add_library(microservice-core
 target_include_directories(microservice-core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/include
+)
+
+target_link_libraries(microservice-core PUBLIC
+    nlohmann_json::nlohmann_json
 )
 
 target_compile_features(microservice-core PUBLIC cxx_std_17)

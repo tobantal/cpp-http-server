@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 #include <optional>
+#include <memory>
 
 /**
  * @file IRequest.hpp
@@ -213,6 +214,24 @@ struct IRequest {
      * @return Value or nullopt if not set
      */
     virtual std::optional<std::string> getAttribute(const std::string& name) const = 0;
+
+    // =========================================================================
+    // OBJECTS
+    // =========================================================================
+
+    /**
+     * @brief Set request object
+     * @param name Object name
+     * @param obj Shared pointer to object
+     */
+    virtual void setObject(const std::string& name, std::shared_ptr<void> obj) = 0;
+
+    /**
+     * @brief Get request object
+     * @param name Object name
+     * @return Shared pointer or nullopt if not set
+     */
+    virtual std::optional<std::shared_ptr<void>> getObject(const std::string& name) const = 0;
 
     // =========================================================================
     // TRACE ID

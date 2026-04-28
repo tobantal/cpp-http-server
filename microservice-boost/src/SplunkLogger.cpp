@@ -11,10 +11,10 @@
 using namespace std::chrono_literals;
 
 SplunkLogger::SplunkLogger(std::shared_ptr<IHttpClient> httpClient,
-                           std::shared_ptr<SplunkLogSettings> settings,
+                           std::shared_ptr<ISplunkLogSettings> settings,
                            std::shared_ptr<ILogger> fallbackLogger)
-    : HttpLogger(std::move(httpClient), std::move(settings), std::move(fallbackLogger))
-    , splunkSettings_(std::dynamic_pointer_cast<SplunkLogSettings>(settings_))
+    : HttpLogger(std::move(httpClient), settings, std::move(fallbackLogger))
+    , splunkSettings_(std::dynamic_pointer_cast<SplunkLogSettings>(settings))
 {
 }
 

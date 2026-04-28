@@ -1,9 +1,10 @@
 #pragma once
 
-#include "settings/IHttpLogSettings.hpp"
+#include "settings/ISplunkLogSettings.hpp"
 #include <cstdlib>
 #include <string>
 #include <map>
+#include <sstream>
 
 /**
  * @file SplunkLogSettings.hpp
@@ -30,7 +31,7 @@
  *   SplunkLogSettings settings("APP");
  *   // reads APP_SPLUNK_URL, APP_SPLUNK_TOKEN, etc.
  */
-class SplunkLogSettings : public IHttpLogSettings {
+class SplunkLogSettings : public ISplunkLogSettings {
 public:
     /**
      * @brief Construct SplunkLogSettings with prefix
@@ -66,9 +67,9 @@ public:
         return std::chrono::seconds(flushIntervalSec_);
     }
 
-    std::string getIndex() const { return index_; }
-    std::string getSourceType() const { return sourcetype_; }
-    std::string getToken() const { return token_; }
+    std::string getToken() const override { return token_; }
+    std::string getIndex() const override { return index_; }
+    std::string getSourceType() const override { return sourcetype_; }
 
 private:
     std::string prefix_;

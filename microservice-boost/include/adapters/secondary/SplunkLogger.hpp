@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adapters/secondary/HttpLogger.hpp"
+#include "settings/ISplunkLogSettings.hpp"
 #include "settings/SplunkLogSettings.hpp"
 #include <memory>
 
@@ -14,7 +15,7 @@
  * @class SplunkLogger
  * @brief Logger that sends log entries to Splunk via HTTP Event Collector
  *
- * Uses SplunkLogSettings for configuration:
+ * Uses SplunkLogSettings (implements ISplunkLogSettings) for configuration:
  * - <PREFIX>_SPLUNK_URL (default: http://localhost:8088/services/collector)
  * - <PREFIX>_SPLUNK_TOKEN
  * - <PREFIX>_SPLUNK_INDEX (default: main)
@@ -34,15 +35,6 @@
  *   );
  *   logger->log(LogLevel::Info, "App", "User logged in");
  * @endcode
- *
- * Docker setup for Splunk:
- * @code
- * docker run -d --name splunk -p 8000:8000 -p 8088:8088 \
- *   -e SPLUNK_START_ARGS=--accept-license \
- *   -e SPLUNK_PASSWORD=YourPassword123 \
- *   splunk/splunk:latest
- * @endcode
- * Then: Settings → Data inputs → HTTP Event Collector → Enable → Create token
  */
 class SplunkLogger : public HttpLogger
 {
@@ -50,15 +42,15 @@ public:
     /**
      * @brief Construct SplunkLogger
      * @param httpClient HTTP client for sending logs
-     * @param settings Splunk logger settings
+     * @param settings Splunk logger settings (implements ISplunkLogSettings)
      * @param fallbackLogger Logger for failed requests (default: NullLogger)
      */
     SplunkLogger(std::shared_ptr<IHttpClient> httpClient,
-                 std::shared_ptr<SplunkLogSettings> settings,
+                 std::shared_ptr<ISplunkLogSettings> settings,
                  std::shared_ptr<ILogger> fallbackLogger = nullptr);
 
 protected:
     std::string formatEntry(const std::string& entryJson) const override;
 
-    std::shared_ptr<SplunkLogSettings> splunkSettings_;
+    std::shared_ptr<ISplunkLogSettings> splunkSettings_;
 };

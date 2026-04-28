@@ -2,6 +2,7 @@
 #include "adapters/secondary/HttpLogger.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include "adapters/secondary/TestLogger.hpp"
+#include "ports/output/IShutdown.hpp"
 
 /**
  * @file HttpLoggerTest.cpp
@@ -127,4 +128,54 @@ TEST(HttpLoggerTest, FailedHttpCallUsesFallback)
         }
     }
     EXPECT_TRUE(found);
+}
+
+TEST(HttpLoggerTest, ImplementsIShutdown)
+{
+    auto mockClient = std::make_shared<MockHttpClient>();
+    auto fallback = std::make_shared<NullLogger>();
+    HttpLogger logger(mockClient, fallback);
+
+    auto shutdownPtr = dynamic_cast<IShutdown*>(&logger);
+    ASSERT_NE(shutdownPtr, nullptr);
+    EXPECT_EQ(shutdownPtr->name(), "HttpLogger");
+
+    logger.log(LogLevel::Info, "App", "test");
+    logger.shutdown();
+}
+
+TEST(HttpLoggerTest, ShutdownFlushesPendingLogs)
+{
+    auto mockClient = std::make_shared<MockHttpClient>();
+    auto fallback = std::make_shared<NullLogger>();
+    HttpLogger logger(mockClient, fallback);
+
+    setenv("HTTP_URL", "http://localhost:9999", 1);
+    logger.log(LogLevel::Info, "App", "message1");
+    logger.log(LogLevel::Info, "App", "message2");
+
+    EXPECT_TRUE(mockClient->requests.empty());
+
+    logger.shutdown(std::chrono::milliseconds(1000));
+    unsetenv("HTTP_URL");
+
+    EXPECT_EQ(mockClient->requests.size(), 1u);
+}
+
+TEST(HttpLoggerTest, ShutdownRespectsTimeout)
+{
+    auto mockClient = std::make_shared<MockHttpClient>();
+    mockClient->shouldFail = true;
+    auto fallback = std::make_shared<TestLogger>();
+    HttpLogger logger(mockClient, fallback);
+
+    setenv("HTTP_URL", "http://localhost:9999", 1);
+    logger.log(LogLevel::Info, "App", "message1");
+    logger.log(LogLevel::Info, "App", "message2");
+    logger.log(LogLevel::Info, "App", "message3");
+
+    logger.shutdown(std::chrono::milliseconds(1));
+    unsetenv("HTTP_URL");
+
+    EXPECT_FALSE(mockClient->requests.empty());
 }

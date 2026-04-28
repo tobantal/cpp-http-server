@@ -3,6 +3,7 @@
 #include "settings/SplunkLogSettings.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include "adapters/secondary/TestLogger.hpp"
+#include "ports/output/IShutdown.hpp"
 
 /**
  * @file SplunkLoggerTest.cpp
@@ -122,4 +123,36 @@ TEST(SplunkLoggerTest, UsesSplunkAuthHeader)
     auto authIt = mockClient->lastHeaders.find("Authorization");
     ASSERT_TRUE(authIt != mockClient->lastHeaders.end());
     EXPECT_TRUE(authIt->second.find("Splunk") != std::string::npos);
+}
+
+TEST(SplunkLoggerTest, ImplementsIShutdown)
+{
+    auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
+    auto fallback = std::make_shared<NullLogger>();
+    SplunkLogger logger(mockClient, settings, fallback);
+
+    auto shutdownPtr = dynamic_cast<IShutdown*>(&logger);
+    ASSERT_NE(shutdownPtr, nullptr);
+    EXPECT_EQ(shutdownPtr->name(), "SplunkLogger");
+
+    logger.log(LogLevel::Info, "App", "test");
+    logger.shutdown();
+}
+
+TEST(SplunkLoggerTest, ShutdownFlushesPendingLogs)
+{
+    auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
+    auto fallback = std::make_shared<NullLogger>();
+    SplunkLogger logger(mockClient, settings, fallback);
+
+    logger.log(LogLevel::Info, "App", "message1");
+    logger.log(LogLevel::Info, "App", "message2");
+
+    EXPECT_TRUE(mockClient->requests.empty());
+
+    logger.shutdown(std::chrono::milliseconds(1000));
+
+    EXPECT_EQ(mockClient->requests.size(), 1u);
 }

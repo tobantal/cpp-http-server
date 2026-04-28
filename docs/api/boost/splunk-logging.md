@@ -33,7 +33,7 @@ docker run -d --name splunk \
 
 ### 3. Configure Application
 
-Set environment variables (see [.env.example](../../.env.example) for full list):
+Set environment variables:
 
 ```bash
 # Splunk Connection
@@ -42,12 +42,9 @@ APP_SPLUNK_TOKEN=your-hec-token-here
 APP_SPLUNK_INDEX=main
 APP_SPLUNK_SOURCETYPE=_json
 
-# Optional: Buffering (default: 100 entries, 5 sec)
+# Buffering (default: 100 entries, 5 sec)
 APP_SPLUNK_BUFFER_SIZE=100
 APP_SPLUNK_FLUSH_INTERVAL_SEC=5
-
-# Optional: Additional HTTP headers (semicolon-separated)
-APP_SPLUNK_HEADERS=X-Custom-Header:value;X-Another:value
 ```
 
 ### 4. Use in Application
@@ -78,24 +75,24 @@ logger->log(LogLevel::Error, "Auth", "Invalid credentials");
 ## Architecture
 
 ```
-ILogger (port)
-└── HttpLogger (async HTTP sender, IShutdown)
-    └── SplunkLogger (Splunk HEC preset)
-        └── SplunkLogSettings (implements ISplunkLogSettings)
-
-ISplunkLogSettings : IHttpLogSettings (common HTTP logger settings)
+ILogger (port) ──────────────────────► ILogger (port)
+    │                                       │
+IShutdown                               IShutdown
+    │                                       │
+    └───── SplunkLogger (standalone) ◄──────┘
+              │
+              └──► ISplunkLogSettings
+                        │
+                        └──► SplunkLogSettings
 ```
 
 ### Classes
 
 | Class | Purpose |
 |-------|---------|
-| `IHttpLogSettings` | Interface for HTTP logger configuration (url, auth, headers, buffer) |
-| `HttpLogSettings` | ENV reader: `*_LOG_URL`, `*_LOG_AUTH`, etc. |
-| `ISplunkLogSettings` | Interface for Splunk config (extends IHttpLogSettings + token, index, sourcetype) |
+| `ISplunkLogSettings` | Interface with 6 methods: url, token, index, sourcetype, bufferSize, flushInterval |
 | `SplunkLogSettings` | ENV reader: `*_SPLUNK_URL`, `*_SPLUNK_TOKEN`, etc. |
-| `HttpLogger` | Async logger sending logs via HTTP POST, implements IShutdown |
-| `SplunkLogger` | Preset for Splunk HEC, formats payload with event/index/sourcetype |
+| `SplunkLogger` | Async logger (ILogger + IShutdown), sends logs to Splunk HEC |
 
 ---
 
@@ -103,29 +100,14 @@ ISplunkLogSettings : IHttpLogSettings (common HTTP logger settings)
 
 All settings use prefix (e.g., `APP_`, `SERVICE_`).
 
-### Splunk Settings
-
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `<PREFIX>_SPLUNK_URL` | http://localhost:8088/services/collector | HEC endpoint |
 | `<PREFIX>_SPLUNK_TOKEN` | (empty) | HEC token (required) |
 | `<PREFIX>_SPLUNK_INDEX` | main | Splunk index |
 | `<PREFIX>_SPLUNK_SOURCETYPE` | _json | Splunk sourcetype |
-| `<PREFIX>_SPLUNK_HEADERS` | (empty) | Additional headers (semicolon-separated) |
 | `<PREFIX>_SPLUNK_BUFFER_SIZE` | 100 | Max entries before flush |
 | `<PREFIX>_SPLUNK_FLUSH_INTERVAL_SEC` | 5 | Flush interval in seconds |
-
-### Generic HTTP Logger Settings
-
-For `HttpLogSettings` (not Splunk):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `<PREFIX>_LOG_URL` | (empty) | HTTP endpoint URL |
-| `<PREFIX>_LOG_AUTH` | (empty) | Authorization header value |
-| `<PREFIX>_LOG_HEADERS` | (empty) | Additional headers |
-| `<PREFIX>_LOG_BUFFER_SIZE` | 100 | Max entries before flush |
-| `<PREFIX>_LOG_FLUSH_INTERVAL_SEC` | 5 | Flush interval |
 
 ---
 
@@ -201,6 +183,6 @@ shutdownManager->registerComponent(logger);
 
 ## See Also
 
-- [Boost Adapters](adapters.md) — HttpClient, HttpLogger
+- [Boost Adapters](adapters.md) — HttpClient
 - [Core Interfaces](../../core/interfaces.md) — ILogger, IShutdown
 - [Configuration](../../configuration.md) — ENV variables

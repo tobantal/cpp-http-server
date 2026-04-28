@@ -4,7 +4,6 @@ add_library(microservice-boost
     src/BoostBeastApplication.cpp
     src/ConnectionPool.cpp
     src/HttpClient.cpp
-    src/HttpLogger.cpp
     src/PostgresTransactionExecutor.cpp
     src/SplunkLogger.cpp
 )

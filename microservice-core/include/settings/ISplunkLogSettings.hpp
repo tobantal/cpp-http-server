@@ -1,9 +1,7 @@
 #pragma once
 
-#include "settings/IHttpLogSettings.hpp"
 #include <string>
 #include <chrono>
-#include <map>
 
 /**
  * @file ISplunkLogSettings.hpp
@@ -15,14 +13,20 @@
  * @class ISplunkLogSettings
  * @brief Splunk logger configuration interface
  *
- * Provides all settings needed for SplunkLogger.
- * Inherits from IHttpLogSettings for common HTTP logger settings.
+ * Provides all settings needed for SplunkLogger:
+ * - HTTP endpoint URL
+ * - Splunk token authentication (Authorization: Splunk {token})
+ * - Index and sourcetype
+ * - Buffering parameters
  */
-class ISplunkLogSettings : public IHttpLogSettings {
+class ISplunkLogSettings {
 public:
     virtual ~ISplunkLogSettings() = default;
 
+    virtual std::string getUrl() const = 0;
     virtual std::string getToken() const = 0;
     virtual std::string getIndex() const = 0;
     virtual std::string getSourceType() const = 0;
+    virtual size_t getBufferSize() const = 0;
+    virtual std::chrono::seconds getFlushInterval() const = 0;
 };

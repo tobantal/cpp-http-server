@@ -8,7 +8,7 @@
 /**
  * @file JsonObject.hpp
  * @brief JSON object wrapper providing type-safe access to JSON data
- * @author AI-Coder
+ * @author Anton Tobolkin
  */
 
 /**

@@ -5,7 +5,7 @@
 /**
  * @file IJsonProcessor.hpp
  * @brief Interface for JSON processing handler
- * @author AI-Coder
+ * @author Anton Tobolkin
  */
 
 /**

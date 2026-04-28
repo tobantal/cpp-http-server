@@ -8,7 +8,7 @@
 /**
  * @file JsonProcessor.hpp
  * @brief JSON processing handler implementation
- * @author AI-Coder
+ * @author Anton Tobolkin
  */
 
 /**

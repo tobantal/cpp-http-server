@@ -2,6 +2,7 @@
 #include "adapters/secondary/NullLogger.hpp"
 #include <cstdlib>
 #include <sstream>
+#include <thread>
 
 /**
  * @file HttpLogger.cpp
@@ -256,5 +257,45 @@ void HttpLogger::stop()
     timer_.cancel();
     if (workerThread_.joinable()) {
         workerThread_.join();
+    }
+}
+
+void HttpLogger::shutdown(std::chrono::milliseconds timeoutMs)
+{
+    stopped_ = true;
+    timer_.cancel();
+
+    auto start = std::chrono::steady_clock::now();
+    auto remaining = [&]() {
+        auto elapsed = std::chrono::steady_clock::now() - start;
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        return std::max(0, static_cast<int>(timeoutMs.count()) - static_cast<int>(ms));
+    };
+
+    std::vector<LogEntry> entries;
+    {
+        std::lock_guard<std::mutex> lock(bufferMutex_);
+        entries = std::move(buffer_);
+        buffer_.clear();
+    }
+
+    if (!entries.empty()) {
+        auto sendRemaining = remaining();
+        if (sendRemaining > 0) {
+            sendBatch(entries);
+        } else {
+            fallbackLogger_->log(LogLevel::Warn, "HttpLogger",
+                "Shutdown timeout exceeded, dropping " + std::to_string(entries.size()) + " logs");
+        }
+    }
+
+    if (workerThread_.joinable()) {
+        auto waitMs = remaining();
+        if (waitMs > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(waitMs));
+        }
+        if (workerThread_.joinable()) {
+            workerThread_.detach();
+        }
     }
 }

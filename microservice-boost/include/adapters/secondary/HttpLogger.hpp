@@ -2,6 +2,7 @@
 
 #include "ports/output/ILogger.hpp"
 #include "ports/output/IHttpClient.hpp"
+#include "ports/output/IShutdown.hpp"
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>
@@ -33,7 +34,7 @@
  * logger->log(LogLevel::Info, "App", "started");
  * @endcode
  */
-class HttpLogger : public ILogger
+class HttpLogger : public ILogger, public IShutdown
 {
 public:
     /**
@@ -65,6 +66,18 @@ public:
      * @brief Stop async operations and cleanup
      */
     void stop();
+
+    /**
+     * @brief Graceful shutdown - flush all pending logs
+     * @param timeoutMs Maximum time to wait for flush (default: 5000ms)
+     */
+    void shutdown(std::chrono::milliseconds timeoutMs = std::chrono::milliseconds(5000)) override;
+
+    /**
+     * @brief Get component name for INameable
+     * @return Component name
+     */
+    std::string name() const override { return "HttpLogger"; }
 
 protected:
     /**

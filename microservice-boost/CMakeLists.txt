@@ -5,6 +5,7 @@ add_library(microservice-boost
     src/ConnectionPool.cpp
     src/HttpClient.cpp
     src/PostgresTransactionExecutor.cpp
+    src/SplunkLogger.cpp
 )
 
 target_include_directories(microservice-boost

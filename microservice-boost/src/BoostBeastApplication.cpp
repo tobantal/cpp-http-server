@@ -29,7 +29,7 @@ using tcp = asio::ip::tcp;
 
 BoostBeastApplication::BoostBeastApplication(std::shared_ptr<ILogger> logger)
     : maxRequestBodySize_(1048576),
-      readTimeout_(30000), writeTimeout_(30000),
+      readTimeout_(30000), writeTimeout_(30000), keepAliveTimeout_(5000),
       maxConnections_(0), activeConnections_(0),
       logger_(std::move(logger))
 {
@@ -213,6 +213,7 @@ void BoostBeastApplication::start()
         maxRequestBodySize_ = serverSettings.getMaxRequestBodySize();
         readTimeout_ = serverSettings.getReadTimeout();
         writeTimeout_ = serverSettings.getWriteTimeout();
+        keepAliveTimeout_ = serverSettings.getKeepAliveTimeout();
         maxConnections_ = serverSettings.getMaxConnections();
         maxRequestsPerConnection_ = serverSettings.getMaxRequestsPerConnection();
 
@@ -310,7 +311,14 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     {
         while (static_cast<size_t>(requestCount) < maxRequestsPerConnection_)
         {
-            stream.expires_after(readTimeout_);
+            if (requestCount == 0)
+            {
+                stream.expires_after(readTimeout_);
+            }
+            else
+            {
+                stream.expires_after(keepAliveTimeout_);
+            }
 
             http::request<http::string_body> req;
             http::read(stream, buffer, req);

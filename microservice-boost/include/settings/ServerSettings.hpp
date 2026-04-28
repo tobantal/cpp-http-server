@@ -17,6 +17,13 @@
 /**
  * @class ServerSettings
  * @brief Server configuration loaded from environment and config
+ *
+ * Reads settings from environment variables (prefixed with SERVER_) or config.json.
+ * Environment variables take precedence over config.json values.
+ *
+ * <b>Keep-alive idle timeout</b>: After sending a response on a keep-alive connection,
+ * the server waits for the next request up to keepAliveTimeoutMs before closing.
+ * Default: 5000ms (5s). Similar to Node.js keepAliveTimeout (5s) or Tomcat keepAliveTimeout (20s).
  */
 class ServerSettings : public IServerSettings {
 private:
@@ -25,6 +32,7 @@ private:
     size_t maxRequestBodySize_;
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
+    std::chrono::milliseconds keepAliveTimeout_;
     size_t maxConnections_;
     size_t maxRequestsPerConnection_;
 
@@ -48,6 +56,7 @@ private:
     static constexpr size_t kDefaultMaxRequestBodySize = 1048576;
     static constexpr int kDefaultReadTimeoutMs = 30000;
     static constexpr int kDefaultWriteTimeoutMs = 30000;
+    static constexpr int kDefaultKeepAliveTimeoutMs = 5000;
     static constexpr size_t kDefaultMaxConnections = 0;
     static constexpr size_t kDefaultMaxRequestsPerConnection = 100;
 
@@ -59,6 +68,7 @@ public:
     explicit ServerSettings(std::shared_ptr<IEnvironment> env)
         : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
            readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),
+           keepAliveTimeout_(kDefaultKeepAliveTimeoutMs),
            maxConnections_(kDefaultMaxConnections),
            maxRequestsPerConnection_(kDefaultMaxRequestsPerConnection)
     {
@@ -121,6 +131,17 @@ public:
             }
         }
 
+        size_t envKeepAliveTimeout = getEnvOrDefaultSize("SERVER_KEEP_ALIVE_TIMEOUT_MS", 0);
+        if (envKeepAliveTimeout > 0) {
+            keepAliveTimeout_ = std::chrono::milliseconds(envKeepAliveTimeout);
+        } else {
+            try {
+                keepAliveTimeout_ = std::chrono::milliseconds(env->get<int>("server.keepAliveTimeoutMs"));
+            } catch (const std::exception&) {
+                keepAliveTimeout_ = std::chrono::milliseconds(kDefaultKeepAliveTimeoutMs);
+            }
+        }
+
         size_t envMaxConn = getEnvOrDefaultSize("SERVER_MAX_CONNECTIONS", 0);
         if (envMaxConn > 0) {
             maxConnections_ = envMaxConn;
@@ -162,6 +183,10 @@ public:
 
     std::chrono::milliseconds getWriteTimeout() const override {
         return writeTimeout_;
+    }
+
+    std::chrono::milliseconds getKeepAliveTimeout() const override {
+        return keepAliveTimeout_;
     }
 
     size_t getMaxConnections() const override {

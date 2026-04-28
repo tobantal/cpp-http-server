@@ -108,6 +108,7 @@ private:
     size_t maxRequestBodySize_;
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
+    std::chrono::milliseconds keepAliveTimeout_;
     size_t maxConnections_;
     size_t maxRequestsPerConnection_;
     std::atomic<int> activeConnections_{0};

@@ -123,6 +123,11 @@ message(STATUS "========================================")
 message(STATUS "")
 
 # ============================================================================
+# CMake modules (for external projects using FetchContent)
+# ============================================================================
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddHttpService.cmake)
+
+# ============================================================================
 # Subdirectories
 # ============================================================================
 add_subdirectory(microservice-core)

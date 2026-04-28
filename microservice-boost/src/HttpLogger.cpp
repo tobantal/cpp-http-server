@@ -1,6 +1,5 @@
 #include "adapters/secondary/HttpLogger.hpp"
 #include "adapters/secondary/NullLogger.hpp"
-#include <cstdlib>
 #include <sstream>
 #include <thread>
 
@@ -13,8 +12,10 @@
 using namespace std::chrono_literals;
 
 HttpLogger::HttpLogger(std::shared_ptr<IHttpClient> httpClient,
+                       std::shared_ptr<IHttpLogSettings> settings,
                        std::shared_ptr<ILogger> fallbackLogger)
     : httpClient_(std::move(httpClient))
+    , settings_(std::move(settings))
     , fallbackLogger_(fallbackLogger ? std::move(fallbackLogger) : std::make_shared<NullLogger>())
     , timer_(ioContext_)
 {
@@ -40,37 +41,6 @@ std::string HttpLogger::LogEntry::toJson() const
     return oss.str();
 }
 
-std::string HttpLogger::getHttpUrl() const
-{
-    const char* url = std::getenv("HTTP_URL");
-    return url ? url : "";
-}
-
-std::string HttpLogger::getHttpAuth() const
-{
-    const char* auth = std::getenv("HTTP_AUTH");
-    return auth ? auth : "";
-}
-
-std::map<std::string, std::string> HttpLogger::getHttpHeaders() const
-{
-    std::map<std::string, std::string> headers;
-    const char* headersStr = std::getenv("HTTP_HEADERS");
-    if (headersStr) {
-        std::stringstream ss(headersStr);
-        std::string pair;
-        while (std::getline(ss, pair, ';')) {
-            auto colonPos = pair.find(':');
-            if (colonPos != std::string::npos) {
-                std::string key = pair.substr(0, colonPos);
-                std::string value = pair.substr(colonPos + 1);
-                headers[key] = value;
-            }
-        }
-    }
-    return headers;
-}
-
 std::string HttpLogger::formatEntry(const std::string& entryJson) const
 {
     return entryJson;
@@ -90,7 +60,7 @@ void HttpLogger::log(LogLevel level,
     {
         std::lock_guard<std::mutex> lock(bufferMutex_);
         buffer_.push_back(std::move(entry));
-        if (buffer_.size() >= getMaxBufferSize()) {
+        if (buffer_.size() >= settings_->getBufferSize()) {
             shouldFlush = true;
         }
     }
@@ -101,7 +71,7 @@ void HttpLogger::log(LogLevel level,
 
 void HttpLogger::scheduleFlush()
 {
-    timer_.expires_after(getFlushInterval());
+    timer_.expires_after(settings_->getFlushInterval());
     timer_.async_wait([this](const boost::system::error_code& ec) {
         onTimer(ec);
     });
@@ -132,9 +102,9 @@ void HttpLogger::doFlush()
 
 void HttpLogger::sendBatch(const std::vector<LogEntry>& entries)
 {
-    std::string url = getHttpUrl();
+    std::string url = settings_->getUrl();
     if (url.empty()) {
-        fallbackLogger_->log(LogLevel::Warn, "HttpLogger", "HTTP_URL not configured");
+        fallbackLogger_->log(LogLevel::Warn, "HttpLogger", "URL not configured");
         return;
     }
 
@@ -205,11 +175,11 @@ void HttpLogger::sendBatch(const std::vector<LogEntry>& entries)
     }
     request->body_ = body.str();
     request->headers_["Content-Type"] = "application/json";
-    std::string auth = getHttpAuth();
+    std::string auth = settings_->getAuth();
     if (!auth.empty()) {
         request->headers_["Authorization"] = auth;
     }
-    for (const auto& h : getHttpHeaders()) {
+    for (const auto& h : settings_->getHeaders()) {
         request->headers_[h.first] = h.second;
     }
 

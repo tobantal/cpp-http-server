@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adapters/secondary/HttpLogger.hpp"
+#include "settings/SplunkLogSettings.hpp"
 #include <memory>
 
 /**
@@ -13,19 +14,25 @@
  * @class SplunkLogger
  * @brief Logger that sends log entries to Splunk via HTTP Event Collector
  *
- * Extends HttpLogger with Splunk-specific configuration and formatting:
- * - ENV: SPLUNK_URL, SPLUNK_TOKEN, SPLUNK_INDEX, SPLUNK_SOURCETYPE
- * - Automatic HEC authentication header
- * - Proper Splunk event format: {event, index, sourcetype, time}
+ * Uses SplunkLogSettings for configuration:
+ * - <PREFIX>_SPLUNK_URL (default: http://localhost:8088/services/collector)
+ * - <PREFIX>_SPLUNK_TOKEN
+ * - <PREFIX>_SPLUNK_INDEX (default: main)
+ * - <PREFIX>_SPLUNK_SOURCETYPE (default: _json)
+ * - <PREFIX>_SPLUNK_BUFFER_SIZE, <PREFIX>_SPLUNK_FLUSH_INTERVAL_SEC
+ *
+ * Auth header is automatically set to "Splunk {token}".
+ * Event format: {event: {...}, index: "...", sourcetype: "..."}
  *
  * Usage:
  * @code
- * auto httpClient = std::make_shared<HttpClient>();
- * auto logger = std::make_shared<SplunkLogger>(
- *     httpClient,
- *     std::make_shared<ConsoleLogger>()  // fallback on failure
- * );
- * logger->log(LogLevel::Info, "App", "User logged in");
+ *   auto settings = std::make_shared<SplunkLogSettings>("APP");
+ *   auto logger = std::make_shared<SplunkLogger>(
+ *       httpClient,
+ *       settings,
+ *       std::make_shared<ConsoleLogger>()  // fallback
+ *   );
+ *   logger->log(LogLevel::Info, "App", "User logged in");
  * @endcode
  *
  * Docker setup for Splunk:
@@ -43,22 +50,15 @@ public:
     /**
      * @brief Construct SplunkLogger
      * @param httpClient HTTP client for sending logs
+     * @param settings Splunk logger settings
      * @param fallbackLogger Logger for failed requests (default: NullLogger)
      */
-    explicit SplunkLogger(std::shared_ptr<IHttpClient> httpClient,
-                          std::shared_ptr<ILogger> fallbackLogger = nullptr);
+    SplunkLogger(std::shared_ptr<IHttpClient> httpClient,
+                 std::shared_ptr<SplunkLogSettings> settings,
+                 std::shared_ptr<ILogger> fallbackLogger = nullptr);
 
 protected:
-    std::string getHttpUrl() const override;
-    std::string getHttpAuth() const override;
-    std::map<std::string, std::string> getHttpHeaders() const override;
     std::string formatEntry(const std::string& entryJson) const override;
 
-    size_t getMaxBufferSize() const override { return 100; }
-    std::chrono::seconds getFlushInterval() const override { return std::chrono::seconds(5); }
-
-    std::string getSplunkUrl() const;
-    std::string getSplunkToken() const;
-    std::string getSplunkIndex() const;
-    std::string getSplunkSourceType() const;
+    std::shared_ptr<SplunkLogSettings> splunkSettings_;
 };

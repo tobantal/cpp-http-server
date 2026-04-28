@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "adapters/secondary/SplunkLogger.hpp"
+#include "settings/SplunkLogSettings.hpp"
 #include "adapters/secondary/NullLogger.hpp"
 #include "adapters/secondary/TestLogger.hpp"
 
@@ -31,8 +32,9 @@ public:
 TEST(SplunkLoggerTest, DoesNotCrashOnLog)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<TestLogger>();
-    SplunkLogger logger(mockClient, fallback);
+    SplunkLogger logger(mockClient, settings, fallback);
     logger.log(LogLevel::Info, "App", "started");
     logger.log(LogLevel::Error, "App", "error occurred");
     logger.flush();
@@ -42,8 +44,9 @@ TEST(SplunkLoggerTest, DoesNotCrashOnLog)
 TEST(SplunkLoggerTest, DefaultUrlIsSplunkCollector)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<NullLogger>();
-    SplunkLogger logger(mockClient, fallback);
+    SplunkLogger logger(mockClient, settings, fallback);
     logger.log(LogLevel::Info, "App", "test");
     logger.flush();
     logger.stop();
@@ -55,8 +58,9 @@ TEST(SplunkLoggerTest, FallbackLoggerIsUsedOnHttpFailure)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
     mockClient->shouldFail = true;
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<TestLogger>();
-    SplunkLogger logger(mockClient, fallback);
+    SplunkLogger logger(mockClient, settings, fallback);
 
     logger.log(LogLevel::Warn, "Test", "test message");
     logger.flush();
@@ -68,15 +72,17 @@ TEST(SplunkLoggerTest, FallbackLoggerIsUsedOnHttpFailure)
 TEST(SplunkLoggerTest, CanBeDestroyedWithoutFlush)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<NullLogger>();
-    auto logger = std::make_shared<SplunkLogger>(mockClient, fallback);
+    auto logger = std::make_shared<SplunkLogger>(mockClient, settings, fallback);
     logger->log(LogLevel::Info, "App", "message");
 }
 
 TEST(SplunkLoggerTest, DefaultFallbackIsNullLogger)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
-    SplunkLogger logger(mockClient, nullptr);
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
+    SplunkLogger logger(mockClient, settings, nullptr);
     logger.log(LogLevel::Info, "App", "test");
     logger.stop();
 }
@@ -84,8 +90,9 @@ TEST(SplunkLoggerTest, DefaultFallbackIsNullLogger)
 TEST(SplunkLoggerTest, SplunkFormatContainsEventIndexSourcetype)
 {
     auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<NullLogger>();
-    SplunkLogger logger(mockClient, fallback);
+    SplunkLogger logger(mockClient, settings, fallback);
     logger.log(LogLevel::Info, "App", "test");
     logger.flush();
     logger.stop();
@@ -99,11 +106,20 @@ TEST(SplunkLoggerTest, SplunkFormatContainsEventIndexSourcetype)
 
 TEST(SplunkLoggerTest, UsesSplunkAuthHeader)
 {
+    setenv("TEST_SPLUNK_TOKEN", "my-token", 1);
     auto mockClient = std::make_shared<MockHttpClient>();
+    auto settings = std::make_shared<SplunkLogSettings>("TEST");
     auto fallback = std::make_shared<NullLogger>();
-    SplunkLogger logger(mockClient, fallback);
+    SplunkLogger logger(mockClient, settings, fallback);
 
     logger.log(LogLevel::Info, "App", "test");
     logger.flush();
     logger.stop();
+
+    unsetenv("TEST_SPLUNK_TOKEN");
+
+    ASSERT_FALSE(mockClient->requests.empty());
+    auto authIt = mockClient->lastHeaders.find("Authorization");
+    ASSERT_TRUE(authIt != mockClient->lastHeaders.end());
+    EXPECT_TRUE(authIt->second.find("Splunk") != std::string::npos);
 }

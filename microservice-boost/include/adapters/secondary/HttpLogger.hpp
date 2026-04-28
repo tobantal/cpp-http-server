@@ -3,6 +3,7 @@
 #include "ports/output/ILogger.hpp"
 #include "ports/output/IHttpClient.hpp"
 #include "ports/output/IShutdown.hpp"
+#include "settings/IHttpLogSettings.hpp"
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>
@@ -22,16 +23,20 @@
  *
  * Features:
  * - Asynchronous sending (does not block application)
- * - Buffering: flushes when buffer reaches 100 entries or timer expires (5 sec)
- * - Configurable via ENV: HTTP_URL, HTTP_AUTH, HTTP_HEADERS
+ * - Buffering: flushes when buffer reaches configured size or timer expires
+ * - Uses IHttpLogSettings for configuration (no direct ENV access)
  * - Fallback logger for failed requests
+ * - Implements IShutdown for graceful flush on shutdown
  *
  * Usage:
  * @code
- * auto logger = std::make_shared<HttpLogger>(
- *     std::make_shared<ConsoleLogger>()  // fallback
- * );
- * logger->log(LogLevel::Info, "App", "started");
+ *   auto settings = std::make_shared<HttpLogSettings>("APP");
+ *   auto logger = std::make_shared<HttpLogger>(
+ *       httpClient,
+ *       settings,
+ *       std::make_shared<ConsoleLogger>()  // fallback
+ *   );
+ *   logger->log(LogLevel::Info, "App", "started");
  * @endcode
  */
 class HttpLogger : public ILogger, public IShutdown
@@ -40,10 +45,12 @@ public:
     /**
      * @brief Construct HttpLogger
      * @param httpClient HTTP client for sending logs
+     * @param settings Configuration settings
      * @param fallbackLogger Logger for failed requests (default: NullLogger)
      */
-    explicit HttpLogger(std::shared_ptr<IHttpClient> httpClient,
-                        std::shared_ptr<ILogger> fallbackLogger = nullptr);
+    HttpLogger(std::shared_ptr<IHttpClient> httpClient,
+               std::shared_ptr<IHttpLogSettings> settings,
+               std::shared_ptr<ILogger> fallbackLogger = nullptr);
 
     ~HttpLogger() override;
 
@@ -81,41 +88,11 @@ public:
 
 protected:
     /**
-     * @brief Get HTTP URL from environment
-     * @return URL or empty string if not set
-     */
-    virtual std::string getHttpUrl() const;
-
-    /**
-     * @brief Get HTTP auth token from environment
-     * @return Auth token or empty string
-     */
-    virtual std::string getHttpAuth() const;
-
-    /**
-     * @brief Get additional HTTP headers from environment
-     * @return Headers map
-     */
-    virtual std::map<std::string, std::string> getHttpHeaders() const;
-
-    /**
      * @brief Format log entry as JSON for HTTP body
      * @param entry Log entry (level, category, message, timestamp)
      * @return JSON string
      */
     virtual std::string formatEntry(const std::string& entryJson) const;
-
-    /**
-     * @brief Get maximum buffer size
-     * @return Max entries before forced flush
-     */
-    virtual size_t getMaxBufferSize() const { return 100; }
-
-    /**
-     * @brief Get flush interval in seconds
-     * @return Interval seconds
-     */
-    virtual std::chrono::seconds getFlushInterval() const { return std::chrono::seconds(5); }
 
     struct LogEntry
     {
@@ -132,6 +109,7 @@ protected:
     void sendBatch(const std::vector<LogEntry>& entries);
 
     std::shared_ptr<IHttpClient> httpClient_;
+    std::shared_ptr<IHttpLogSettings> settings_;
     std::shared_ptr<ILogger> fallbackLogger_;
 
     std::vector<LogEntry> buffer_;
@@ -141,6 +119,4 @@ protected:
     boost::asio::steady_timer timer_;
     std::thread workerThread_;
     bool stopped_ = false;
-
-    static constexpr size_t kDefaultBufferSize = 100;
 };

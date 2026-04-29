@@ -68,7 +68,12 @@ public:
     std::string show(TimeUnit unit = TimeUnit::Millis) const;
 
 private:
+    /** @brief Start time point */
     std::chrono::steady_clock::time_point start_;
+
+    /** @brief Saved elapsed duration */
     std::chrono::nanoseconds elapsed_{0};
+
+    /** @brief Whether timer is running */
     bool running_{false};
 };

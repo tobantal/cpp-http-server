@@ -17,6 +17,7 @@ add_library(microservice-core
     src/HttpClientError.cpp
     src/HttpStatus.cpp
     src/ShutdownManager.cpp
+    src/UuidGenerator.cpp
     src/IWebApplication.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp

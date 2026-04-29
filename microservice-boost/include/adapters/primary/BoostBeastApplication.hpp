@@ -140,19 +140,6 @@ private:
      */
     std::vector<std::string> split(const std::string &s, char delimiter);
 
-    std::unique_ptr<boost::asio::io_context> ioContext_;
-    std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
-    std::atomic<ServerState> state_{ServerState::NotStarted};
-    std::vector<std::thread> threads_;
-    std::mutex threadsMutex_;
-    size_t maxRequestBodySize_;
-    std::chrono::milliseconds readTimeout_;
-    std::chrono::milliseconds writeTimeout_;
-    size_t maxConnections_;
-    size_t maxRequestsPerConnection_;
-    std::atomic<int> activeConnections_{0};
-    std::shared_ptr<ILogger> logger_;
-
     /**
      * @brief Handle single client session
      * @param socket TCP socket
@@ -190,4 +177,40 @@ private:
      * @brief Accept new connection (async)
      */
     void doAccept();
+
+    /** @brief Boost Asio io context for async operations */
+    std::unique_ptr<boost::asio::io_context> ioContext_;
+
+    /** @brief TCP acceptor for incoming connections */
+    std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
+
+    /** @brief Current server state */
+    std::atomic<ServerState> state_{ServerState::NotStarted};
+
+    /** @brief Worker threads for handling connections */
+    std::vector<std::thread> threads_;
+
+    /** @brief Mutex for thread-safe access to threads_ */
+    std::mutex threadsMutex_;
+
+    /** @brief Maximum request body size in bytes (default 16MB) */
+    size_t maxRequestBodySize_;
+
+    /** @brief Read timeout in milliseconds (default 30000) */
+    std::chrono::milliseconds readTimeout_;
+
+    /** @brief Write timeout in milliseconds (default 30000) */
+    std::chrono::milliseconds writeTimeout_;
+
+    /** @brief Maximum concurrent connections (default 1024, 0=unlimited) */
+    size_t maxConnections_;
+
+    /** @brief Maximum requests per connection (default 100) */
+    size_t maxRequestsPerConnection_;
+
+    /** @brief Current number of active connections */
+    std::atomic<int> activeConnections_{0};
+
+    /** @brief Logger instance */
+    std::shared_ptr<ILogger> logger_;
 };

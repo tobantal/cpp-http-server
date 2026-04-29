@@ -70,14 +70,33 @@ struct SimpleRequest : IRequest
     void setPort(int port);
 
 private:
+    /** @brief HTTP method (GET, POST, etc.) */
     std::string method_;
+
+    /** @brief Request path */
     std::string path_;
+
+    /** @brief Request body */
     std::string body_;
+
+    /** @brief Client IP address */
     std::string ip_;
+
+    /** @brief Client port */
     int port_;
+
+    /** @brief Registered path pattern for param extraction */
     std::string pathPattern_;
+
+    /** @brief HTTP headers */
     std::map<std::string, std::string> headers_;
+
+    /** @brief Query parameters */
     std::map<std::string, std::string> queryParams_;
+
+    /** @brief Request attributes (custom key-value) */
     std::map<std::string, std::string> attributes_;
+
+    /** @brief Trace ID generator */
     std::shared_ptr<IIdGenerator> idGenerator_;
 };

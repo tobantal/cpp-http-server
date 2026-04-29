@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "application/HttpRetryExecutor.hpp"
-#include "ports/output/IHttpClient.hpp"
+#include "adapters/secondary/NullLogger.hpp"
 #include <atomic>
 
 class MockHttpRetrySettings : public IHttpRetrySettings
@@ -25,7 +25,8 @@ class HttpRetryExecutorTest : public ::testing::Test
 {
 protected:
     MockHttpRetrySettings settings;
-    HttpRetryExecutor executor{std::make_shared<MockHttpRetrySettings>(settings)};
+    std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>();
+    HttpRetryExecutor executor{std::make_shared<MockHttpRetrySettings>(settings), logger};
 };
 
 TEST_F(HttpRetryExecutorTest, SuccessOnFirstAttempt)

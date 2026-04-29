@@ -1,7 +1,6 @@
 #pragma once
 
 #include "application/IRetrySettings.hpp"
-#include <cstdlib>
 #include <string>
 
 /**
@@ -29,34 +28,20 @@ public:
      * @brief Construct RetrySettings
      * @param prefix Environment variable prefix (e.g., "HTTP", "BROKER")
      */
-    explicit RetrySettings(const std::string& prefix)
-        : prefix_(prefix)
-    {
-        maxAttempts_ = getEnvInt(prefix + "_RETRY_MAX_ATTEMPTS", 3);
-        baseDelayMs_ = getEnvInt(prefix + "_RETRY_BASE_DELAY_MS", 1000);
-        multiplier_ = getEnvDouble(prefix + "_RETRY_MULTIPLIER", 2.0);
-        maxDelayMs_ = getEnvInt(prefix + "_RETRY_MAX_DELAY_MS", 30000);
-    }
+    explicit RetrySettings(const std::string& prefix);
 
-    int getMaxAttempts() const override { return maxAttempts_; }
-    std::chrono::milliseconds getBaseDelay() const override { return std::chrono::milliseconds(baseDelayMs_); }
-    double getMultiplier() const override { return multiplier_; }
-    std::chrono::milliseconds getMaxDelay() const override { return std::chrono::milliseconds(maxDelayMs_); }
+    int getMaxAttempts() const override;
+    std::chrono::milliseconds getBaseDelay() const override;
+    double getMultiplier() const override;
+    std::chrono::milliseconds getMaxDelay() const override;
 
 private:
+    static int getEnvInt(const std::string& name, int defaultValue);
+    static double getEnvDouble(const std::string& name, double defaultValue);
+
     std::string prefix_;
     int maxAttempts_;
     int baseDelayMs_;
     double multiplier_;
     int maxDelayMs_;
-
-    static int getEnvInt(const std::string& name, int defaultValue) {
-        const char* value = std::getenv(name.c_str());
-        return value ? std::stoi(value) : defaultValue;
-    }
-
-    static double getEnvDouble(const std::string& name, double defaultValue) {
-        const char* value = std::getenv(name.c_str());
-        return value ? std::stod(value) : defaultValue;
-    }
 };

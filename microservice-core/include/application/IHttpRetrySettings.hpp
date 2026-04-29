@@ -1,9 +1,9 @@
 #pragma once
 
 #include "application/IRetrySettings.hpp"
+#include <chrono>
 #include <set>
 #include <string>
-#include <sstream>
 
 /**
  * @file IHttpRetrySettings.hpp
@@ -13,15 +13,9 @@
 
 /**
  * @class IHttpRetrySettings
- * @brief HTTP-specific retry configuration
+ * @brief HTTP retry configuration interface
  *
- * Extends IRetrySettings with HTTP-specific settings:
- * retryable status codes and network error retry flag.
- *
- * @par Usage
- * @code
- *   auto httpSettings = std::make_shared<HttpRetrySettings>("HTTP");
- * @endcode
+ * Extends IRetrySettings with HTTP-specific retry conditions.
  */
 class IHttpRetrySettings : public IRetrySettings
 {
@@ -29,14 +23,14 @@ public:
     ~IHttpRetrySettings() override = default;
 
     /**
-     * @brief Get HTTP status codes that trigger retry
-     * @return Set of retryable HTTP status codes (default: {500, 502, 503, 504})
+     * @brief Get HTTP status codes that should trigger retry
+     * @return Set of retryable HTTP status codes (typically 5xx)
      */
     virtual const std::set<int>& getRetryableStatuses() const = 0;
 
     /**
      * @brief Check if network errors should trigger retry
-     * @return true if retry on network errors enabled (default: true)
+     * @return true if network errors are retryable
      */
     virtual bool isRetryOnNetworkErrorEnabled() const = 0;
 };

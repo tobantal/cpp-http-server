@@ -118,6 +118,93 @@ enum class LogLevel : uint8_t { Debug, Info, Warn, Error };
 - Дублирование `toLower()` и `splitPath()` в 4 файлах — вынести в общий utility (`StringUtils.hpp` в core)
 - Дублирование `getPathParam()` логики — вынести в общий helper или mixin
 
+## Doxygen-документация
+
+### Файл (.hpp)
+```cpp
+/**
+ * @file MyClass.hpp
+ * @brief Short description of file purpose
+ * @author Anton Tobolkin
+ */
+#pragma once
+// ... includes ...
+```
+
+### Класс
+```cpp
+/**
+ * @class MyClass
+ * @brief What this class does
+ * @version 1.0
+ * @author Anton Tobolkin
+ */
+class MyClass
+{
+```
+
+### Методы (публичные и приватные)
+```cpp
+/**
+ * @brief What method does
+ * @param param1 Description of first parameter
+ * @param param2 Description of second parameter
+ * @return What is returned (if any)
+ *
+ * Additional details about behavior, exceptions, threading model.
+ */
+void myMethod(Type param1, Type param2);
+```
+
+### Поля (member variables)
+```cpp
+/** @brief What this field stores and its default value */
+std::string field_;
+```
+
+### Пример: BoostBeastApplication.hpp (правильное оформление)
+```cpp
+class BoostBeastApplication : public IWebApplication, public IShutdown
+{
+public:
+    explicit BoostBeastApplication(
+        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
+
+    /**
+     * @brief Get library version string
+     * @return Version string (e.g., "0.3.0")
+     */
+    static std::string getVersion();
+
+    /**
+     * @brief Stop server and wait for all sessions to finish
+     */
+    void stop() override;
+
+private:
+    /** @brief Map of path patterns to method handlers */
+    std::map<std::string, std::map<std::string, std::shared_ptr<IHttpHandler>>> handlers_;
+
+    /** @brief Struct for handler match result */
+    struct HandlerMatch
+    {
+        std::shared_ptr<IHttpHandler> handler;
+        std::string pattern;
+    };
+
+    /** @brief Boost Asio io context for async operations */
+    std::unique_ptr<boost::asio::io_context> ioContext_;
+
+    /** @brief Maximum request body size in bytes (default 16MB) */
+    size_t maxRequestBodySize_;
+};
+```
+
+### Что НЕ делать
+- Не писать `// END` или `#endif // GUARD` комментарии
+- Не использовать `@class` если есть `@brief`
+- Не дублировать информацию из hpp в cpp (Doxygen читает из hpp)
+
 ## Предкоммитная проверка чистоты кода
 
 Перед каждым коммитом запускать clang-tidy на изменённых файлах:

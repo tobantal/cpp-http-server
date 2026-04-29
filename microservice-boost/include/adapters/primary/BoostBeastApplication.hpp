@@ -46,15 +46,7 @@ class BoostBeastApplication : public IWebApplication, public IShutdown
 {
 public:
     explicit BoostBeastApplication(
-        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())
-        : maxRequestBodySize_(32 * 1024 * 1024)
-        , readTimeout_(30 * 1000)
-        , writeTimeout_(30 * 1000)
-        , maxConnections_(1024)
-        , maxRequestsPerConnection_(100)
-        , logger_(std::move(logger))
-    {
-    }
+        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
     virtual ~BoostBeastApplication();
 
     /**

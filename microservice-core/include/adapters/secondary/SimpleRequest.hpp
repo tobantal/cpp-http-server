@@ -62,6 +62,8 @@ struct SimpleRequest : IRequest
     std::string getContentType() const override;
     void setAttribute(const std::string& name, const std::string& value) override;
     std::optional<std::string> getAttribute(const std::string& name) const override;
+    void setObject(const std::string& name, std::shared_ptr<IEnvironment> obj) override;
+    std::optional<std::shared_ptr<IEnvironment>> getObject(const std::string& name) const override;
     std::string getTraceId() override;
     void setTraceId(const std::string& id) override;
     void setMethod(const std::string& method);
@@ -96,6 +98,9 @@ private:
 
     /** @brief Request attributes (custom key-value) */
     std::map<std::string, std::string> attributes_;
+
+    /** @brief Request objects (shared ptrs to IEnvironment) */
+    std::map<std::string, std::shared_ptr<IEnvironment>> objects_;
 
     /** @brief Trace ID generator */
     std::shared_ptr<IIdGenerator> idGenerator_;

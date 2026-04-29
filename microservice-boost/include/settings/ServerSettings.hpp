@@ -25,6 +25,7 @@ private:
     size_t maxRequestBodySize_;
     std::chrono::milliseconds readTimeout_;
     std::chrono::milliseconds writeTimeout_;
+    std::chrono::milliseconds keepAliveTimeout_;
     size_t maxConnections_;
     size_t maxRequestsPerConnection_;
 
@@ -46,6 +47,7 @@ public:
     size_t getMaxRequestBodySize() const override;
     std::chrono::milliseconds getReadTimeout() const override;
     std::chrono::milliseconds getWriteTimeout() const override;
+    std::chrono::milliseconds getKeepAliveTimeout() const override;
     size_t getMaxConnections() const override;
     size_t getMaxRequestsPerConnection() const override;
 };

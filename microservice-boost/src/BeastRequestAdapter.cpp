@@ -215,6 +215,21 @@ std::optional<std::string> BeastRequestAdapter::getAttribute(const std::string& 
     return std::nullopt;
 }
 
+void BeastRequestAdapter::setObject(const std::string& name, std::shared_ptr<IEnvironment> obj)
+{
+    objects_[name] = std::move(obj);
+}
+
+std::optional<std::shared_ptr<IEnvironment>> BeastRequestAdapter::getObject(const std::string& name) const
+{
+    auto it = objects_.find(name);
+    if (it != objects_.end())
+    {
+        return it->second;
+    }
+    return std::nullopt;
+}
+
 std::string BeastRequestAdapter::getTraceId()
 {
     auto header = getHeader("X-Trace-ID");

@@ -26,6 +26,7 @@ size_t getEnvOrDefaultSize(const char* name, size_t defaultValue) {
 ServerSettings::ServerSettings(std::shared_ptr<IEnvironment> env)
     : host_("0.0.0.0"), port_(8080), maxRequestBodySize_(kDefaultMaxRequestBodySize),
       readTimeout_(kDefaultReadTimeoutMs), writeTimeout_(kDefaultWriteTimeoutMs),
+      keepAliveTimeout_(std::chrono::milliseconds(5000)),
       maxConnections_(kDefaultMaxConnections),
       maxRequestsPerConnection_(kDefaultMaxRequestsPerConnection)
 {
@@ -129,6 +130,10 @@ std::chrono::milliseconds ServerSettings::getReadTimeout() const {
 
 std::chrono::milliseconds ServerSettings::getWriteTimeout() const {
     return writeTimeout_;
+}
+
+std::chrono::milliseconds ServerSettings::getKeepAliveTimeout() const {
+    return keepAliveTimeout_;
 }
 
 size_t ServerSettings::getMaxConnections() const {

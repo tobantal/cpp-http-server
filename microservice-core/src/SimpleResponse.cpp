@@ -1,15 +1,34 @@
+/**
+ * @file SimpleResponse.cpp
+ * @brief SimpleResponse implementation
+ * @author Anton Tobolkin
+ */
+
 #include "adapters/secondary/SimpleResponse.hpp"
 
+/**
+ * @brief Construct SimpleResponse with status and body
+ * @param status HTTP status code (default 200)
+ * @param body Response body (default empty)
+ */
 SimpleResponse::SimpleResponse(int status, const std::string& body)
     : status_(status), body_(body)
 {
 }
 
+/**
+ * @brief Set HTTP status code
+ * @param code Status code (e.g., 200, 404, 500)
+ */
 void SimpleResponse::setStatus(int code)
 {
     status_ = code;
 }
 
+/**
+ * @brief Set status from enum
+ * @param status HttpStatus enum value
+ */
 void SimpleResponse::setStatus(HttpStatus status)
 {
     status_ = toInt(status);

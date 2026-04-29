@@ -74,9 +74,29 @@ public:
     }
 
     void start() override;
+
+    /**
+     * @brief Stop server and wait for all sessions to finish
+     */
     void stop() override;
+
+    /**
+     * @brief Graceful shutdown with timeout
+     * @param timeoutMs Maximum time to wait (default 5000ms)
+     */
     void shutdown(std::chrono::milliseconds timeoutMs = std::chrono::milliseconds(5000)) override;
+
+    /**
+     * @brief Get server instance name
+     * @return "BoostBeastApplication"
+     */
     std::string name() const override { return "BoostBeastApplication"; }
+
+    /**
+     * @brief Load configuration from args, ENV, and config.json
+     * @param argc Argument count
+     * @param argv Argument values
+     */
     void loadEnvironment(int argc, char *argv[]) override;
 
 protected:
@@ -97,8 +117,27 @@ private:
         std::string pattern;
     };
 
+    /**
+     * @brief Find handler matching method and path
+     * @param method HTTP method (GET, POST, etc.)
+     * @param path Request path
+     * @return HandlerMatch with handler and pattern, or std::nullopt
+     */
     std::optional<HandlerMatch> findHandler(const std::string &method, const std::string &path);
+
+    /**
+     * @brief Check if path has any registered handler
+     * @param path Request path
+     * @return true if path exists (even if method not allowed)
+     */
     bool pathExists(const std::string &path);
+
+    /**
+     * @brief Split string by delimiter
+     * @param s Input string
+     * @param delimiter Character to split on
+     * @return Vector of string segments
+     */
     std::vector<std::string> split(const std::string &s, char delimiter);
 
     std::unique_ptr<boost::asio::io_context> ioContext_;
@@ -114,14 +153,41 @@ private:
     std::atomic<int> activeConnections_{0};
     std::shared_ptr<ILogger> logger_;
 
+    /**
+     * @brief Handle single client session
+     * @param socket TCP socket
+     */
     void handleSession(boost::asio::ip::tcp::socket socket);
+
+    /**
+     * @brief Handle Boost.Beast HTTP request
+     * @param req Boost.Beast request
+     * @param res Boost.Beast response
+     * @param clientIp Client IP address
+     * @param port Local port
+     */
     void handleBeastRequest(
         const boost::beast::http::request<boost::beast::http::string_body> &req,
         boost::beast::http::response<boost::beast::http::string_body> &res,
         const std::string &clientIp,
         int port);
+
+    /**
+     * @brief Handle request via registered handler
+     * @param req HTTP request
+     * @param res HTTP response
+     */
     void handleRequest(IRequest &req, IResponse &res);
 
+    /**
+     * @brief Recursively load JSON to environment
+     * @param j JSON object
+     * @param prefix Key prefix for nested objects
+     */
     void loadJsonToEnvironment(const nlohmann::json &j, const std::string &prefix = "");
+
+    /**
+     * @brief Accept new connection (async)
+     */
     void doAccept();
 };

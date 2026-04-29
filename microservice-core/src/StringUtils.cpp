@@ -1,3 +1,9 @@
+/**
+ * @file StringUtils.cpp
+ * @brief StringUtils implementation
+ * @author Anton Tobolkin
+ */
+
 #include "util/StringUtils.hpp"
 
 #include <algorithm>
@@ -6,6 +12,11 @@
 #include <string>
 #include <vector>
 
+/**
+ * @brief Convert string to lowercase
+ * @param str Input string
+ * @return Lowercase copy of string
+ */
 std::string StringUtils::toLower(const std::string &str)
 {
     std::string result = str;
@@ -14,6 +25,11 @@ std::string StringUtils::toLower(const std::string &str)
     return result;
 }
 
+/**
+ * @brief Split path into segments by '/'
+ * @param path URL path (e.g., "/api/users/123")
+ * @return Vector of path segments (e.g., ["api", "users", "123"])
+ */
 std::vector<std::string> StringUtils::splitPath(const std::string &path)
 {
     std::vector<std::string> segments;
@@ -43,6 +59,11 @@ std::vector<std::string> StringUtils::splitPath(const std::string &path)
     return segments;
 }
 
+/**
+ * @brief Escape string for JSON output
+ * @param s Input string
+ * @return JSON-safe string with special characters escaped
+ */
 std::string StringUtils::escapeJson(const std::string &s)
 {
     std::string result;
@@ -83,6 +104,11 @@ std::string StringUtils::escapeJson(const std::string &s)
     return result;
 }
 
+/**
+ * @brief URL-decode a string
+ * @param s Encoded URL string
+ * @return Decoded string (+ becomes space, %XX becomes character)
+ */
 std::string StringUtils::urlDecode(const std::string &s)
 {
     std::string result;

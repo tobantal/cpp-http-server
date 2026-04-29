@@ -27,21 +27,47 @@ namespace http = beast::http;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
+/**
+ * @brief Construct BoostBeastApplication with logger
+ * @param logger Logger instance (default: NullLogger)
+ *
+ * Default values:
+ * - maxRequestBodySize: 16 MB
+ * - readTimeout: 30000 ms
+ * - writeTimeout: 30000 ms
+ * - maxConnections: 1024 (prevents DoS)
+ * - maxRequestsPerConnection: 100
+ *
+ * All values can be overridden via config.json or environment variables.
+ */
 BoostBeastApplication::BoostBeastApplication(std::shared_ptr<ILogger> logger)
-    : maxRequestBodySize_(1048576),
+    : maxRequestBodySize_(16 * 1024 * 1024),
       readTimeout_(30000), writeTimeout_(30000),
-      maxConnections_(0), activeConnections_(0),
+      maxConnections_(1024), maxRequestsPerConnection_(100),
+      activeConnections_(0),
       logger_(std::move(logger))
 {
     logger_->log(LogLevel::Info, "App", "BoostBeastApplication created");
 }
 
+/**
+ * @brief Destructor - stops server if still running
+ */
 BoostBeastApplication::~BoostBeastApplication()
 {
-    stop();
+    if (state_.load(std::memory_order_acquire) == ServerState::Running)
+    {
+        shutdown();
+    }
     logger_->log(LogLevel::Info, "App", "BoostBeastApplication destroyed");
 }
 
+/**
+ * @brief Stop the server and wait for all sessions to finish
+ *
+ * Closes acceptor, stops io_context, and joins all worker threads.
+ * Uses compare-exchange to ensure stop is called only once.
+ */
 void BoostBeastApplication::stop()
 {
     ServerState expected = ServerState::Running;
@@ -76,11 +102,42 @@ void BoostBeastApplication::stop()
     }
 }
 
-void BoostBeastApplication::shutdown(std::chrono::milliseconds /*timeoutMs*/)
+/**
+ * @brief Shutdown server with timeout
+ * @param timeoutMs Maximum time to wait for graceful shutdown
+ *
+ * Calls stop() and waits up to timeoutMs for completion.
+ */
+void BoostBeastApplication::shutdown(std::chrono::milliseconds timeoutMs)
 {
+    const auto deadline = std::chrono::steady_clock::now() + timeoutMs;
     stop();
+
+    while (state_.load(std::memory_order_acquire) != ServerState::Stopped &&
+           std::chrono::steady_clock::now() < deadline)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    if (state_.load(std::memory_order_acquire) != ServerState::Stopped)
+    {
+        logger_->log(LogLevel::Error, "BoostBeastApplication", "Shutdown timeout");
+    }
 }
 
+/**
+ * @brief Register HTTP handler for method and path pattern
+ * @param method HTTP method (GET, POST, etc.)
+ * @param pattern URL pattern with wildcards (e.g., "/api/users/-star-")
+ * @param handler Handler to execute for matching requests
+ *
+ * @throws std::logic_error if called after server start()
+ *
+ * Patterns:
+ * - Exact match: "/api/users"
+ * - Wildcard: "/api/-star-" matches "/api/anything"
+ * - Named param: not yet supported
+ */
 void BoostBeastApplication::registerHandler(
     const std::string &method,
     const std::string &pattern,
@@ -91,12 +148,22 @@ void BoostBeastApplication::registerHandler(
         throw std::logic_error("Cannot register handler after server has started");
     }
 
-    handlers_[pattern][method] = handler;
+    handlers_[pattern][method] = std::move(handler);
 
     logger_->log(LogLevel::Info, "App",
                  "Registered: " + method + " " + pattern);
 }
 
+/**
+ * @brief Find handler matching method and path
+ * @param method HTTP method
+ * @param path Request path
+ * @return HandlerMatch with handler and matched pattern, or std::nullopt
+ *
+ * Search order:
+ * 1. Exact path match
+ * 2. Wildcard pattern match (via RouteMatcher)
+ */
 std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHandler(
     const std::string &method,
     const std::string &path)
@@ -131,6 +198,13 @@ std::optional<BoostBeastApplication::HandlerMatch> BoostBeastApplication::findHa
     return std::nullopt;
 }
 
+/**
+ * @brief Check if path has any registered handlers
+ * @param path Request path
+ * @return true if path has handlers (even if wrong method)
+ *
+ * Used to distinguish 404 (path not found) from 405 (method not allowed).
+ */
 bool BoostBeastApplication::pathExists(const std::string &path)
 {
     if (handlers_.find(path) != handlers_.end())
@@ -149,6 +223,14 @@ bool BoostBeastApplication::pathExists(const std::string &path)
     return false;
 }
 
+/**
+ * @brief Handle HTTP request via registered handler
+ * @param req HTTP request
+ * @param res HTTP response
+ *
+ * Calls findHandler(), then executes handler.
+ * Catches HttpError and std::exception, returns appropriate error responses.
+ */
 void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
 {
     std::string path = req.getPath();
@@ -191,6 +273,15 @@ void BoostBeastApplication::handleRequest(IRequest &req, IResponse &res)
     }
 }
 
+/**
+ * @brief Handle Boost.Beast HTTP request
+ * @param req Boost.Beast request object
+ * @param res Boost.Beast response object
+ * @param clientIp Client IP address
+ * @param port Local port
+ *
+ * Wraps Beast types in adapters and delegates to handleRequest().
+ */
 void BoostBeastApplication::handleBeastRequest(
     const http::request<http::string_body> &req,
     http::response<http::string_body> &res,
@@ -203,6 +294,15 @@ void BoostBeastApplication::handleBeastRequest(
     handleRequest(requestAdapter, responseAdapter);
 }
 
+/**
+ * @brief Start HTTP server
+ *
+ * Loads configuration from ServerSettings (ENV + config.json),
+ * binds to host:port, and starts accepting connections.
+ * Each connection is handled in a separate thread.
+ *
+ * Runs until stop() is called or error occurs.
+ */
 void BoostBeastApplication::start()
 {
     try
@@ -283,6 +383,14 @@ void BoostBeastApplication::start()
     }
 }
 
+/**
+ * @brief Handle single client session
+ * @param socket TCP socket for client connection
+ *
+ * Reads HTTP requests in a loop (keep-alive support).
+ * Respects maxRequestsPerConnection limit.
+ * Decrements activeConnections_ on exit.
+ */
 void BoostBeastApplication::handleSession(tcp::socket socket)
 {
     beast::tcp_stream stream(std::move(socket));
@@ -398,14 +506,63 @@ void BoostBeastApplication::handleSession(tcp::socket socket)
     activeConnections_--;
 }
 
+/**
+ * @brief Load configuration from command line and config.json
+ * @param argc Argument count
+ * @param argv Argument values
+ *
+ * Creates Environment instance and loads settings from:
+ * 1. Command line arguments (--max-body-size=, --read-timeout=, etc.)
+ * 2. Environment variables
+ * 3. config.json file
+ */
 void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 {
     logger_->log(LogLevel::Info, "App", "Loading environment...");
 
-    (void)argc;
-    (void)argv;
-
     env_ = std::make_shared<Environment>();
+
+    for (int i = 0; i < argc; ++i)
+    {
+        std::string arg(argv[i]);
+        if (arg.rfind("--max-body-size=", 0) == 0)
+        {
+            maxRequestBodySize_ = std::stoull(arg.substr(15));
+        }
+        else if (arg.rfind("--read-timeout=", 0) == 0)
+        {
+            readTimeout_ = std::chrono::milliseconds(std::stoi(arg.substr(14)));
+        }
+        else if (arg.rfind("--write-timeout=", 0) == 0)
+        {
+            writeTimeout_ = std::chrono::milliseconds(std::stoi(arg.substr(15)));
+        }
+        else if (arg.rfind("--max-connections=", 0) == 0)
+        {
+            maxConnections_ = std::stoull(arg.substr(17));
+        }
+    }
+
+    if (const char *env = std::getenv("MAX_REQUEST_BODY_SIZE"))
+    {
+        maxRequestBodySize_ = std::stoull(env);
+    }
+    if (const char *env = std::getenv("READ_TIMEOUT_MS"))
+    {
+        readTimeout_ = std::chrono::milliseconds(std::stoi(env));
+    }
+    if (const char *env = std::getenv("WRITE_TIMEOUT_MS"))
+    {
+        writeTimeout_ = std::chrono::milliseconds(std::stoi(env));
+    }
+    if (const char *env = std::getenv("MAX_CONNECTIONS"))
+    {
+        maxConnections_ = std::stoull(env);
+    }
+    if (const char *env = std::getenv("MAX_REQUESTS_PER_CONNECTION"))
+    {
+        maxRequestsPerConnection_ = std::stoull(env);
+    }
 
     try
     {
@@ -413,7 +570,7 @@ void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 
         if (!configFile.is_open())
         {
-            logger_->log(LogLevel::Info, "App", "config.json not found");
+            logger_->log(LogLevel::Info, "App", "config.json not found, using defaults");
             return;
         }
 
@@ -429,16 +586,21 @@ void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
     {
         logger_->log(LogLevel::Error, "App",
                      std::string("JSON parse error: ") + e.what());
-        throw;
     }
     catch (const std::exception &e)
     {
         logger_->log(LogLevel::Error, "App",
                      std::string("Error loading config: ") + e.what());
-        throw;
     }
 }
 
+/**
+ * @brief Recursively load JSON to environment
+ * @param j JSON object
+ * @param prefix Key prefix for nested objects
+ *
+ * Converts JSON structure to flat key-value pairs in Environment.
+ */
 void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::string &prefix)
 {
     for (auto it = j.begin(); it != j.end(); ++it)

@@ -28,10 +28,10 @@ private:
     size_t maxConnections_;
     size_t maxRequestsPerConnection_;
 
-    static constexpr size_t kDefaultMaxRequestBodySize = 1048576;
+    static constexpr size_t kDefaultMaxRequestBodySize = 16 * 1024 * 1024;
     static constexpr int kDefaultReadTimeoutMs = 30000;
     static constexpr int kDefaultWriteTimeoutMs = 30000;
-    static constexpr size_t kDefaultMaxConnections = 0;
+    static constexpr size_t kDefaultMaxConnections = 1024;
     static constexpr size_t kDefaultMaxRequestsPerConnection = 100;
 
 public:

@@ -15,6 +15,8 @@ add_library(microservice-core
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
     src/DomainEvent.cpp
+    src/HttpRetryExecutor.cpp
+    src/HttpRetrySettings.cpp
     src/InMemoryEventBus.cpp
     src/IEventPublisher.cpp
     src/IWebApplication.cpp
@@ -23,6 +25,7 @@ add_library(microservice-core
     src/MetricsHandler.cpp
     src/MetricsObserverHandler.cpp
     src/NullLogger.cpp
+    src/RetrySettings.cpp
     src/RouteMatcher.cpp
     src/Timer.cpp
     src/TestLogger.cpp

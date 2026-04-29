@@ -82,9 +82,13 @@ protected:
      */
     virtual void installSignalHandlers();
 
+    /** @brief Environment for configuration access */
     std::shared_ptr<IEnvironment> env_;
 
 private:
+    /** @brief Singleton instance for signal handler */
     static IWebApplication *instance_;
+
+    /** @brief Signal handler callback */
     static void signalHandler(int signal);
 };

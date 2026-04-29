@@ -19,5 +19,10 @@
 class HttpErrorSender : public IHttpErrorHandler
 {
 public:
+    /**
+     * @brief Send JSON error response
+     * @param res HTTP response
+     * @param e HTTP error
+     */
     void handleError(IResponse &res, const HttpError &e) override;
 };

@@ -75,7 +75,12 @@ public:
     void handle(IRequest &req, IResponse &res) override;
 
 private:
+    /** @brief Ordered list of handlers to execute */
     std::vector<std::shared_ptr<IHttpHandler>> handlers_;
+
+    /** @brief Logger instance */
     std::shared_ptr<ILogger> logger_;
+
+    /** @brief Error handler for HttpError exceptions */
     std::shared_ptr<IHttpErrorHandler> errorHandler_;
 };

@@ -20,10 +20,20 @@
 class MetricsHandler : public IHttpHandler
 {
 public:
+    /**
+     * @brief Construct MetricsHandler
+     * @param metrics Metrics collector instance
+     */
     explicit MetricsHandler(std::shared_ptr<IMetricsCollector> metrics);
 
+    /**
+     * @brief Handle GET /metrics request
+     * @param req HTTP request
+     * @param res HTTP response
+     */
     void handle(IRequest &req, IResponse &res) override;
 
 private:
+    /** @brief Metrics collector */
     std::shared_ptr<IMetricsCollector> metrics_;
 };

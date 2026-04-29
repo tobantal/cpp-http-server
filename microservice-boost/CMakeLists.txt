@@ -6,6 +6,7 @@ add_library(microservice-boost
     src/BeastRequestAdapter.cpp
     src/BeastResponseAdapter.cpp
     src/ServerSettings.cpp
+    src/JsonValidator.cpp
 )
 
 target_include_directories(microservice-boost

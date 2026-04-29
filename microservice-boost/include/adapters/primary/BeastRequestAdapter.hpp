@@ -57,14 +57,33 @@ struct BeastRequestAdapter : IRequest
     void setTraceId(const std::string& id) override;
 
 private:
+    /** @brief Reference to Boost.Beast request */
     const boost::beast::http::request<boost::beast::http::string_body>& req_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+
+    /** @brief Client IP address */
     std::string ip_;
+
+    /** @brief Client port */
     int port_;
+
+    /** @brief Request body (cached for performance) */
     std::string body_;
+
+    /** @brief Registered path pattern */
     std::string pathPattern_;
+
+    /** @brief Query parameters */
     std::map<std::string, std::string> queryParams_;
+
+    /** @brief Cached query params for lazy evaluation */
     mutable std::optional<std::map<std::string, std::string>> cachedQueryParams_;
+
+    /** @brief HTTP headers */
     std::map<std::string, std::string> headers_;
+
+    /** @brief Request attributes */
     std::map<std::string, std::string> attributes_;
+
+    /** @brief Trace ID generator */
     std::shared_ptr<IIdGenerator> idGenerator_;
 };

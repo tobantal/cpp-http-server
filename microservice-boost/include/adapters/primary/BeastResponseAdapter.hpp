@@ -45,5 +45,6 @@ struct BeastResponseAdapter : IResponse
     void setTraceId(const std::string& id) override;
 
 private:
+    /** @brief Reference to Boost.Beast response */
     boost::beast::http::response<boost::beast::http::string_body>& res_;  // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 };

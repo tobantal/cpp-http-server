@@ -35,44 +35,18 @@ enum class HttpStatus : int
  * @param status HttpStatus enum value
  * @return Integer status code
  */
-inline int toInt(HttpStatus status) noexcept
-{
-    return static_cast<int>(status);
-}
+int toInt(HttpStatus status) noexcept;
 
 /**
  * @brief Get reason phrase for status code
  * @param code HTTP status code as integer
  * @return Reason phrase string
  */
-inline std::string getReasonPhrase(int code)
-{
-    switch (code)
-    {
-    case 200: return "OK";
-    case 201: return "Created";
-    case 204: return "No Content";
-    case 400: return "Bad Request";
-    case 401: return "Unauthorized";
-    case 403: return "Forbidden";
-    case 404: return "Not Found";
-    case 405: return "Method Not Allowed";
-    case 409: return "Conflict";
-    case 413: return "Payload Too Large";
-    case 422: return "Unprocessable Entity";
-    case 500: return "Internal Server Error";
-    case 503: return "Service Unavailable";
-    case 504: return "Gateway Timeout";
-    default: return "Unknown";
-    }
-}
+std::string getReasonPhrase(int code);
 
 /**
  * @brief Get reason phrase for HttpStatus enum
  * @param status HttpStatus enum value
  * @return Reason phrase string
  */
-inline std::string getReasonPhrase(HttpStatus status)
-{
-    return getReasonPhrase(toInt(status));
-}
+std::string getReasonPhrase(HttpStatus status);

@@ -19,7 +19,7 @@ class IJsonProcessor : public IHttpHandler
 {
 public:
     /**
-     * @brief Key for storing JsonObject in request
+     * @brief Key for storing IEnvironment in request
      */
     static constexpr const char* JSON_OBJECT_KEY = "json_object";
 

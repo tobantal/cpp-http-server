@@ -207,12 +207,12 @@ struct SimpleRequest : IRequest
         return std::nullopt;
     }
 
-    void setObject(const std::string& name, std::shared_ptr<void> obj) override
+    void setObject(const std::string& name, std::shared_ptr<IEnvironment> obj) override
     {
         objects_[name] = obj;
     }
 
-    std::optional<std::shared_ptr<void>> getObject(const std::string& name) const override
+    std::optional<std::shared_ptr<IEnvironment>> getObject(const std::string& name) const override
     {
         auto it = objects_.find(name);
         if (it != objects_.end())
@@ -254,6 +254,6 @@ private:
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> queryParams_;
     std::map<std::string, std::string> attributes_;
-    std::map<std::string, std::shared_ptr<void>> objects_;
+    std::map<std::string, std::shared_ptr<IEnvironment>> objects_;
     std::shared_ptr<IIdGenerator> idGenerator_;
 };

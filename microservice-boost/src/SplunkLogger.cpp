@@ -152,8 +152,8 @@ void SplunkLogger::sendBatch(const std::vector<LogEntry>& entries)
         std::string getContentType() const override { return "application/json"; }
         void setAttribute(const std::string&, const std::string&) override {}
         std::optional<std::string> getAttribute(const std::string&) const override { return std::nullopt; }
-        void setObject(const std::string&, std::shared_ptr<void>) override {}
-        std::optional<std::shared_ptr<void>> getObject(const std::string&) const override { return std::nullopt; }
+        void setObject(const std::string&, std::shared_ptr<IEnvironment>) override {}
+        std::optional<std::shared_ptr<IEnvironment>> getObject(const std::string&) const override { return std::nullopt; }
         std::string getTraceId() override { return {}; }
         void setTraceId(const std::string&) override {}
 

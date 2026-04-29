@@ -4,6 +4,7 @@
 #include "ports/output/IHttpClient.hpp"
 #include "ports/output/IShutdown.hpp"
 #include "settings/ISplunkLogSettings.hpp"
+#include "ports/output/IEnvironment.hpp"
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>

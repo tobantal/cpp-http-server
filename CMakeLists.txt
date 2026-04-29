@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
-project(cpp-http-server VERSION 0.3.0 LANGUAGES CXX)
+project(cpp-http-server VERSION 0.4.0 LANGUAGES CXX)
+
+set(PROJECT_VERSION_SUFFIX "-beta" CACHE STRING "Version suffix (e.g. -beta, -rc1, empty for release)")
 
 if(POLICY CMP0167)
     cmake_policy(SET CMP0167 NEW)
@@ -84,11 +86,34 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # ============================================================================
+# libpqxx
+# ============================================================================
+if(CPP_HTTP_SERVER_FETCH_DEPS)
+    find_package(pqxx 7.0 QUIET)
+endif()
+
+if(pqxx_FOUND)
+    message(STATUS "Using system pqxx ${pqxx_VERSION}")
+else()
+    message(STATUS "pqxx not found, fetching via FetchContent...")
+    find_package(PostgreSQL REQUIRED)
+    set(PQXX_BUILD_TEST OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(
+        pqxx
+        GIT_REPOSITORY https://github.com/jtv/libpqxx.git
+        GIT_TAG 7.9.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(pqxx)
+    message(STATUS "pqxx fetched via FetchContent")
+endif()
+
+# ============================================================================
 # Summary
 # ============================================================================
 message(STATUS "")
 message(STATUS "========================================")
-message(STATUS "  cpp-http-server ${PROJECT_VERSION}")
+message(STATUS "  cpp-http-server ${PROJECT_VERSION}${PROJECT_VERSION_SUFFIX}")
 message(STATUS "========================================")
 message(STATUS "  Build type:     ${CMAKE_BUILD_TYPE}")
 message(STATUS "  C++ standard:   C++${CMAKE_CXX_STANDARD}")
@@ -96,6 +121,11 @@ message(STATUS "  Compiler:       ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_
 message(STATUS "  Fetch deps:      ${CPP_HTTP_SERVER_FETCH_DEPS}")
 message(STATUS "========================================")
 message(STATUS "")
+
+# ============================================================================
+# CMake modules (for external projects using FetchContent)
+# ============================================================================
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddHttpService.cmake)
 
 # ============================================================================
 # Subdirectories

@@ -39,7 +39,7 @@ gcovr --root . --exclude '.*CMakeFiles/.*' --exclude '.*/tests/.*' --exclude '.*
 ## Процесс работы
 
 1. **Перед началом задачи** — прочитать `memory.md` для восстановления контекста
-2. Задачи брать из `TODO.md` по приоритету (P0 → P1 → P2 → P3)
+2. Задачи брать из **Vikunja Kanban** (Project 6: http://localhost:3456/projects/6) по приоритету (P0 → P1 → P2 → P3)
 3. Перед правкой кода — прочитать файл целиком, понять контекст
 4. Соблюдать существующую архитектуру (core interfaces → boost implementations)
 5. **Каждая задача — отдельный коммит в GitHub**
@@ -48,13 +48,12 @@ gcovr --root . --exclude '.*CMakeFiles/.*' --exclude '.*/tests/.*' --exclude '.*
 8. Не переходить к следующей задаче, пока текущая не верифицирована полностью
 9. Не упоминать ИИ в тексте коммитов
 10. **После завершения задачи** — обновить `memory.md`
-11. **После завершения задачи** — добавить подробное описание в `CHANGELOG.md` в секцию текущей версии. Включать: что изменено, какие файлы затронуты, backward compatibility, миграционные шаги (если есть breaking changes). Это единственный источник правды о том, что реально вошло в релиз.
-12. **Backward compatibility** — новые версии библиотеки не должны ломать существующий код consumer-проектов. Если breaking change неизбежен — описать миграцию в CHANGELOG
+11. **После завершения задачи** — обновить задачу в **Vikunja**: `done=true`, `percent_done=1.0`, `end_date=now`, переместить в колонку «Done». Комментарий с кратким summary: выполнено, PR, merge commit.
+12. **Backward compatibility** — новые версии библиотеки не должны ломать существующий код consumer-проектов. Если breaking change неизбежен — описать миграцию в задаче Vikunja
 
 ## Где искать идеи и исследования
 
 - **`docs/TAGS.md`** — Git tagging workflow
-- **`CHANGELOG.md`** — история версий библиотеки
 - **`README.md`** — документация API и примеры использования
 
 ## Правила (обязательно к исполнению)
@@ -64,6 +63,7 @@ gcovr --root . --exclude '.*CMakeFiles/.*' --exclude '.*/tests/.*' --exclude '.*
 - **[error-handling.md](rules/error-handling.md)** — исключения vs optional vs коды возврата, паттерны
 - **[security.md](rules/security.md)** — input validation, thread-safety, resource limits
 - **[testing.md](rules/testing.md)** — GTest, mock-и, именование, покрытие
+- **[vikunja.md](rules/vikunja.md)** — правила работы с задачами в Vikunja (read-first-write-all, Kanban, приоритеты)
 
 ## Проектные справочники
 

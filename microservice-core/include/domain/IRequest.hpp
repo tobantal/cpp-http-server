@@ -3,6 +3,8 @@
 #include <map>
 #include <vector>
 #include <optional>
+#include <memory>
+#include "ports/output/IEnvironment.hpp"
 
 /**
  * @file IRequest.hpp
@@ -24,7 +26,20 @@ struct IRequest {
 
     /**
      * @brief Get request path without query string, URL-decoded
-     * @return Decoded path, e.g. "/api/v1/orders/my order"
+     *
+     * Contract:
+     * - Path component only (everything before '?' is stripped)
+     * - URL-decoded (%20 → space, %C3%BC → ü, + → space)
+     * - No trailing slash normalization (preserved as-is)
+     * - Leading '/' is always present
+     *
+     * Examples:
+     *   Request target              → getPath() result
+     *   /api/v1/orders               → /api/v1/orders
+     *   /api/v1/my%20order?id=5     → /api/v1/my order
+     *   /api/v1/orders?sort=asc     → /api/v1/orders
+     *
+     * @return URL-decoded path without query string
      */
     virtual std::string getPath() const = 0;
 
@@ -200,6 +215,24 @@ struct IRequest {
      * @return Value or nullopt if not set
      */
     virtual std::optional<std::string> getAttribute(const std::string& name) const = 0;
+
+    // =========================================================================
+    // OBJECTS
+    // =========================================================================
+
+    /**
+     * @brief Set request object
+     * @param name Object name
+     * @param obj Shared pointer to IEnvironment
+     */
+    virtual void setObject(const std::string& name, std::shared_ptr<IEnvironment> obj) = 0;
+
+    /**
+     * @brief Get request object
+     * @param name Object name
+     * @return Shared pointer to IEnvironment or nullopt if not set
+     */
+    virtual std::optional<std::shared_ptr<IEnvironment>> getObject(const std::string& name) const = 0;
 
     // =========================================================================
     // TRACE ID

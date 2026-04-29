@@ -11,6 +11,7 @@ add_library(microservice-boost
 target_include_directories(microservice-boost
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/microservice-core/include
 )
 
 find_package(Threads REQUIRED)

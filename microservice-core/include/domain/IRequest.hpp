@@ -4,6 +4,7 @@
 #include <vector>
 #include <optional>
 #include <memory>
+#include "ports/output/IEnvironment.hpp"
 
 /**
  * @file IRequest.hpp
@@ -222,16 +223,16 @@ struct IRequest {
     /**
      * @brief Set request object
      * @param name Object name
-     * @param obj Shared pointer to object
+     * @param obj Shared pointer to IEnvironment
      */
-    virtual void setObject(const std::string& name, std::shared_ptr<void> obj) = 0;
+    virtual void setObject(const std::string& name, std::shared_ptr<IEnvironment> obj) = 0;
 
     /**
      * @brief Get request object
      * @param name Object name
-     * @return Shared pointer or nullopt if not set
+     * @return Shared pointer to IEnvironment or nullopt if not set
      */
-    virtual std::optional<std::shared_ptr<void>> getObject(const std::string& name) const = 0;
+    virtual std::optional<std::shared_ptr<IEnvironment>> getObject(const std::string& name) const = 0;
 
     // =========================================================================
     // TRACE ID

@@ -27,6 +27,11 @@
 class ShutdownManager
 {
 public:
+    /**
+     * @brief Construct ShutdownManager
+     * @param logger Logger instance
+     * @param defaultTimeout Default timeout per component
+     */
     explicit ShutdownManager(std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>(),
                               std::chrono::milliseconds defaultTimeout = std::chrono::milliseconds(5000))
         : logger_(std::move(logger)), defaultTimeout_(defaultTimeout) {}
@@ -35,11 +40,7 @@ public:
      * @brief Register a component for shutdown
      * @param component Component implementing IShutdown
      */
-    void registerComponent(std::shared_ptr<IShutdown> component)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        components_.push_back(component);
-    }
+    void registerComponent(std::shared_ptr<IShutdown> component);
 
     /**
      * @brief Shut down all registered components in LIFO order
@@ -47,51 +48,24 @@ public:
      * Calls shutdown() on each component in reverse registration order.
      * If a component's shutdown exceeds its timeout, logs a warning and continues.
      */
-    void shutdownAll()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        logger_->log(LogLevel::Info, "ShutdownManager",
-                     "Starting graceful shutdown of " + std::to_string(components_.size()) + " components...");
-
-        for (auto it = components_.rbegin(); it != components_.rend(); ++it)
-        {
-            auto &component = *it;
-            logger_->log(LogLevel::Info, "ShutdownManager",
-                         "Shutting down " + component->name() + "...");
-
-            Timer timer;
-            timer.start();
-            component->shutdown(defaultTimeout_);
-            timer.stop();
-
-            if (timer.elapsed() >= defaultTimeout_.count())
-            {
-                logger_->log(LogLevel::Warn, "ShutdownManager",
-                             component->name() + " shutdown timed out after " + timer.show());
-            }
-            else
-            {
-                logger_->log(LogLevel::Info, "ShutdownManager",
-                             component->name() + " shut down in " + timer.show());
-            }
-        }
-
-        logger_->log(LogLevel::Info, "ShutdownManager", "All components shut down");
-    }
+    void shutdownAll();
 
     /**
      * @brief Get number of registered components
      * @return Number of components
      */
-    size_t size() const
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return components_.size();
-    }
+    size_t size() const;
 
 private:
+    /** @brief Logger instance */
     std::shared_ptr<ILogger> logger_;
+
+    /** @brief Default timeout per component in milliseconds */
     std::chrono::milliseconds defaultTimeout_;
+
+    /** @brief Registered components */
     std::vector<std::shared_ptr<IShutdown>> components_;
+
+    /** @brief Mutex for thread-safe access */
     mutable std::mutex mutex_;
 };

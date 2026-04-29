@@ -13,6 +13,7 @@ configure_file(
 add_library(microservice-core
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
+    src/Environment.cpp
     src/IWebApplication.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp
@@ -20,7 +21,13 @@ add_library(microservice-core
     src/MetricsObserverHandler.cpp
     src/NullLogger.cpp
     src/RouteMatcher.cpp
+    src/SimpleRequest.cpp
+    src/SimpleResponse.cpp
+    src/StringUtils.cpp
+    src/PathParamExtractor.cpp
     src/Timer.cpp
+    src/HttpErrorSender.cpp
+    src/HealthHandler.cpp
     src/TestLogger.cpp
 )
 

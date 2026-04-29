@@ -20,8 +20,5 @@ public:
      * @param req HTTP request
      * @param res HTTP response
      */
-    void handle(IRequest &req, IResponse &res) override
-    {
-        res.setResult(200, "application/json", R"({"status": "ok"})");
-    }
+    void handle(IRequest &req, IResponse &res) override;
 };

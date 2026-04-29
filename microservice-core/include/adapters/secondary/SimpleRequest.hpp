@@ -39,190 +39,35 @@ struct SimpleRequest : IRequest
     {
     }
 
-    std::string getPath() const override { return path_; }
-
-    std::vector<std::string> getPathSegments() const override
-    {
-        std::vector<std::string> segments;
-        std::string segment;
-
-        for (char ch : path_)
-        {
-            if (ch == '/')
-            {
-                if (!segment.empty())
-                {
-                    segments.push_back(segment);
-                    segment.clear();
-                }
-            }
-            else if (ch == '?')
-            {
-                break;
-            }
-            else
-            {
-                segment += ch;
-            }
-        }
-
-        if (!segment.empty())
-        {
-            segments.push_back(segment);
-        }
-
-        return segments;
-    }
-
-    std::string getPathPattern() const override
-    {
-        return pathPattern_;
-    }
-
-    void setPathPattern(const std::string& pattern) override
-    {
-        pathPattern_ = pattern;
-    }
-
-    std::optional<std::string> getPathParam(size_t index) const override
-    {
-        return PathParamExtractor::getByIndex(path_, pathPattern_, index);
-    }
-
-    std::map<std::string, std::string> getQueryParams() const override
-    {
-        return queryParams_;
-    }
-
-    std::optional<std::string> getQueryParam(const std::string& name) const override
-    {
-        auto it = queryParams_.find(name);
-        if (it != queryParams_.end())
-        {
-            return it->second;
-        }
-        return std::nullopt;
-    }
-
-    void setQueryParam(const std::string& name, const std::string& value) override
-    {
-        queryParams_[name] = value;
-    }
-
-    std::map<std::string, std::string> getParams() const override
-    {
-        return getQueryParams();
-    }
-
-    std::map<std::string, std::string> getHeaders() const override
-    {
-        return headers_;
-    }
-
-    std::optional<std::string> getHeader(const std::string& name) const override
-    {
-        std::string nameLower = StringUtils::toLower(name);
-        for (const auto& [key, value] : headers_)
-        {
-            if (StringUtils::toLower(key) == nameLower)
-            {
-                return value;
-            }
-        }
-        return std::nullopt;
-    }
-
-    void setHeader(const std::string& name, const std::string& value) override
-    {
-        headers_[name] = value;
-    }
-
-    void setHeaders(const std::map<std::string, std::string>& headers) override
-    {
-        for (const auto& [name, value] : headers)
-        {
-            headers_[name] = value;
-        }
-    }
-
-    std::string getBody() const override { return body_; }
-
-    void setBody(const std::string& body) override
-    {
-        body_ = body;
-    }
-
-    std::string getMethod() const override { return method_; }
-
-    std::string getIp() const override { return ip_; }
-    int getPort() const override { return port_; }
-
-    std::optional<std::string> getBearerToken() const override
-    {
-        auto auth = getHeader("Authorization");
-        if (!auth)
-        {
-            return std::nullopt;
-        }
-
-        const std::string bearerPrefix = "Bearer ";
-        if (auth->length() > bearerPrefix.length() &&
-            auth->substr(0, bearerPrefix.length()) == bearerPrefix)
-        {
-            return auth->substr(bearerPrefix.length());
-        }
-
-        return std::nullopt;
-    }
-
-    bool isJson() const override
-    {
-        auto contentType = getContentType();
-        return contentType.find("json") != std::string::npos;
-    }
-
-    std::string getContentType() const override
-    {
-        auto ct = getHeader("Content-Type");
-        return ct.value_or("");
-    }
-
-    void setAttribute(const std::string& name, const std::string& value) override
-    {
-        attributes_[name] = value;
-    }
-
-    std::optional<std::string> getAttribute(const std::string& name) const override
-    {
-        auto it = attributes_.find(name);
-        if (it != attributes_.end())
-        {
-            return it->second;
-        }
-        return std::nullopt;
-    }
-
-    std::string getTraceId() override
-    {
-        auto header = getHeader("X-Trace-ID");
-        if (header)
-        {
-            return *header;
-        }
-        std::string id = idGenerator_->generate();
-        setHeader("X-Trace-ID", id);
-        return id;
-    }
-
-    void setTraceId(const std::string& id) override
-    {
-        setHeader("X-Trace-ID", id);
-    }
-
-    void setMethod(const std::string& method) { method_ = method; }
-    void setPath(const std::string& path) { path_ = path; }
-    void setIp(const std::string& ip) { ip_ = ip; }
-    void setPort(int port) { port_ = port; }
+    std::string getPath() const override;
+    std::vector<std::string> getPathSegments() const override;
+    std::string getPathPattern() const override;
+    void setPathPattern(const std::string& pattern) override;
+    std::optional<std::string> getPathParam(size_t index) const override;
+    std::map<std::string, std::string> getQueryParams() const override;
+    std::optional<std::string> getQueryParam(const std::string& name) const override;
+    void setQueryParam(const std::string& name, const std::string& value) override;
+    std::map<std::string, std::string> getParams() const override;
+    std::map<std::string, std::string> getHeaders() const override;
+    std::optional<std::string> getHeader(const std::string& name) const override;
+    void setHeader(const std::string& name, const std::string& value) override;
+    void setHeaders(const std::map<std::string, std::string>& headers) override;
+    std::string getBody() const override;
+    void setBody(const std::string& body) override;
+    std::string getMethod() const override;
+    std::string getIp() const override;
+    int getPort() const override;
+    std::optional<std::string> getBearerToken() const override;
+    bool isJson() const override;
+    std::string getContentType() const override;
+    void setAttribute(const std::string& name, const std::string& value) override;
+    std::optional<std::string> getAttribute(const std::string& name) const override;
+    std::string getTraceId() override;
+    void setTraceId(const std::string& id) override;
+    void setMethod(const std::string& method);
+    void setPath(const std::string& path);
+    void setIp(const std::string& ip);
+    void setPort(int port);
 
 private:
     std::string method_;

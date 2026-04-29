@@ -46,7 +46,15 @@ class BoostBeastApplication : public IWebApplication, public IShutdown
 {
 public:
     explicit BoostBeastApplication(
-        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>());
+        std::shared_ptr<ILogger> logger = std::make_shared<NullLogger>())
+        : maxRequestBodySize_(32 * 1024 * 1024)
+        , readTimeout_(30 * 1000)
+        , writeTimeout_(30 * 1000)
+        , maxConnections_(1024)
+        , maxRequestsPerConnection_(100)
+        , logger_(std::move(logger))
+    {
+    }
     virtual ~BoostBeastApplication();
 
     /**
@@ -99,6 +107,7 @@ private:
 
     std::optional<HandlerMatch> findHandler(const std::string &method, const std::string &path);
     bool pathExists(const std::string &path);
+    std::vector<std::string> split(const std::string &s, char delimiter);
 
     std::unique_ptr<boost::asio::io_context> ioContext_;
     std::unique_ptr<boost::asio::ip::tcp::acceptor> acceptor_;
@@ -122,4 +131,5 @@ private:
     void handleRequest(IRequest &req, IResponse &res);
 
     void loadJsonToEnvironment(const nlohmann::json &j, const std::string &prefix = "");
+    void doAccept();
 };

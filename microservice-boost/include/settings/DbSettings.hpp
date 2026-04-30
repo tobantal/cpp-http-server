@@ -50,18 +50,15 @@ public:
 
     ~DbSettings() override = default;
 
-    std::string getHost() const override { return host_; }
-    int getPort() const override { return port_; }
-    std::string getName() const override { return name_; }
-    std::string getUser() const override { return user_; }
-    std::string getPassword() const override { return password_; }
-    size_t getMinConnections() const override { return minConnections_; }
-    size_t getMaxConnections() const override { return maxConnections_; }
+    std::string getHost() const override;
+    int getPort() const override;
+    std::string getName() const override;
+    std::string getUser() const override;
+    std::string getPassword() const override;
+    size_t getMinConnections() const override;
+    size_t getMaxConnections() const override;
 
-    std::string getConnectionString() const override {
-        return "host=" + host_ + " port=" + std::to_string(port_) +
-               " dbname=" + name_ + " user=" + user_ + " password=" + password_;
-    }
+    std::string getConnectionString() const override;
 
 private:
     std::string prefix_;
@@ -73,16 +70,6 @@ private:
     size_t minConnections_;
     size_t maxConnections_;
 
-    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue) {
-        const char* value = std::getenv(name);
-        return value ? std::string(value) : defaultValue;
-    }
-
-    static std::string toLower(const std::string& s) {
-        std::string result = s;
-        for (auto& c : result) {
-            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-        }
-        return result;
-    }
+    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue);
+    static std::string toLower(const std::string& s);
 };

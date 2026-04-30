@@ -239,10 +239,10 @@ struct SimpleRequest : IRequest
         setHeader("X-Trace-ID", id);
     }
 
-    void setMethod(const std::string& method) { method_ = method; }
-    void setPath(const std::string& path) { path_ = path; }
-    void setIp(const std::string& ip) { ip_ = ip; }
-    void setPort(int port) { port_ = port; }
+    void setMethod(const std::string& method);
+    void setPath(const std::string& path);
+    void setIp(const std::string& ip);
+    void setPort(int port);
 
 private:
     std::string method_;

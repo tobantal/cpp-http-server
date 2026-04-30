@@ -105,7 +105,7 @@ TEST(ServerSettingsTest, DefaultMaxRequestBodySize)
     auto env = std::make_shared<Environment>();
     ServerSettings settings(env);
 
-    EXPECT_EQ(settings.getMaxRequestBodySize(), 1048576);
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 16 * 1024 * 1024);
 }
 
 TEST(ServerSettingsTest, MaxRequestBodySizeFromEnv)
@@ -157,7 +157,7 @@ TEST(ServerSettingsTest, InvalidMaxRequestBodySizeEnvUsesDefault)
     auto env = std::make_shared<Environment>();
     ServerSettings settings(env);
 
-    EXPECT_EQ(settings.getMaxRequestBodySize(), 1048576);
+    EXPECT_EQ(settings.getMaxRequestBodySize(), 16 * 1024 * 1024);
 
     unsetenv("SERVER_MAX_REQUEST_BODY_SIZE");
 }
@@ -252,7 +252,7 @@ TEST(ServerSettingsTest, DefaultMaxConnectionsIsUnlimited)
     auto env = std::make_shared<Environment>();
     ServerSettings settings(env);
 
-    EXPECT_EQ(settings.getMaxConnections(), 0u);
+    EXPECT_EQ(settings.getMaxConnections(), 1024u);
 }
 
 TEST(ServerSettingsTest, MaxConnectionsFromEnv)
@@ -304,7 +304,7 @@ TEST(ServerSettingsTest, InvalidMaxConnectionsEnvUsesDefault)
     auto env = std::make_shared<Environment>();
     ServerSettings settings(env);
 
-    EXPECT_EQ(settings.getMaxConnections(), 0u);
+    EXPECT_EQ(settings.getMaxConnections(), 1024u);
 
     unsetenv("SERVER_MAX_CONNECTIONS");
 }

@@ -29,22 +29,9 @@ public:
     PooledConnection(pqxx::connection* conn, class ConnectionPool* pool)
         : conn_(conn), pool_(pool) {}
 
-    PooledConnection(PooledConnection&& other) noexcept
-        : conn_(other.conn_), pool_(other.pool_) {
-        other.conn_ = nullptr;
-        other.pool_ = nullptr;
-    }
+    PooledConnection(PooledConnection&& other) noexcept;
 
-    PooledConnection& operator=(PooledConnection&& other) noexcept {
-        if (this != &other) {
-            reset();
-            conn_ = other.conn_;
-            pool_ = other.pool_;
-            other.conn_ = nullptr;
-            other.pool_ = nullptr;
-        }
-        return *this;
-    }
+    PooledConnection& operator=(PooledConnection&& other) noexcept;
 
     PooledConnection(const PooledConnection&) = delete;
     PooledConnection& operator=(const PooledConnection&) = delete;
@@ -52,13 +39,13 @@ public:
     ~PooledConnection();
 
     /** @brief Access the underlying pqxx connection */
-    pqxx::connection& get() { return *conn_; }
+    pqxx::connection& get();
 
     /** @brief Implicit conversion for use as pqxx::connection& */
-    operator pqxx::connection&() { return *conn_; }
+    operator pqxx::connection&();
 
     /** @brief Whether this handle holds a valid connection */
-    bool valid() const { return conn_ != nullptr; }
+    bool valid() const;
 
 private:
     void reset();
@@ -116,7 +103,7 @@ public:
     void shutdown(std::chrono::milliseconds timeoutMs = std::chrono::milliseconds(5000)) override;
 
     /** @brief Component name for ShutdownManager logging */
-    std::string name() const override { return "ConnectionPool"; }
+    std::string name() const override;
 
     // --- IConnectionPool ---
     size_t available() const override;

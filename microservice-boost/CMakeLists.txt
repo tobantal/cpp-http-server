@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.14)
 add_library(microservice-boost
     src/BoostBeastApplication.cpp
     src/ConnectionPool.cpp
+    src/DbSettings.cpp
     src/HttpClient.cpp
     src/PostgresTransactionExecutor.cpp
     src/SplunkLogger.cpp

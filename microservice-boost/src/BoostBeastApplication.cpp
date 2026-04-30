@@ -17,9 +17,9 @@ using tcp = asio::ip::tcp;
 
 BoostBeastApplication::BoostBeastApplication(std::shared_ptr<ILogger> logger)
     : BaseWebApplication(std::move(logger)),
-      maxRequestBodySize_(1048576),
+      maxRequestBodySize_(16 * 1024 * 1024),
       readTimeout_(30000), writeTimeout_(30000), keepAliveTimeout_(5000),
-      maxConnections_(0), activeConnections_(0)
+      maxConnections_(1024), activeConnections_(0)
 {
 }
 

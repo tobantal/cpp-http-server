@@ -16,6 +16,35 @@ void PooledConnection::reset() {
     pool_ = nullptr;
 }
 
+PooledConnection::PooledConnection(PooledConnection&& other) noexcept
+    : conn_(other.conn_), pool_(other.pool_) {
+    other.conn_ = nullptr;
+    other.pool_ = nullptr;
+}
+
+PooledConnection& PooledConnection::operator=(PooledConnection&& other) noexcept {
+    if (this != &other) {
+        reset();
+        conn_ = other.conn_;
+        pool_ = other.pool_;
+        other.conn_ = nullptr;
+        other.pool_ = nullptr;
+    }
+    return *this;
+}
+
+pqxx::connection& PooledConnection::get() {
+    return *conn_;
+}
+
+PooledConnection::operator pqxx::connection&() {
+    return *conn_;
+}
+
+bool PooledConnection::valid() const {
+    return conn_ != nullptr;
+}
+
 // --- ConnectionPool ---
 
 ConnectionPool::ConnectionPool(const std::string& connString,
@@ -154,6 +183,10 @@ bool ConnectionPool::isAlive() const {
 
     auto* conn = available_.front();
     return conn->is_open();
+}
+
+std::string ConnectionPool::name() const {
+    return "ConnectionPool";
 }
 
 std::unique_ptr<pqxx::connection> ConnectionPool::createConnection() {

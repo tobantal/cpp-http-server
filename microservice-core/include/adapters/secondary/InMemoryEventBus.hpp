@@ -3,7 +3,7 @@
 #include "ports/output/IEventPublisher.hpp"
 #include "ports/output/IEventConsumer.hpp"
 #include "messaging/EventHandler.hpp"
-#include "messaging/ExceptionPolicy.hpp"
+#include "messaging/InMemoryEventBusExceptionPolicy.hpp"
 #include "messaging/PublishedMessage.hpp"
 #include <unordered_map>
 #include <vector>
@@ -49,7 +49,7 @@ public:
     bool isRunning() const;
     size_t subscriptionCount() const;
     size_t handlerCount(const std::string &routingKey) const;
-    void setExceptionPolicy(ExceptionPolicy policy);
+    void setExceptionPolicy(InMemoryEventBusExceptionPolicy policy);
     const std::vector<std::pair<std::string, std::string>> &errors() const;
 
     enum class State
@@ -60,7 +60,7 @@ public:
 
 private:
     mutable std::mutex handlersMutex_;
-    std::atomic<ExceptionPolicy> exceptionPolicy_{ExceptionPolicy::Catch};
+    std::atomic<InMemoryEventBusExceptionPolicy> exceptionPolicy_{InMemoryEventBusExceptionPolicy::Catch};
     State state_ = State::Idle;
     std::unordered_map<std::string, std::vector<EventHandler>> handlers_;
     std::vector<PublishedMessage> publishedMessages_;

@@ -14,6 +14,6 @@
  */
 struct PublishedMessage
 {
-    std::string routingKey;
-    std::string message;
+    std::string routingKey; ///< Routing key of the event (e.g. "order.created")
+    std::string message;    ///< Event payload (typically JSON)
 };

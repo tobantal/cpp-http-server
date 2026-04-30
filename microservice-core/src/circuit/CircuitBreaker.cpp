@@ -42,7 +42,7 @@ void CircuitBreaker::recordSuccess()
 void CircuitBreaker::recordFailure()
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    failureCount_++;
+    ++failureCount_;
     lastFailureTime_ = std::chrono::steady_clock::now();
 
     if (state_ == State::Closed) {

@@ -27,8 +27,14 @@
 | `ChainHandler` | Middleware chain с IHttpErrorHandler injection |
 | `RouteMatcher` | Сопоставление маршрутов с wildcards |
 | `IIdGenerator` / `UuidGenerator` | Thread-safe генератор ID (DIP: mockable в тестах) |
+| `Uuid7Generator` | UUID v7 (RFC 9562) — time-ordered, k-sortable IDs |
 | `IEnvironment` / `Environment` | Type-safe конфигурация (ENV → config.json → default) |
 | `IHttpClient` | HTTP-клиент для межсервисной коммуникации |
+| `ICircuitBreaker` | Circuit breaker pattern: CLOSED/OPEN/HALF_OPEN states, threshold-based transition |
+| `CircuitBreaker` | Implementation: failure counting, timeout-based half-open transition |
+| `IRetryPolicy` | Retry strategy interface: `shouldRetry()`, `getDelay()` |
+| `RetrySettings` | Configuration: maxAttempts, initialDelay, maxDelay, backoffMultiplier |
+| `HttpRetryExecutor` | Decorator for IHttpClient: wraps calls with retry logic |
 | `IEventPublisher` | Публикация событий: `publish(routingKey, message)` |
 | `IEventConsumer` | Подписка на события: `subscribe(routingKeys, handler)`, `start()`, `stop()` |
 | `InMemoryEventBus` | Test double: IEventPublisher + IEventConsumer (ExceptionPolicy, message recording) |
@@ -39,6 +45,7 @@
 | `KeyValueEntity` | Simple key-value entity struct (id + value) |
 | `InMemoryKeyValueRepository` | Thread-safe in-memory IRepository<KeyValueEntity> for tests and caching |
 | `Timer` | Утилита замера времени (start/stop/elapsed/show) |
+| `HttpLogger` / `SplunkLogger` | HTTP-based logging with IShutdown graceful flush, Splunk auth, fallback to NullLogger |
 | `SimpleRequest` / `SimpleResponse` | Test doubles для IRequest/IResponse |
 
 ### Boost Module (`microservice-boost`)
@@ -50,6 +57,7 @@ Production-ready HTTP-сервер на Boost.Beast/Asio.
 | `BoostBeastApplication` | HTTP-сервер: keep-alive, connection limits, timeouts, version header |
 | `BeastRequestAdapter` / `BeastResponseAdapter` | Адаптеры Beast → IRequest/IResponse |
 | `HttpClient` | Исходящий HTTP-клиент (connect/read/write timeout) |
+| `RetryingHttpClient` | HttpClient wrapper with RetryPolicy: exponential backoff on failures |
 | `RabbitMQAdapter` | RabbitMQ: IEventPublisher + IEventConsumer + IShutdown, lifecycle state machine, reconnect with exponential backoff |
 | `RabbitMQSettings` | Конфигурация RabbitMQ: ENV → config.json → default |
 | `ConnectionPool` | Thread-safe PostgreSQL connection pool: PooledConnection RAII, min/max sizing, blocking checkout |
@@ -74,7 +82,7 @@ include(FetchContent)
 FetchContent_Declare(
     cpp-http-server
     GIT_REPOSITORY https://github.com/tobantal/cpp-http-server.git
-    GIT_TAG v0.3.0
+    GIT_TAG v0.4.0
 )
 
 # Если ваш проект уже подтягивает Boost/nlohmann_json:

@@ -32,31 +32,16 @@ public:
      * @brief Construct SplunkLogSettings with prefix
      * @param prefix ENV prefix (e.g., "APP", "SERVICE")
      */
-    explicit SplunkLogSettings(const std::string& prefix)
-        : prefix_(prefix)
-    {
-        url_ = getEnvOrDefault((prefix + "_SPLUNK_URL").c_str(),
-                               "http://localhost:8088/services/collector");
-        token_ = getEnvOrDefault((prefix + "_SPLUNK_TOKEN").c_str(), "");
-        index_ = getEnvOrDefault((prefix + "_SPLUNK_INDEX").c_str(), "main");
-        sourcetype_ = getEnvOrDefault((prefix + "_SPLUNK_SOURCETYPE").c_str(), "_json");
-
-        bufferSize_ = std::stoul(getEnvOrDefault(
-            (prefix + "_SPLUNK_BUFFER_SIZE").c_str(), "100"));
-        flushIntervalSec_ = std::stoi(getEnvOrDefault(
-            (prefix + "_SPLUNK_FLUSH_INTERVAL_SEC").c_str(), "5"));
-    }
+    explicit SplunkLogSettings(const std::string& prefix);
 
     ~SplunkLogSettings() override = default;
 
-    std::string getUrl() const override { return url_; }
-    std::string getToken() const override { return token_; }
-    std::string getIndex() const override { return index_; }
-    std::string getSourceType() const override { return sourcetype_; }
-    size_t getBufferSize() const override { return bufferSize_; }
-    std::chrono::seconds getFlushInterval() const override {
-        return std::chrono::seconds(flushIntervalSec_);
-    }
+    std::string getUrl() const override;
+    std::string getToken() const override;
+    std::string getIndex() const override;
+    std::string getSourceType() const override;
+    size_t getBufferSize() const override;
+    std::chrono::seconds getFlushInterval() const override;
 
 private:
     std::string prefix_;
@@ -67,8 +52,5 @@ private:
     size_t bufferSize_;
     int flushIntervalSec_;
 
-    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue) {
-        const char* value = std::getenv(name);
-        return value ? std::string(value) : defaultValue;
-    }
+    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue);
 };

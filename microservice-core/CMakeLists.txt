@@ -15,6 +15,7 @@ add_library(microservice-core
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
     src/DomainEvent.cpp
+    src/Environment.cpp
     src/HttpClientError.cpp
     src/HttpError.cpp
     src/HttpErrorSender.cpp

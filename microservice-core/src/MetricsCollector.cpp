@@ -11,6 +11,10 @@
 const std::array<double, 11> MetricsCollector::kDefaultBuckets = {
     0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0};
 
+MetricsCollector::HistogramBucket::HistogramBucket() = default;
+
+MetricsCollector::HistogramBucket::HistogramBucket(double bound) : upperBound(bound), count(0) {}
+
 void MetricsCollector::increment(const std::string &name,
                                   const std::map<std::string, std::string> &labels)
 {

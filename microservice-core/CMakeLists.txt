@@ -38,6 +38,7 @@ add_library(microservice-core
     src/SimpleResponse.cpp
     src/StringUtils.cpp
     src/Timer.cpp
+    src/Uuid7Generator.cpp
     src/ShutdownManager.cpp
     src/TestLogger.cpp
 )

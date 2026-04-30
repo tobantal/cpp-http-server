@@ -9,6 +9,7 @@ add_library(microservice-boost
     src/HttpClient.cpp
     src/JsonProcessor.cpp
     src/JsonToEnvConverter.cpp
+    src/JsonValidator.cpp
     src/RetryingHttpClient.cpp
     src/PostgresTransactionExecutor.cpp
     src/SplunkLogger.cpp

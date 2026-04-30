@@ -24,6 +24,7 @@ add_library(microservice-core
     src/HttpRetrySettings.cpp
     src/InMemoryEventBus.cpp
     src/IEventPublisher.cpp
+    src/IHttpHandler.cpp
     src/IWebApplication.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp

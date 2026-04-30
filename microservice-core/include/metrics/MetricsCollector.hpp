@@ -52,8 +52,8 @@ private:
     {
         double upperBound = 0.0;
         int64_t count = 0;
-        HistogramBucket() = default;
-        HistogramBucket(double bound) : upperBound(bound), count(0) {}
+        HistogramBucket();
+        HistogramBucket(double bound);
     };
 
     struct HistogramData

@@ -150,17 +150,14 @@ struct SimpleRequest : IRequest
         }
     }
 
-    std::string getBody() const override { return body_; }
+    std::string getBody() const override;
 
-    void setBody(const std::string& body) override
-    {
-        body_ = body;
-    }
+    void setBody(const std::string& body) override;
 
-    std::string getMethod() const override { return method_; }
+    std::string getMethod() const override;
 
-    std::string getIp() const override { return ip_; }
-    int getPort() const override { return port_; }
+    std::string getIp() const override;
+    int getPort() const override;
 
     std::optional<std::string> getBearerToken() const override
     {

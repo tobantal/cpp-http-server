@@ -74,6 +74,29 @@ else()
 endif()
 
 # ============================================================================
+# AMQP-CPP (RabbitMQ client library)
+# ============================================================================
+if(CPP_HTTP_SERVER_FETCH_DEPS)
+    find_package(amqpcpp QUIET)
+endif()
+
+if(amqpcpp_FOUND)
+    message(STATUS "Using system amqpcpp ${amqpcpp_VERSION}")
+else()
+    message(STATUS "amqpcpp not found, fetching via FetchContent...")
+    include(FetchContent)
+    FetchContent_Declare(
+        amqpcpp
+        GIT_REPOSITORY https://github.com/CopernicaMarketingSoftware/AMQP-CPP.git
+        GIT_TAG v4.3.26
+        GIT_SHALLOW TRUE
+    )
+    set(AMQP-CPP_LINUX_TCP ON CACHE BOOL "Enable TCP support in AMQP-CPP" FORCE)
+    FetchContent_MakeAvailable(amqpcpp)
+    message(STATUS "amqpcpp fetched via FetchContent")
+endif()
+
+# ============================================================================
 # GoogleTest
 # ============================================================================
 include(FetchContent)

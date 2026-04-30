@@ -177,7 +177,7 @@ TEST_F(InMemoryEventBusTest, Clear_ResetsAllState) {
 // ============================================================================
 
 TEST_F(InMemoryEventBusTest, ExceptionPolicy_Catch_StoresError) {
-    bus.setExceptionPolicy(InMemoryEventBus::ExceptionPolicy::Catch);
+    bus.setExceptionPolicy(ExceptionPolicy::Catch);
     bus.subscribe({"test"}, [](const std::string&, const std::string&) {
         throw std::runtime_error("handler error");
     });
@@ -191,7 +191,7 @@ TEST_F(InMemoryEventBusTest, ExceptionPolicy_Catch_StoresError) {
 
 TEST_F(InMemoryEventBusTest, ExceptionPolicy_Catch_OtherHandlersStillRun) {
     int secondHandlerCalled = 0;
-    bus.setExceptionPolicy(InMemoryEventBus::ExceptionPolicy::Catch);
+    bus.setExceptionPolicy(ExceptionPolicy::Catch);
     bus.subscribe({"test"}, [](const std::string&, const std::string&) {
         throw std::runtime_error("fail");
     });
@@ -206,7 +206,7 @@ TEST_F(InMemoryEventBusTest, ExceptionPolicy_Catch_OtherHandlersStillRun) {
 }
 
 TEST_F(InMemoryEventBusTest, ExceptionPolicy_Propagate_ExceptionReachesCaller) {
-    bus.setExceptionPolicy(InMemoryEventBus::ExceptionPolicy::Propagate);
+    bus.setExceptionPolicy(ExceptionPolicy::Propagate);
     bus.subscribe({"test"}, [](const std::string&, const std::string&) {
         throw std::runtime_error("propagated error");
     });

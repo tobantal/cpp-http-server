@@ -26,21 +26,12 @@ public:
      */
     RetryingHttpClient(
         std::shared_ptr<IHttpClient> inner,
-        std::shared_ptr<IHttpRetryExecutor> executor)
-        : inner_(std::move(inner))
-        , executor_(std::move(executor))
-    {
-    }
+        std::shared_ptr<IHttpRetryExecutor> executor);
 
     /**
      * @brief Send HTTP request with retry
      */
-    HttpClientResult send(const IRequest& request, IResponse& response) override
-    {
-        return executor_->execute([this, &request, &response]() {
-            return inner_->send(request, response);
-        });
-    }
+    HttpClientResult send(const IRequest& request, IResponse& response) override;
 
 private:
     std::shared_ptr<IHttpClient> inner_;

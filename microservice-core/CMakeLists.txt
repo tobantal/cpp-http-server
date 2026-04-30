@@ -19,6 +19,7 @@ add_library(microservice-core
     src/HttpClientError.cpp
     src/HttpError.cpp
     src/HttpErrorSender.cpp
+    src/HealthHandler.cpp
     src/HttpRetryExecutor.cpp
     src/HttpRetrySettings.cpp
     src/InMemoryEventBus.cpp
@@ -36,6 +37,7 @@ add_library(microservice-core
     src/SimpleResponse.cpp
     src/StringUtils.cpp
     src/Timer.cpp
+    src/ShutdownManager.cpp
     src/TestLogger.cpp
 )
 

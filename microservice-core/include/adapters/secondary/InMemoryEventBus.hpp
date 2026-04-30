@@ -3,6 +3,8 @@
 #include "ports/output/IEventPublisher.hpp"
 #include "ports/output/IEventConsumer.hpp"
 #include "messaging/EventHandler.hpp"
+#include "messaging/ExceptionPolicy.hpp"
+#include "messaging/PublishedMessage.hpp"
 #include <unordered_map>
 #include <vector>
 #include <mutex>
@@ -14,26 +16,6 @@
  * @brief In-memory event bus for testing and development
  * @author Anton Tobolkin
  */
-
-/**
- * @enum ExceptionPolicy
- * @brief How to handle exceptions thrown by event handlers
- */
-enum class ExceptionPolicy
-{
-    Catch,
-    Propagate
-};
-
-/**
- * @struct PublishedMessage
- * @brief Record of a published message for test assertions
- */
-struct PublishedMessage
-{
-    std::string routingKey;
-    std::string message;
-};
 
 /**
  * @class InMemoryEventBus

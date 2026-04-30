@@ -6,8 +6,10 @@
 #include "ports/output/IShutdown.hpp"
 #include "metrics/IMetricsCollector.hpp"
 #include "adapters/secondary/NullLogger.hpp"
+#include "messaging/RabbitMQConnectionState.hpp"
+#include "settings/RabbitMQSettings.hpp"
+#include "adapters/secondary/ReconnectBoostAsioHandler.hpp"
 #include <amqpcpp.h>
-#include <amqpcpp/libboostasio.h>
 #include <boost/asio.hpp>
 #include <memory>
 #include <string>
@@ -17,112 +19,12 @@
 #include <vector>
 #include <unordered_map>
 #include <chrono>
-#include <functional>
 
 /**
  * @file RabbitMQAdapter.hpp
- * @brief RabbitMQ adapter with reconnection and lifecycle management
+ * @brief RabbitMQ adapter implementing IEventPublisher and IEventConsumer
  * @author Anton Tobolkin
  */
-
-class IEnvironment;
-
-/**
- * @enum RabbitMQConnectionState
- * @brief Lifecycle states for the RabbitMQ connection
- */
-enum class RabbitMQConnectionState : uint8_t
-{
-    Idle,
-    Connecting,
-    Connected,
-    Reconnecting
-};
-
-/**
- * @class RabbitMQSettings
- * @brief RabbitMQ configuration loaded from environment variables
- *
- * Reads from ENV (with fallback defaults):
- * - RABBITMQ_HOST (default: "localhost")
- * - RABBITMQ_PORT (default: 5672)
- * - RABBITMQ_USER (default: "guest")
- * - RABBITMQ_PASSWORD (default: "guest")
- * - RABBITMQ_EXCHANGE (default: "events")
- * - RABBITMQ_QUEUE_NAME (default: "" — server-generated exclusive queue)
- */
-class RabbitMQSettings
-{
-public:
-    explicit RabbitMQSettings(std::shared_ptr<IEnvironment> env);
-
-    std::string getHost() const { return host_; }
-    int getPort() const { return port_; }
-    std::string getUser() const { return user_; }
-    std::string getPassword() const { return password_; }
-    std::string getExchange() const { return exchange_; }
-    std::string getQueueName() const { return queueName_; }
-    std::string getConnectionString() const;
-
-private:
-    static std::string getEnvOrDefault(const char *name, const std::string &defaultValue);
-    static int getEnvOrDefaultInt(const char *name, int defaultValue);
-
-    std::string host_;
-    int port_;
-    std::string user_;
-    std::string password_;
-    std::string exchange_;
-    std::string queueName_;
-
-    static constexpr auto kDefaultHost = "localhost";
-    static constexpr int kDefaultPort = 5672;
-    static constexpr auto kDefaultUser = "guest";
-    static constexpr auto kDefaultPassword = "guest";
-    static constexpr auto kDefaultExchange = "events";
-};
-
-/**
- * @typedef ConnectionLostCallback
- * @brief Callback invoked when the RabbitMQ connection is lost
- */
-using ConnectionLostCallback = std::function<void()>;
-
-/**
- * @class ReconnectBoostAsioHandler
- * @brief Custom LibBoostAsioHandler that detects connection loss
- *
- * Overrides TcpHandler::onError, onClosed, onLost to detect
- * connection failures and trigger reconnection.
- */
-class ReconnectBoostAsioHandler : public AMQP::LibBoostAsioHandler
-{
-public:
-    explicit ReconnectBoostAsioHandler(boost::asio::io_context &ioContext,
-                                       ConnectionLostCallback onLost)
-        : AMQP::LibBoostAsioHandler(ioContext), onLost_(std::move(onLost)) {}
-
-private:
-    void onError(AMQP::TcpConnection *connection, const char *message) override
-    {
-        AMQP::LibBoostAsioHandler::onError(connection, message);
-        if (onLost_) onLost_();
-    }
-
-    void onClosed(AMQP::TcpConnection *connection) override
-    {
-        AMQP::LibBoostAsioHandler::onClosed(connection);
-        if (onLost_) onLost_();
-    }
-
-    void onLost(AMQP::TcpConnection *connection) override
-    {
-        AMQP::LibBoostAsioHandler::onLost(connection);
-        if (onLost_) onLost_();
-    }
-
-    ConnectionLostCallback onLost_;
-};
 
 /**
  * @class RabbitMQAdapter

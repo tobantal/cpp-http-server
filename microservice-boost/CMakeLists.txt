@@ -4,6 +4,7 @@ add_library(microservice-boost
     src/BoostBeastApplication.cpp
     src/HttpClient.cpp
     src/RabbitMQAdapter.cpp
+    src/RabbitMQSettings.cpp
 )
 
 target_include_directories(microservice-boost

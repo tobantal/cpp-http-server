@@ -22,6 +22,7 @@ add_library(microservice-core
     src/RouteMatcher.cpp
     src/Timer.cpp
     src/TestLogger.cpp
+    src/circuit/CircuitBreaker.cpp
 )
 
 target_include_directories(microservice-core PUBLIC

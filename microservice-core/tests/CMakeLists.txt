@@ -14,6 +14,7 @@ add_executable(microservice-core-test
     HttpErrorSenderTest.cpp
     ShutdownManagerTest.cpp
     TimerTest.cpp
+    CircuitBreakerTest.cpp
 )
 
 target_link_libraries(microservice-core-test

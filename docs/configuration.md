@@ -31,6 +31,45 @@ ENV variable > config.json key > default value
 | `HTTP_CLIENT_READ_TIMEOUT_MS` | int | `30000` | Read timeout in ms (30s) |
 | `HTTP_CLIENT_WRITE_TIMEOUT_MS` | int | `30000` | Write timeout in ms (30s) |
 
+## Circuit Breaker Settings
+
+| ENV Variable | Type | Default | Description |
+|---|---|---|---|
+| `CIRCUIT_BREAKER_FAILURE_THRESHOLD` | int | `5` | Number of failures before opening the circuit |
+| `CIRCUIT_BREAKER_FAILURE_WINDOW_SECONDS` | int | `30` | Time window in seconds to count failures |
+| `CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT_SECONDS` | int | `60` | Time in seconds before transitioning from OPEN to HALF_OPEN |
+
+**State Machine:**
+- **CLOSED** → Normal operation, requests pass through. Failures are counted.
+- **OPEN** → Fail-fast mode, requests are blocked. After timeout → HALF_OPEN.
+- **HALF_OPEN** → Probe mode, one request allowed. Success → CLOSED, Failure → OPEN.
+
+**Usage Example:**
+```cpp
+#include "circuit/CircuitBreaker.hpp"
+#include "circuit/CircuitBreakerSettings.hpp"
+
+// Via settings interface
+auto settings = std::make_shared<CircuitBreakerSettings>("CIRCUIT_BREAKER_");
+CircuitBreaker cb(settings);
+
+// Or via ENV prefix
+CircuitBreaker cb("HTTP_CLIENT_");  // reads HTTP_CLIENT_FAILURE_THRESHOLD, etc.
+
+// In your service code
+if (!cb.allowRequest()) {
+    throw ServiceUnavailableException("Circuit is open");
+}
+try {
+    auto result = httpClient->send(request, response);
+    cb.recordSuccess();
+    return result;
+} catch (...) {
+    cb.recordFailure();
+    throw;
+}
+```
+
 ## config.json Example
 
 ```json

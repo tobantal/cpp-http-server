@@ -26,9 +26,11 @@ add_library(microservice-core
     src/MetricsHandler.cpp
     src/MetricsObserverHandler.cpp
     src/NullLogger.cpp
+    src/PathParamExtractor.cpp
     src/RetrySettings.cpp
     src/RouteMatcher.cpp
     src/SimpleRequest.cpp
+    src/StringUtils.cpp
     src/Timer.cpp
     src/TestLogger.cpp
 )

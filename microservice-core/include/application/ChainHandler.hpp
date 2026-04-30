@@ -5,7 +5,7 @@
 #include "handler/HttpErrorSender.hpp"
 #include "ports/output/ILogger.hpp"
 #include "adapters/secondary/NullLogger.hpp"
-#include "domain/HttpError.hpp"
+#include "domain/error/HttpError.hpp"
 #include <memory>
 #include <vector>
 

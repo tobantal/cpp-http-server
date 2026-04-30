@@ -16,6 +16,7 @@ add_executable(microservice-core-test
     TimerTest.cpp
     BaseWebApplicationTest.cpp
     InMemoryEventBusTest.cpp
+    InMemoryKeyValueRepositoryTest.cpp
     Uuid7GeneratorTest.cpp
     RetrySettingsTest.cpp
     HttpRetrySettingsTest.cpp

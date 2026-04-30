@@ -1,42 +1,42 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 /**
  * @file IEventPublisher.hpp
- * @brief Output port for publishing domain events
+ * @brief Interface for publishing events
  * @author Anton Tobolkin
  */
 
 struct DomainEvent;
 
 /**
- * @interface IEventPublisher
- * @brief Output port implemented by message broker adapters (RabbitMQAdapter, InMemoryEventBus)
+ * @class IEventPublisher
+ * @brief Interface for publishing events to a message bus
  *
- * Provides two publish overloads: raw (routingKey + message string)
- * and typed (DomainEvent → toJson). The typed overload is non-virtual
- * and delegates to the virtual raw overload, so subclasses only
- * implement publish(string, string).
+ * Implementations may use RabbitMQ, Kafka, in-memory bus, etc.
+ * Follows the Dependency Inversion Principle: domain code depends
+ * on this abstraction, not on a specific messaging technology.
  */
-class IEventPublisher {
+class IEventPublisher
+{
 public:
     virtual ~IEventPublisher() = default;
 
     /**
-     * @brief Publish a raw event to the message broker
+     * @brief Publish an event to the message bus
      * @param routingKey Routing key for message dispatch (e.g. "order.created")
-     * @param message JSON-serialized event body
+     * @param message Event payload (typically JSON)
      */
-    virtual void publish(const std::string& routingKey, const std::string& message) = 0;
+    virtual void publish(const std::string &routingKey, const std::string &message) = 0;
 
     /**
-     * @brief Publish a typed domain event
+     * @brief Publish a domain event (convenience overload)
+     * @param event Domain event to publish
      *
-     * Non-virtual — calls publish(event.eventType, event.toJson()).
-     * Subclasses need not override this method.
-     *
-     * @param event Domain event whose eventType becomes routingKey
+     * Default implementation calls publish(event.eventType, event.toJson()).
+     * Can be overridden for custom serialization.
      */
-    void publish(const DomainEvent& event);
+    virtual void publish(const DomainEvent &event);
 };

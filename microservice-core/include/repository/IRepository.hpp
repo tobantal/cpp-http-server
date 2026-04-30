@@ -48,6 +48,13 @@ public:
     virtual Entity save(const Entity &entity) = 0;
 
     /**
+     * @brief Save multiple entities in a batch (insert or update)
+     * @param entities Vector of entities to save
+     * @return Vector of saved entities (with generated IDs if new)
+     */
+    virtual std::vector<Entity> saveAll(const std::vector<Entity> &entities) = 0;
+
+    /**
      * @brief Remove an entity by its ID
      * @param id Entity identifier
      * @return true if the entity was removed, false if not found

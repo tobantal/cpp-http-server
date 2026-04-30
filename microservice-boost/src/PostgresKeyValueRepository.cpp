@@ -74,6 +74,30 @@ KeyValueEntity PostgresKeyValueRepository::save(const KeyValueEntity &entity)
     return entity;
 }
 
+std::vector<KeyValueEntity> PostgresKeyValueRepository::saveAll(const std::vector<KeyValueEntity> &entities)
+{
+    if (entities.empty())
+    {
+        return {};
+    }
+
+    auto conn = pool_->connection();
+
+    executor_.execute(conn.get(),
+        "PostgresKeyValueRepository::saveAll",
+        [&](pqxx::work &txn) {
+            for (const auto &entity : entities)
+            {
+                txn.exec_params(
+                    "INSERT INTO " + tableName_ + " (id, value) VALUES ($1, $2) "
+                    "ON CONFLICT (id) DO UPDATE SET value = EXCLUDED.value",
+                    entity.id, entity.value);
+            }
+        });
+
+    return entities;
+}
+
 bool PostgresKeyValueRepository::removeById(const std::string &id)
 {
     auto conn = pool_->connection();

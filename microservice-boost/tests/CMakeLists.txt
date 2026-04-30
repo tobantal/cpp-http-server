@@ -1,15 +1,16 @@
 add_executable(microservice-boost-test
     BeastRequestAdapterTest.cpp
     BeastResponseAdapterTest.cpp
+    ConnectionPoolTest.cpp
     DbSettingsTest.cpp
-    JsonValidatorTest.cpp
-    ServerSettingsTest.cpp
     HttpClientTest.cpp
-    SplunkLoggerTest.cpp
+    JsonProcessorTest.cpp
     JsonSerializerTest.cpp
     JsonToEnvConverterTest.cpp
-    JsonProcessorTest.cpp
+    JsonValidatorTest.cpp
     PostgresTransactionExecutorTest.cpp
+    ServerSettingsTest.cpp
+    SplunkLoggerTest.cpp
 )
 
 target_link_libraries(microservice-boost-test

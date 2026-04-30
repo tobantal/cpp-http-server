@@ -32,6 +32,12 @@
 | `IEventPublisher` | Публикация событий: `publish(routingKey, message)` |
 | `IEventConsumer` | Подписка на события: `subscribe(routingKeys, handler)`, `start()`, `stop()` |
 | `InMemoryEventBus` | Test double: IEventPublisher + IEventConsumer (ExceptionPolicy, message recording) |
+| `IConnectionPool` | Connection pool lifecycle: `available()`, `size()`, `isAlive()`, extends IShutdown |
+| `ITransactionExecutor` | Marker interface для DI wiring транзакций |
+| `IDbSettings` | Database settings: host, port, name, user, password, pool sizing, connectionString |
+| `IRepository<T>` | Generic CRUD interface: findById, findAll, save, saveAll, removeById |
+| `KeyValueEntity` | Simple key-value entity struct (id + value) |
+| `InMemoryKeyValueRepository` | Thread-safe in-memory IRepository<KeyValueEntity> for tests and caching |
 | `Timer` | Утилита замера времени (start/stop/elapsed/show) |
 | `SimpleRequest` / `SimpleResponse` | Test doubles для IRequest/IResponse |
 
@@ -46,6 +52,11 @@ Production-ready HTTP-сервер на Boost.Beast/Asio.
 | `HttpClient` | Исходящий HTTP-клиент (connect/read/write timeout) |
 | `RabbitMQAdapter` | RabbitMQ: IEventPublisher + IEventConsumer + IShutdown, lifecycle state machine, reconnect with exponential backoff |
 | `RabbitMQSettings` | Конфигурация RabbitMQ: ENV → config.json → default |
+| `ConnectionPool` | Thread-safe PostgreSQL connection pool: PooledConnection RAII, min/max sizing, blocking checkout |
+| `PostgresTransactionExecutor` | Template query/execute wrapper for pqxx::work with error logging |
+| `DbSettings` | Конфигурация БД: ENV → config.json → default (prefix support) |
+| `DatabaseHealthHandler` | /health/db endpoint: isAlive, available, size → JSON |
+| `PostgresKeyValueRepository` | Example IRepository<KeyValueEntity> with ensureSchema(), upsert, parameterized queries |
 | `ServerSettings` | Конфигурация сервера: ENV → config.json → default |
 
 ---
@@ -82,6 +93,7 @@ target_link_libraries(my_app microservice-boost)
 - **Boost 1.70+** (Asio, Beast, System)
 - **nlohmann/json** 3.9+ (для config.json в microservice-boost)
 - **amqpcpp** 4.3+ (для RabbitMQ в microservice-boost, FetchContent auto-fetch)
+- **libpqxx** 7.0+ (для PostgreSQL в microservice-boost, FetchContent auto-fetch)
 
 ### Сборка и тесты
 
@@ -171,6 +183,31 @@ Lifecycle: `Idle → Connecting → Connected ↔ Reconnecting` with exponential
 
 Metrics: `amqp_published_total`, `amqp_received_total`, `amqp_errors_total`.
 
+### Database (PostgreSQL)
+
+```cpp
+auto dbSettings = std::make_shared<DbSettings>(env);
+auto pool = std::make_shared<ConnectionPool>(
+    dbSettings->getConnectionString(),
+    ConnectionPool::Config{dbSettings->getMinConnections(), dbSettings->getMaxConnections()},
+    logger);
+
+shutdownMgr->registerComponent(pool);  // implements IShutdown
+
+// Health check endpoint
+registerEndpoint("GET", "/health/db",
+    std::make_shared<DatabaseHealthHandler>(pool));
+
+// Repository pattern
+auto repo = std::make_shared<PostgresKeyValueRepository>(pool, logger);
+repo->ensureSchema();
+repo->save({"user:1", R"({"name":"Alice"})"});
+auto entity = repo->findById("user:1");
+```
+
+Connection pool: thread-safe, PooledConnection RAII, min/max sizing, blocking checkout.
+Repository: generic `IRepository<T>` interface, parameterized queries, upsert support.
+
 ### Graceful Shutdown
 
 ```cpp
@@ -243,13 +280,14 @@ cpp-http-server/
 │   │   ├── domain/                 # Доменные типы: HttpError, INameable, IResponse
 │   │   ├── error/                   # NotFoundError, BadRequestError, MethodNotAllowedError
 │   │   ├── ports/input/             # IHttpHandler, IHttpErrorHandler, IWebApplication
-│   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector, IEventPublisher, IEventConsumer
+│   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector, IEventPublisher, IEventConsumer, IConnectionPool, ITransactionExecutor
 │   │   ├── application/            # ChainHandler, ShutdownManager
 │   │   ├── handler/                # HealthHandler, MetricsHandler, MetricsObserverHandler, HttpErrorSender
 │   │   ├── metrics/                # MetricsCollector, PrometheusSerializer
 │   │   ├── messaging/              # EventHandler, ExceptionPolicy, PublishedMessage
+│   │   ├── repository/             # IRepository<T>, KeyValueEntity
 │   │   ├── util/                   # StringUtils, Timer, IIdGenerator, UuidGenerator, PathParamExtractor
-│   │   ├── settings/               # IServerSettings, Environment
+│   │   ├── settings/               # IServerSettings, IDbSettings, Environment
 │   │   └── adapters/secondary/    # SimpleRequest, SimpleResponse, NullLogger, TestLogger
 │   └── src/
 ├── microservice-boost/             # Boost.Beast + Asio
@@ -260,9 +298,13 @@ cpp-http-server/
 │   │   ├── HttpClient.hpp
 │   │   ├── RabbitMQAdapter.hpp
 │   │   ├── ReconnectBoostAsioHandler.hpp
+│   │   ├── adapters/primary/       # DatabaseHealthHandler
+│   │   ├── adapters/secondary/    # ConnectionPool, PostgresTransactionExecutor, SplunkLogger
 │   │   ├── settings/ServerSettings.hpp
 │   │   ├── settings/RabbitMQSettings.hpp
+│   │   ├── settings/DbSettings.hpp
 │   │   ├── messaging/RabbitMQConnectionState.hpp
+│   │   ├── repository/             # PostgresKeyValueRepository, KeyValueEntity
 │   └── src/
 ├── docs/
 │   ├── configuration.md
@@ -285,10 +327,10 @@ cpp-http-server/
 
 ## Покрытие тестами
 
-322+ тестов. Покрытие по модулям:
+448+ тестов. Покрытие по модулям:
 
-- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, Version
-- **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient
+- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, InMemoryKeyValueRepository, Version
+- **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient, ConnectionPool (RAII, thread safety, schema), PostgresTransactionExecutor, DbSettings
 
 ---
 

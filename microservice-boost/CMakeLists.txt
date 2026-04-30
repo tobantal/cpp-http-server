@@ -1,10 +1,23 @@
 cmake_minimum_required(VERSION 3.14)
 
 add_library(microservice-boost
+    src/BeastResponseAdapter.cpp
     src/BoostBeastApplication.cpp
+    src/ConnectionPool.cpp
+    src/DatabaseHealthHandler.cpp
+    src/DbSettings.cpp
     src/HttpClient.cpp
+    src/JsonProcessor.cpp
+    src/JsonToEnvConverter.cpp
+    src/JsonValidator.cpp
+    src/PostgresKeyValueRepository.cpp
+    src/PostgresTransactionExecutor.cpp
     src/RabbitMQAdapter.cpp
     src/RabbitMQSettings.cpp
+    src/RetryingHttpClient.cpp
+    src/ServerSettings.cpp
+    src/SplunkLogger.cpp
+    src/SplunkLogSettings.cpp
 )
 
 target_include_directories(microservice-boost
@@ -24,6 +37,7 @@ target_link_libraries(microservice-boost
         Boost::asio
         nlohmann_json::nlohmann_json
         amqpcpp
+        pqxx
         Threads::Threads
 )
 

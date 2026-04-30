@@ -108,14 +108,10 @@ public:
     // =========================================================================
 
     /** @brief All published messages, in order of publish() calls */
-    const std::vector<PublishedMessage>& publishedMessages() const {
-        return publishedMessages_;
-    }
+    const std::vector<PublishedMessage>& publishedMessages() const;
 
     /** @brief Number of published messages */
-    size_t publishedCount() const {
-        return publishedMessages_.size();
-    }
+    size_t publishedCount() const;
 
     /** @brief Reset all state: messages, errors, subscriptions */
     void clear();
@@ -133,9 +129,7 @@ public:
     void setExceptionPolicy(ExceptionPolicy policy);
 
     /** @brief Errors caught in Catch mode: (routingKey, what) pairs */
-    const std::vector<std::pair<std::string, std::string>>& errors() const {
-        return errors_;
-    }
+    const std::vector<std::pair<std::string, std::string>>& errors() const;
 
 private:
     mutable std::mutex handlersMutex_;

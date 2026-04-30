@@ -28,13 +28,13 @@ public:
      * @brief Get HTTP status code
      * @return Status code
      */
-    int statusCode() const noexcept { return statusCode_; }
+    int statusCode() const noexcept;
 
     /**
      * @brief Get error message
      * @return Error message
      */
-    const std::string &message() const noexcept { return message_; }
+    const std::string &message() const noexcept;
 
 protected:
     int statusCode_;

@@ -16,6 +16,7 @@ add_library(microservice-core
     src/ConsoleLogger.cpp
     src/DomainEvent.cpp
     src/HttpClientError.cpp
+    src/HttpError.cpp
     src/HttpRetryExecutor.cpp
     src/HttpRetrySettings.cpp
     src/InMemoryEventBus.cpp

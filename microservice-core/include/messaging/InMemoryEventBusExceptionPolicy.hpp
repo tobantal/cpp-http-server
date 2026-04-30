@@ -12,6 +12,6 @@
  */
 enum class InMemoryEventBusExceptionPolicy
 {
-    Catch,
-    Propagate
+    Catch,      ///< Catch exceptions, store in errors list, continue dispatching to remaining handlers
+    Propagate   ///< Let exceptions propagate to the caller, abort dispatching
 };

@@ -33,8 +33,5 @@ public:
      * @brief Get handler name for logging and metrics
      * @return Handler name (default: "UnnamedHandler")
      */
-    std::string name() const override
-    {
-        return "UnnamedHandler";
-    }
+    std::string name() const override;
 };

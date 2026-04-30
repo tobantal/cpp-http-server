@@ -19,14 +19,5 @@
 class HttpErrorSender : public IHttpErrorHandler
 {
 public:
-    void handleError(IResponse &res, const HttpError &e) override
-    {
-        auto traceId = res.getHeader("X-Trace-ID");
-        res.setResult(e.statusCode(), "application/json",
-                      R"({"error": ")" + StringUtils::escapeJson(e.message()) + R"("})");
-        if (traceId)
-        {
-            res.setTraceId(*traceId);
-        }
-    }
+    void handleError(IResponse &res, const HttpError &e) override;
 };

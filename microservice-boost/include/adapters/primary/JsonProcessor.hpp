@@ -25,10 +25,7 @@ public:
      * @brief Construct JsonProcessor with JSON to Environment converter
      * @param converter Converter for JSON string to IEnvironment
      */
-    explicit JsonProcessor(std::shared_ptr<IJsonToEnvConverter> converter)
-        : converter_(std::move(converter))
-    {
-    }
+    explicit JsonProcessor(std::shared_ptr<IJsonToEnvConverter> converter);
 
     /**
      * @brief Process JSON request
@@ -37,21 +34,9 @@ public:
      * @throws BadRequestError if Content-Type is not JSON
      * @throws ConvertError if JSON parsing fails
      */
-    void handle(IRequest& req, IResponse& /*res*/) override
-    {
-        if (!req.isJson())
-        {
-            throw BadRequestError("Content-Type must be application/json");
-        }
+    void handle(IRequest& req, IResponse& /*res*/) override;
 
-        auto env = converter_->convert(req.getBody());
-        req.setObject(JSON_OBJECT_KEY, env);
-    }
-
-    std::string name() const override
-    {
-        return "JsonProcessor";
-    }
+    std::string name() const override;
 
 private:
     std::shared_ptr<IJsonToEnvConverter> converter_;

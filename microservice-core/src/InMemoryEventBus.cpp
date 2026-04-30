@@ -82,3 +82,15 @@ bool InMemoryEventBus::isRunning() const {
 void InMemoryEventBus::setExceptionPolicy(ExceptionPolicy policy) {
     exceptionPolicy_ = policy;
 }
+
+const std::vector<InMemoryEventBus::PublishedMessage>& InMemoryEventBus::publishedMessages() const {
+    return publishedMessages_;
+}
+
+size_t InMemoryEventBus::publishedCount() const {
+    return publishedMessages_.size();
+}
+
+const std::vector<std::pair<std::string, std::string>>& InMemoryEventBus::errors() const {
+    return errors_;
+}

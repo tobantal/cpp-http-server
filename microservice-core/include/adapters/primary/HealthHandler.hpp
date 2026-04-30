@@ -25,19 +25,14 @@ public:
      * @brief Construct HealthHandler with service name
      * @param serviceName Name of the service for health response
      */
-    explicit HealthHandler(const std::string& serviceName = "unknown")
-        : serviceName_(serviceName) {}
+    explicit HealthHandler(const std::string& serviceName = "unknown");
 
     /**
      * @brief Handle health check request
      * @param req HTTP request
      * @param res HTTP response
      */
-    void handle(IRequest &req, IResponse &res) override
-    {
-        std::string body = R"({"status":"healthy","service":")" + serviceName_ + R"("})";
-        res.setResult(200, "application/json", body);
-    }
+    void handle(IRequest &req, IResponse &res) override;
 
 private:
     std::string serviceName_;

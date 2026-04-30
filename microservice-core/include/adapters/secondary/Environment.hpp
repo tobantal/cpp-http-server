@@ -25,25 +25,14 @@ public:
      * @return Property value
      * @throws std::runtime_error If property not found
      */
-    std::any getProperty(const std::string& key) const override
-    {
-        auto it = properties_.find(key);
-        if (it == properties_.end())
-        {
-            throw std::runtime_error("Property not found: " + key);
-        }
-        return it->second;
-    }
+    std::any getProperty(const std::string& key) const override;
 
     /**
      * @brief Set property value
      * @param key Property key
      * @param value New value
      */
-    void setProperty(const std::string& key, const std::any& value) override
-    {
-        properties_[key] = value;
-    }
+    void setProperty(const std::string& key, const std::any& value) override;
 
 private:
     std::map<std::string, std::any> properties_;

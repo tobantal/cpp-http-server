@@ -15,11 +15,16 @@ add_library(microservice-core
     src/ChainHandler.cpp
     src/ConsoleLogger.cpp
     src/DomainEvent.cpp
+    src/Environment.cpp
     src/HttpClientError.cpp
+    src/HttpError.cpp
+    src/HttpErrorSender.cpp
+    src/HealthHandler.cpp
     src/HttpRetryExecutor.cpp
     src/HttpRetrySettings.cpp
     src/InMemoryEventBus.cpp
     src/IEventPublisher.cpp
+    src/IHttpHandler.cpp
     src/IWebApplication.cpp
     src/LogLevel.cpp
     src/MetricsCollector.cpp
@@ -30,8 +35,10 @@ add_library(microservice-core
     src/RetrySettings.cpp
     src/RouteMatcher.cpp
     src/SimpleRequest.cpp
+    src/SimpleResponse.cpp
     src/StringUtils.cpp
     src/Timer.cpp
+    src/ShutdownManager.cpp
     src/TestLogger.cpp
 )
 

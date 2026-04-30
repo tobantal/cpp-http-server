@@ -2,6 +2,7 @@
 
 #include "domain/IRequest.hpp"
 #include "util/IIdGenerator.hpp"
+#include "util/StringUtils.hpp"
 #include "util/Uuid7Generator.hpp"
 #include "util/PathParamExtractor.hpp"
 #include "ports/output/IEnvironment.hpp"

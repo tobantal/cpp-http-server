@@ -35,7 +35,9 @@
 | `IConnectionPool` | Connection pool lifecycle: `available()`, `size()`, `isAlive()`, extends IShutdown |
 | `ITransactionExecutor` | Marker interface для DI wiring транзакций |
 | `IDbSettings` | Database settings: host, port, name, user, password, pool sizing, connectionString |
-| `IRepository<T>` | Generic CRUD interface: findById, findAll, save, removeById |
+| `IRepository<T>` | Generic CRUD interface: findById, findAll, save, saveAll, removeById |
+| `KeyValueEntity` | Simple key-value entity struct (id + value) |
+| `InMemoryKeyValueRepository` | Thread-safe in-memory IRepository<KeyValueEntity> for tests and caching |
 | `Timer` | Утилита замера времени (start/stop/elapsed/show) |
 | `SimpleRequest` / `SimpleResponse` | Test doubles для IRequest/IResponse |
 
@@ -283,7 +285,7 @@ cpp-http-server/
 │   │   ├── handler/                # HealthHandler, MetricsHandler, MetricsObserverHandler, HttpErrorSender
 │   │   ├── metrics/                # MetricsCollector, PrometheusSerializer
 │   │   ├── messaging/              # EventHandler, ExceptionPolicy, PublishedMessage
-│   │   ├── repository/             # IRepository<T>
+│   │   ├── repository/             # IRepository<T>, KeyValueEntity
 │   │   ├── util/                   # StringUtils, Timer, IIdGenerator, UuidGenerator, PathParamExtractor
 │   │   ├── settings/               # IServerSettings, IDbSettings, Environment
 │   │   └── adapters/secondary/    # SimpleRequest, SimpleResponse, NullLogger, TestLogger
@@ -325,9 +327,9 @@ cpp-http-server/
 
 ## Покрытие тестами
 
-436+ тестов. Покрытие по модулям:
+448+ тестов. Покрытие по модулям:
 
-- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, Version
+- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, InMemoryKeyValueRepository, Version
 - **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient, ConnectionPool (RAII, thread safety, schema), PostgresTransactionExecutor, DbSettings
 
 ---

@@ -52,7 +52,7 @@ public:
     std::optional<KeyValueEntity> findById(const std::string &id) override;
     std::vector<KeyValueEntity> findAll() override;
     KeyValueEntity save(const KeyValueEntity &entity) override;
-    std::vector<KeyValueEntity> saveAll(const std::vector<KeyValueEntity> &entities) override;
+    void saveAll(const std::vector<KeyValueEntity> &entities) override;
     bool removeById(const std::string &id) override;
 
     /**

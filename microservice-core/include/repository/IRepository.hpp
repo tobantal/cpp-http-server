@@ -50,9 +50,11 @@ public:
     /**
      * @brief Save multiple entities in a batch (insert or update)
      * @param entities Vector of entities to save
-     * @return Vector of saved entities (with generated IDs if new)
+     *
+     * All entities are persisted within a single transaction.
+     * If any entity fails, the entire batch is rolled back.
      */
-    virtual std::vector<Entity> saveAll(const std::vector<Entity> &entities) = 0;
+    virtual void saveAll(const std::vector<Entity> &entities) = 0;
 
     /**
      * @brief Remove an entity by its ID

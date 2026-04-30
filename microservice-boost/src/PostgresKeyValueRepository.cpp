@@ -74,11 +74,11 @@ KeyValueEntity PostgresKeyValueRepository::save(const KeyValueEntity &entity)
     return entity;
 }
 
-std::vector<KeyValueEntity> PostgresKeyValueRepository::saveAll(const std::vector<KeyValueEntity> &entities)
+void PostgresKeyValueRepository::saveAll(const std::vector<KeyValueEntity> &entities)
 {
     if (entities.empty())
     {
-        return {};
+        return;
     }
 
     auto conn = pool_->connection();
@@ -94,8 +94,6 @@ std::vector<KeyValueEntity> PostgresKeyValueRepository::saveAll(const std::vecto
                     entity.id, entity.value);
             }
         });
-
-    return entities;
 }
 
 bool PostgresKeyValueRepository::removeById(const std::string &id)

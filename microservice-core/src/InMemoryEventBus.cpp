@@ -15,7 +15,7 @@ void InMemoryEventBus::publish(const std::string &routingKey,
 
     for (auto &handler : it->second)
     {
-        if (exceptionPolicy_ == ExceptionPolicy::Catch)
+        if (exceptionPolicy_ == InMemoryEventBusExceptionPolicy::Catch)
         {
             try
             {
@@ -87,7 +87,7 @@ bool InMemoryEventBus::isRunning() const
     return state_ == State::Running;
 }
 
-void InMemoryEventBus::setExceptionPolicy(ExceptionPolicy policy)
+void InMemoryEventBus::setExceptionPolicy(InMemoryEventBusExceptionPolicy policy)
 {
     exceptionPolicy_ = policy;
 }

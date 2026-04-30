@@ -29,6 +29,9 @@
 | `IIdGenerator` / `UuidGenerator` | Thread-safe генератор ID (DIP: mockable в тестах) |
 | `IEnvironment` / `Environment` | Type-safe конфигурация (ENV → config.json → default) |
 | `IHttpClient` | HTTP-клиент для межсервисной коммуникации |
+| `IEventPublisher` | Публикация событий: `publish(routingKey, message)` |
+| `IEventConsumer` | Подписка на события: `subscribe(routingKeys, handler)`, `start()`, `stop()` |
+| `InMemoryEventBus` | Test double: IEventPublisher + IEventConsumer (ExceptionPolicy, message recording) |
 | `Timer` | Утилита замера времени (start/stop/elapsed/show) |
 | `SimpleRequest` / `SimpleResponse` | Test doubles для IRequest/IResponse |
 
@@ -41,7 +44,9 @@ Production-ready HTTP-сервер на Boost.Beast/Asio.
 | `BoostBeastApplication` | HTTP-сервер: keep-alive, connection limits, timeouts, version header |
 | `BeastRequestAdapter` / `BeastResponseAdapter` | Адаптеры Beast → IRequest/IResponse |
 | `HttpClient` | Исходящий HTTP-клиент (connect/read/write timeout) |
-| `ServerSettings` | Конфигурация: ENV → config.json → default |
+| `RabbitMQAdapter` | RabbitMQ: IEventPublisher + IEventConsumer + IShutdown, lifecycle state machine, reconnect with exponential backoff |
+| `RabbitMQSettings` | Конфигурация RabbitMQ: ENV → config.json → default |
+| `ServerSettings` | Конфигурация сервера: ENV → config.json → default |
 
 ---
 
@@ -76,6 +81,7 @@ target_link_libraries(my_app microservice-boost)
 - **CMake 3.14+**
 - **Boost 1.70+** (Asio, Beast, System)
 - **nlohmann/json** 3.9+ (для config.json в microservice-boost)
+- **amqpcpp** 4.3+ (для RabbitMQ в microservice-boost, FetchContent auto-fetch)
 
 ### Сборка и тесты
 
@@ -141,7 +147,29 @@ Signal handling (SIGINT/SIGTERM) встроен в `IWebApplication::run()`. Try
 
 ---
 
-## Ключевые возможности v0.3.0
+## Ключевые возможности v0.4.0
+
+### Messaging (RabbitMQ)
+
+```cpp
+auto settings = std::make_shared<RabbitMQSettings>(env);
+auto rabbitMQ = std::make_shared<RabbitMQAdapter>(settings, logger, metrics);
+
+rabbitMQ->subscribe({"order.created", "order.cancelled"},
+    [](const std::string& routingKey, const std::string& message) {
+        // handle event
+    });
+
+rabbitMQ->start();  // Idle → Connecting → Connected
+
+rabbitMQ->publish("order.created", R"({"id":"ord-1"})");
+
+shutdownMgr->registerComponent(rabbitMQ);  // implements IShutdown
+```
+
+Lifecycle: `Idle → Connecting → Connected ↔ Reconnecting` with exponential backoff (1s→30s).
+
+Metrics: `amqp_published_total`, `amqp_received_total`, `amqp_errors_total`.
 
 ### Graceful Shutdown
 
@@ -215,10 +243,11 @@ cpp-http-server/
 │   │   ├── domain/                 # Доменные типы: HttpError, INameable, IResponse
 │   │   ├── error/                   # NotFoundError, BadRequestError, MethodNotAllowedError
 │   │   ├── ports/input/             # IHttpHandler, IHttpErrorHandler, IWebApplication
-│   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector
+│   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector, IEventPublisher, IEventConsumer
 │   │   ├── application/            # ChainHandler, ShutdownManager
 │   │   ├── handler/                # HealthHandler, MetricsHandler, MetricsObserverHandler, HttpErrorSender
 │   │   ├── metrics/                # MetricsCollector, PrometheusSerializer
+│   │   ├── messaging/              # EventHandler, ExceptionPolicy, PublishedMessage
 │   │   ├── util/                   # StringUtils, Timer, IIdGenerator, UuidGenerator, PathParamExtractor
 │   │   ├── settings/               # IServerSettings, Environment
 │   │   └── adapters/secondary/    # SimpleRequest, SimpleResponse, NullLogger, TestLogger
@@ -229,7 +258,11 @@ cpp-http-server/
 │   │   ├── BeastRequestAdapter.hpp
 │   │   ├── BeastResponseAdapter.hpp
 │   │   ├── HttpClient.hpp
-│   │   └── settings/ServerSettings.hpp
+│   │   ├── RabbitMQAdapter.hpp
+│   │   ├── ReconnectBoostAsioHandler.hpp
+│   │   ├── settings/ServerSettings.hpp
+│   │   ├── settings/RabbitMQSettings.hpp
+│   │   ├── messaging/RabbitMQConnectionState.hpp
 │   └── src/
 ├── docs/
 │   ├── configuration.md
@@ -254,7 +287,7 @@ cpp-http-server/
 
 322+ тестов. Покрытие по модулям:
 
-- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, Version
+- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, Version
 - **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient
 
 ---

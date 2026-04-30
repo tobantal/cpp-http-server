@@ -28,11 +28,11 @@
 | 148 | DRY-01b | Генерация main.cpp при сборке (CMake) |
 | 149 | DRY-04b | Аналитика — выпиливание nlohmann/json из библиотеки |
 | 150 | DRY-06 | Аналитика — оценка библиотек для внедрения |
-| 151 | MSG-01 | IEventPublisher + IEventConsumer — интерфейсы сообщений |
-| 152 | MSG-02 | RabbitMQAdapter — publisher/consumer + reconnect |
+| 151 | MSG-01 | IEventPublisher + IEventConsumer — интерфейсы сообщений ✅ |
+| 152 | MSG-02 | RabbitMQAdapter — publisher/consumer + reconnect ✅ |
 | 153 | MSG-03 | Circuit breaker для исходящих вызовов |
 | 154 | MSG-04 | Retry policy с exponential backoff |
-| 155 | MSG-05 | RabbitMQ metrics (published, received, errors) |
+| 155 | MSG-05 | RabbitMQ metrics (published, received, errors) ✅ |
 | 156 | DB-01 | IConnectionPool + ConnectionPool — Postgres connection pool |
 | 157 | DB-02 | ITransactionExecutor + PostgresTransactionExecutor |
 | 158 | DB-03 | Health check для Postgres и RabbitMQ |

@@ -33,9 +33,9 @@
 | 153 | MSG-03 | Circuit breaker для исходящих вызовов |
 | 154 | MSG-04 | Retry policy с exponential backoff |
 | 155 | MSG-05 | RabbitMQ metrics (published, received, errors) ✅ |
-| 156 | DB-01 | IConnectionPool + ConnectionPool — Postgres connection pool |
-| 157 | DB-02 | ITransactionExecutor + PostgresTransactionExecutor |
-| 158 | DB-03 | Health check для Postgres и RabbitMQ |
+| 156 | DB-01 | IConnectionPool + ConnectionPool — Postgres connection pool ✅ |
+| 157 | DB-02 | ITransactionExecutor + PostgresTransactionExecutor ✅ |
+| 158 | DB-03 | Health check для Postgres и RabbitMQ ✅ |
 
 *Закрытые задачи (CHANGELOG): 42 шт., `done=true` в Vikunja.*
 
@@ -60,4 +60,4 @@
 
 ---
 
-*Последнее обновление: 2026-04-23*
+*Последнее обновление: 2026-04-30*

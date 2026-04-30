@@ -40,9 +40,21 @@ ENV variable > config.json key > default value
 | `CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT_SECONDS` | int | `60` | Time in seconds before transitioning from OPEN to HALF_OPEN |
 
 **State Machine:**
-- **CLOSED** → Normal operation, requests pass through. Failures are counted.
-- **OPEN** → Fail-fast mode, requests are blocked. After timeout → HALF_OPEN.
-- **HALF_OPEN** → Probe mode, one request allowed. Success → CLOSED, Failure → OPEN.
+```
+CLOSED ──(failures >= threshold)──> OPEN
+  ↑                                │
+  │                                │
+(success)                      (timeout)
+  │                                │
+  │                                ▼
+  └────(success)──────────── HALF_OPEN
+```
+
+| State | Behavior |
+|---|---|
+| CLOSED | Normal operation. Requests pass through. Failures counted. |
+| OPEN | Fail-fast mode. Requests blocked. After timeout → HALF_OPEN. |
+| HALF_OPEN | Probe mode. One request allowed. Success → CLOSED, Failure → OPEN. |
 
 **Usage Example:**
 ```cpp

@@ -5,15 +5,16 @@ add_library(microservice-boost
     src/BeastResponseAdapter.cpp
     src/BoostBeastApplication.cpp
     src/ConnectionPool.cpp
-    src/DatabaseHealthHandler.cpp
     src/DbSettings.cpp
     src/HttpClient.cpp
     src/JsonProcessor.cpp
     src/JsonToEnvConverter.cpp
     src/JsonValidator.cpp
+    src/PostgresHealthCheck.cpp
     src/PostgresKeyValueRepository.cpp
     src/PostgresTransactionExecutor.cpp
     src/RabbitMQAdapter.cpp
+    src/RabbitMQHealthCheck.cpp
     src/RabbitMQSettings.cpp
     src/RetryingHttpClient.cpp
     src/ServerSettings.cpp

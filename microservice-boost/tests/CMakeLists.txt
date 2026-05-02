@@ -8,7 +8,8 @@ add_executable(microservice-boost-test
     JsonSerializerTest.cpp
     JsonToEnvConverterTest.cpp
     JsonValidatorTest.cpp
-    PostgresTransactionExecutorTest.cpp
+    PostgresHealthCheckTest.cpp
+    RabbitMQHealthCheckTest.cpp
     ServerSettingsTest.cpp
     SplunkLoggerTest.cpp
 )

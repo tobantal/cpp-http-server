@@ -101,3 +101,38 @@ All changes targeting the v0.5.0 release. Collected here during development.
 ---
 
 *This file will be merged into CHANGELOG.md at release time.*
+
+---
+
+## SRV-19: Health check с dependency checks (+ DB-03)
+
+**Task:** #138 (includes #158) | **Commit:** TBD
+
+### Changes
+
+- **IHealthCheck** (NEW, core) — interface with `check() → HealthStatus`
+- **HealthStatus** (NEW, core) — struct: `name`, `healthy`, `message`
+- **HealthHandler** (core) — rewritten: accepts `vector<shared_ptr<IHealthCheck>>`, aggregated JSON report
+  - HTTP 200 + `"status":"UP"` when all checks pass
+  - HTTP 503 + `"status":"DOWN"` when any check fails
+  - Backward compat: without checks, returns simple `{"status":"UP","service":"..."}`
+- **PostgresHealthCheck** (NEW, boost) — via `IConnectionPool::isAlive()`, reports pool stats
+- **RabbitMQHealthCheck** (NEW, boost) — via `RabbitMQConnectionState`, reports connection state
+- **DatabaseHealthHandler** — DELETED (replaced by PostgresHealthCheck via IHealthCheck)
+
+### Response Format
+
+```json
+{
+  "status": "UP",
+  "service": "auth-service",
+  "checks": {
+    "database": {"status": "UP", "message": "Pool: 5/10 available"},
+    "rabbitmq": {"status": "UP", "message": "Connected"}
+  }
+}
+```
+
+### Tests
+
+3 new tests: HealthHandler (5), PostgresHealthCheck (2), RabbitMQHealthCheck (4) = 11 total

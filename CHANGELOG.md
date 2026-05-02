@@ -13,6 +13,12 @@
 - **IEnvironment::get_optional\<T\>(key)** — returns `std::optional<T>`: `nullopt` if key absent, `ConvertError(400)` if type mismatch
 - **IEnvironment::hasProperty(key)** — check if key exists without throwing
 - **ConvertError(400)** thrown by `getProperty`, `get`, and `get_optional` on type mismatch — automatic HTTP 400 via ChainHandler
+- **SchemaValidator** (#360) — request field validation middleware
+  - `Schema` base class with fluent DSL: `field<std::string>("name").required().minLength(3)`
+  - `ISchemaValidator` port (inherits `IHttpHandler`)
+  - `SchemaValidator` adapter: validates `IEnvironment` fields, throws `BadRequestError(400)` with all violations
+  - Supports: `required`/`optional`, type checks (string/int/double/bool), `min`/`max`, `minLength`/`maxLength`
+  - Place in `ChainHandler` after `JsonProcessor`, before business handler
 
 ### Improvements
 

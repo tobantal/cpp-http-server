@@ -4,6 +4,7 @@ add_executable(microservice-core-test
     ThreadSafeMapTest.cpp
     EnvironmentTest.cpp
     HealthHandlerTest.cpp
+    SchemaTest.cpp
     SimpleRequestTest.cpp
     SimpleResponseTest.cpp
     HttpErrorTest.cpp

@@ -13,6 +13,8 @@ configure_file(
 add_library(microservice-core
     src/BaseWebApplication.cpp
     src/ChainHandler.cpp
+    src/CircuitBreaker.cpp
+    src/CircuitBreakerSettings.cpp
     src/ConsoleLogger.cpp
     src/DomainEvent.cpp
     src/Environment.cpp

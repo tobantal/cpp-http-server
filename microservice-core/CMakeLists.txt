@@ -34,6 +34,7 @@ add_library(microservice-core
     src/PathParamExtractor.cpp
     src/RetrySettings.cpp
     src/RouteMatcher.cpp
+    src/RouteTrie.cpp
     src/SimpleRequest.cpp
     src/SimpleResponse.cpp
     src/StringUtils.cpp

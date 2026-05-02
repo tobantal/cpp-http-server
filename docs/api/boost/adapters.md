@@ -82,6 +82,46 @@ From ENV or defaults:
 
 ---
 
+## RetryingHttpClient
+
+Decorator that adds retry logic to `IHttpClient`.
+
+```cpp
+#include "RetryingHttpClient.hpp"
+```
+
+### Construction
+
+```cpp
+auto retrying = std::make_shared<RetryingHttpClient>(httpClient, retryExecutor);
+```
+
+Uses `IHttpRetryExecutor` for retry policy with exponential backoff.
+
+---
+
+## CircuitBreakingHttpClient
+
+Decorator that adds circuit breaker protection to `IHttpClient`.
+
+```cpp
+#include "CircuitBreakingHttpClient.hpp"
+```
+
+### Construction
+
+```cpp
+auto cbProtected = std::make_shared<CircuitBreakingHttpClient>(httpClient, circuitBreaker, logger);
+```
+
+### Behavior
+
+- **CLOSED** — requests pass through normally
+- **OPEN** — rejects immediately with `HttpClientError::ConnectionRefused`
+- **HALF_OPEN** — allows limited requests; success closes circuit, failure reopens
+
+---
+
 ## See Also
 
 - [Boost Application](application.md) — BoostBeastApplication

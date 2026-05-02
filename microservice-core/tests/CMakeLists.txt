@@ -24,6 +24,8 @@ add_executable(microservice-core-test
     RetrySettingsTest.cpp
     HttpRetrySettingsTest.cpp
     HttpRetryExecutorTest.cpp
+    CircuitBreakerTest.cpp
+    CircuitBreakerSettingsTest.cpp
 )
 
 target_link_libraries(microservice-core-test

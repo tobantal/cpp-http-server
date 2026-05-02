@@ -31,6 +31,24 @@ ENV variable > config.json key > default value
 | `HTTP_CLIENT_READ_TIMEOUT_MS` | int | `30000` | Read timeout in ms (30s) |
 | `HTTP_CLIENT_WRITE_TIMEOUT_MS` | int | `30000` | Write timeout in ms (30s) |
 
+## Circuit Breaker Settings
+
+Circuit breaker uses a **prefix** to allow multiple independent circuits (e.g. `HTTP_BROKER_`, `HTTP_AUTH_`). Replace `<PREFIX>` below with your prefix.
+
+| ENV Variable | Type | Default | Description |
+|---|---|---|---|
+| `<PREFIX>_CB_FAILURE_THRESHOLD` | int | `5` | Consecutive failures before opening circuit |
+| `<PREFIX>_CB_RESET_TIMEOUT_MS` | int | `30000` | Time (ms) to wait before HALF_OPEN transition |
+| `<PREFIX>_CB_HALF_OPEN_MAX_CALLS` | int | `3` | Successful calls in HALF_OPEN to close circuit |
+
+Example:
+```bash
+# For HTTP broker calls
+HTTP_BROKER_CB_FAILURE_THRESHOLD=5
+HTTP_BROKER_CB_RESET_TIMEOUT_MS=30000
+HTTP_BROKER_CB_HALF_OPEN_MAX_CALLS=3
+```
+
 ## config.json Example
 
 ```json

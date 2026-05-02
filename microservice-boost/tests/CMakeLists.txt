@@ -11,6 +11,7 @@ add_executable(microservice-boost-test
     PostgresHealthCheckTest.cpp
     RabbitMQHealthCheckTest.cpp
     SchemaValidatorTest.cpp
+    CircuitBreakingHttpClientTest.cpp
     ServerSettingsTest.cpp
     SplunkLoggerTest.cpp
 )

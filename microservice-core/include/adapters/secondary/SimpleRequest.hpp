@@ -91,12 +91,32 @@ struct SimpleRequest : IRequest
 
     std::optional<std::string> getPathParam(size_t index) const override
     {
+        if (!pathParams_.empty())
+        {
+            size_t i = 0;
+            for (const auto &[key, value] : pathParams_)
+            {
+                if (i == index) return value;
+                ++i;
+            }
+            return std::nullopt;
+        }
         return PathParamExtractor::getByIndex(path_, pathPattern_, index);
     }
 
     std::optional<std::string> getPathParam(const std::string& name) const override
     {
+        if (!pathParams_.empty())
+        {
+            auto it = pathParams_.find(name);
+            if (it != pathParams_.end()) return it->second;
+        }
         return PathParamExtractor::getByName(path_, pathPattern_, name);
+    }
+
+    void setPathParams(const std::map<std::string, std::string>& params) override
+    {
+        pathParams_ = params;
     }
 
     std::map<std::string, std::string> getQueryParams() const override
@@ -253,6 +273,7 @@ private:
     std::string ip_;
     int port_;
     std::string pathPattern_;
+    std::map<std::string, std::string> pathParams_;
     std::map<std::string, std::string> headers_;
     std::map<std::string, std::string> queryParams_;
     std::map<std::string, std::string> attributes_;

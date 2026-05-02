@@ -79,6 +79,12 @@ struct IRequest {
      */
     virtual std::optional<std::string> getPathParam(const std::string& name) const = 0;
 
+    /**
+     * @brief Set all path parameters at once
+     * @param params Map of parameter names to values
+     */
+    virtual void setPathParams(const std::map<std::string, std::string>& params) = 0;
+
     // =========================================================================
     // QUERY PARAMETERS
     // =========================================================================

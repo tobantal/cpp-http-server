@@ -1,5 +1,6 @@
 add_executable(microservice-core-test
     RouteMatcherTest.cpp
+    RouteTrieTest.cpp
     ThreadSafeMapTest.cpp
     EnvironmentTest.cpp
     SimpleRequestTest.cpp

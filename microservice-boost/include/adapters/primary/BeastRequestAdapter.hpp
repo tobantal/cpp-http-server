@@ -32,6 +32,7 @@ struct BeastRequestAdapter : IRequest
     void setPathPattern(const std::string& pattern) override;
     std::optional<std::string> getPathParam(size_t index) const override;
     std::optional<std::string> getPathParam(const std::string& name) const override;
+    void setPathParams(const std::map<std::string, std::string>& params) override;
     std::map<std::string, std::string> getQueryParams() const override;
     std::optional<std::string> getQueryParam(const std::string& name) const override;
     void setQueryParam(const std::string& name, const std::string& value) override;
@@ -61,6 +62,7 @@ private:
     int port_;
     std::string body_;
     std::string pathPattern_;
+    std::map<std::string, std::string> pathParams_;
     std::map<std::string, std::string> queryParams_;
     mutable std::optional<std::map<std::string, std::string>> cachedQueryParams_;
     std::map<std::string, std::string> headers_;

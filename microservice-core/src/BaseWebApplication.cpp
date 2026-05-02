@@ -38,109 +38,10 @@ void BaseWebApplication::registerHandler(
         throw std::logic_error("Cannot register handler after server has started");
     }
 
-    handlers_[pattern][method] = handler;
+    trie_.insert(pattern, method, handler);
 
     logger_->log(LogLevel::Info, "App",
                  "Registered: " + method + " " + pattern);
-}
-
-std::optional<BaseWebApplication::HandlerMatch> BaseWebApplication::findHandler(
-    const std::string &method,
-    const std::string &path)
-{
-    auto exactIt = handlers_.find(path);
-    if (exactIt != handlers_.end())
-    {
-        auto methodIt = exactIt->second.find(method);
-        if (methodIt != exactIt->second.end())
-        {
-            return HandlerMatch{methodIt->second, path};
-        }
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (!hasParameters(pattern))
-        {
-            continue;
-        }
-
-        if (pattern.find(':') != std::string::npos && RouteMatcher::matches(pattern, path))
-        {
-            auto methodIt = methodHandlers.find(method);
-            if (methodIt != methodHandlers.end())
-            {
-                return HandlerMatch{methodIt->second, pattern};
-            }
-        }
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (!hasParameters(pattern))
-        {
-            continue;
-        }
-
-        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
-        {
-            auto methodIt = methodHandlers.find(method);
-            if (methodIt != methodHandlers.end())
-            {
-                return HandlerMatch{methodIt->second, pattern};
-            }
-        }
-    }
-
-    return std::nullopt;
-}
-
-bool BaseWebApplication::pathExists(const std::string &path)
-{
-    if (handlers_.find(path) != handlers_.end())
-    {
-        return true;
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (hasParameters(pattern) && RouteMatcher::matches(pattern, path))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-std::vector<std::string> BaseWebApplication::getAllowedMethods(const std::string &path)
-{
-    auto exactIt = handlers_.find(path);
-    if (exactIt != handlers_.end())
-    {
-        std::vector<std::string> methods;
-        for (const auto &[method, _] : exactIt->second)
-            methods.push_back(method);
-        return methods;
-    }
-
-    for (const auto &[pattern, methodHandlers] : handlers_)
-    {
-        if (hasParameters(pattern) && RouteMatcher::matches(pattern, path))
-        {
-            std::vector<std::string> methods;
-            for (const auto &[method, _] : methodHandlers)
-                methods.push_back(method);
-            return methods;
-        }
-    }
-
-    return {};
-}
-
-bool BaseWebApplication::hasParameters(const std::string &pattern)
-{
-    return pattern.find('*') != std::string::npos || pattern.find(':') != std::string::npos;
 }
 
 void BaseWebApplication::handleRequest(IRequest &req, IResponse &res)
@@ -151,13 +52,14 @@ void BaseWebApplication::handleRequest(IRequest &req, IResponse &res)
     logger_->log(LogLevel::Info, "App",
                  method + " " + path + " from " + req.getIp());
 
-    auto match = findHandler(method, path);
+    auto match = trie_.lookup(method, path);
 
     if (match)
     {
         try
         {
             req.setPathPattern(match->pattern);
+            req.setPathParams(match->pathParams);
             match->handler->handle(req, res);
         }
         catch (const HttpError &e)
@@ -176,9 +78,9 @@ void BaseWebApplication::handleRequest(IRequest &req, IResponse &res)
     }
     else
     {
-        if (pathExists(path))
+        if (trie_.lookupAny(path))
         {
-            auto allowed = getAllowedMethods(path);
+            auto allowed = trie_.lookupMethods(path);
             std::string allowValue;
             for (size_t i = 0; i < allowed.size(); ++i)
             {

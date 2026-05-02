@@ -31,6 +31,7 @@ struct BeastRequestAdapter : IRequest
     std::string getPathPattern() const override;
     void setPathPattern(const std::string& pattern) override;
     std::optional<std::string> getPathParam(size_t index) const override;
+    std::optional<std::string> getPathParam(const std::string& name) const override;
     std::map<std::string, std::string> getQueryParams() const override;
     std::optional<std::string> getQueryParam(const std::string& name) const override;
     void setQueryParam(const std::string& name, const std::string& value) override;

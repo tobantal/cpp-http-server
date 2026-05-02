@@ -107,6 +107,33 @@ TEST(BeastRequestAdapterTest, GetPathParamNoPattern)
     EXPECT_FALSE(param.has_value());
 }
 
+TEST(BeastRequestAdapterTest, GetPathParamByName)
+{
+    http::request<http::string_body> req{http::verb::get, "/api/v1/orders/ord-123", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+    adapter.setPathPattern("/api/:version/orders/:orderId");
+
+    auto version = adapter.getPathParam("version");
+    ASSERT_TRUE(version.has_value());
+    EXPECT_EQ(*version, "v1");
+
+    auto orderId = adapter.getPathParam("orderId");
+    ASSERT_TRUE(orderId.has_value());
+    EXPECT_EQ(*orderId, "ord-123");
+
+    auto missing = adapter.getPathParam("missing");
+    EXPECT_FALSE(missing.has_value());
+}
+
+TEST(BeastRequestAdapterTest, GetPathParamByNameNoPattern)
+{
+    http::request<http::string_body> req{http::verb::get, "/api/orders/123", 11};
+    BeastRequestAdapter adapter(req, "127.0.0.1");
+
+    auto param = adapter.getPathParam("id");
+    EXPECT_FALSE(param.has_value());
+}
+
 // =============================================================================
 // QUERY PARAMETERS TESTS
 // =============================================================================

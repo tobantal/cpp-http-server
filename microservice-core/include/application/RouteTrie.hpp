@@ -13,19 +13,39 @@
  * @author Anton Tobolkin
  */
 
+/**
+ * @struct TrieNode
+ * @brief Node in the route trie
+ *
+ * Each node represents one path segment. Static segments go into `children`,
+ * named parameters (`:id`) use `paramChild`, and wildcards (`*`) use `wildcardChild`.
+ * Leaf nodes have non-empty `handlers` map.
+ */
 struct TrieNode
 {
+    /** @brief Static segment children: segment string → child node */
     std::map<std::string, std::shared_ptr<TrieNode>> children;
+    /** @brief Named parameter child (`:paramName`), at most one per node */
     std::unique_ptr<TrieNode> paramChild;
+    /** @brief Wildcard child (`*`), at most one per node */
     std::unique_ptr<TrieNode> wildcardChild;
+    /** @brief HTTP method → handler (non-empty only for leaf nodes) */
     std::map<std::string, std::shared_ptr<IHttpHandler>> handlers;
+    /** @brief Parameter name for paramChild (e.g., "id" for `:id`), empty if no paramChild */
     std::string paramName;
 };
 
+/**
+ * @struct RouteMatch
+ * @brief Result of a successful route lookup
+ */
 struct RouteMatch
 {
+    /** @brief Matched handler */
     std::shared_ptr<IHttpHandler> handler;
+    /** @brief Original pattern string (e.g., "/users/:id") */
     std::string pattern;
+    /** @brief Extracted path parameters (name → value) */
     std::map<std::string, std::string> pathParams;
 };
 

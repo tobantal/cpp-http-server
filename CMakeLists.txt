@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(cpp-http-server VERSION 0.4.0 LANGUAGES CXX)
+project(cpp-http-server VERSION 0.5.0 LANGUAGES CXX)
 
 set(PROJECT_VERSION_SUFFIX "-beta" CACHE STRING "Version suffix (e.g. -beta, -rc1, empty for release)")
 

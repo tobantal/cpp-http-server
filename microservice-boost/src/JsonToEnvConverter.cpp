@@ -12,6 +12,10 @@ std::shared_ptr<IEnvironment> JsonToEnvConverter::convert(const std::string& inp
 
         for (auto& [key, value] : json.items())
         {
+            if (value.is_null())
+            {
+                continue;
+            }
             env->setProperty(key, toAny(value));
         }
 

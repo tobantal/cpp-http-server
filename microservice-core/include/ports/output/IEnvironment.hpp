@@ -2,7 +2,8 @@
 
 #include <any>
 #include <string>
-#include <stdexcept>
+#include <optional>
+#include "domain/error/ConvertError.hpp"
 
 /**
  * @file IEnvironment.hpp
@@ -23,9 +24,16 @@ public:
      * @brief Get environment property value
      * @param key Property key (name)
      * @return Property value (may be of any type)
-     * @throws std::runtime_error If property not found
+     * @throws ConvertError If property not found
      */
     virtual std::any getProperty(const std::string& key) const = 0;
+
+    /**
+     * @brief Check if property exists
+     * @param key Property key
+     * @return true if property exists
+     */
+    virtual bool hasProperty(const std::string& key) const = 0;
 
     /**
      * @brief Set environment property value
@@ -35,35 +43,50 @@ public:
     virtual void setProperty(const std::string& key, const std::any& value) = 0;
 
     /**
-     * @brief Type-safe property getter
+     * @brief Type-safe getter for required property
      * @tparam T Expected value type
      * @param key Property key
      * @return Property value cast to type T
-     * @throws std::bad_any_cast If type does not match
+     * @throws ConvertError If key not found or type does not match
      */
     template<typename T>
     T get(const std::string& key) const
-    {
-        return std::any_cast<T>(getProperty(key));
-    }
-
-    /**
-     * @brief Type-safe getter with default value
-     * @tparam T Expected value type
-     * @param key Property key
-     * @param defaultValue Default value if key not found
-     * @return Property value or defaultValue
-     */
-    template<typename T>
-    T get(const std::string& key, const T& defaultValue) const
     {
         try
         {
             return std::any_cast<T>(getProperty(key));
         }
-        catch (const std::exception&)
+        catch (const ConvertError&)
         {
-            return defaultValue;
+            throw;
+        }
+        catch (const std::bad_any_cast&)
+        {
+            throw ConvertError("Type mismatch for key: " + key);
+        }
+    }
+
+    /**
+     * @brief Type-safe getter for optional property
+     * @tparam T Expected value type
+     * @param key Property key
+     * @return optional with value if key exists and type matches, nullopt if key absent
+     * @throws ConvertError If key exists but type does not match
+     */
+    template<typename T>
+    std::optional<T> get_optional(const std::string& key) const
+    {
+        if (!hasProperty(key))
+        {
+            return std::nullopt;
+        }
+        try
+        {
+            return std::any_cast<T>(getProperty(key));
+        }
+        catch (const std::bad_any_cast&)
+        {
+            throw ConvertError("Type mismatch for key: " + key);
         }
     }
 };

@@ -72,6 +72,13 @@ struct IRequest {
      */
     virtual std::optional<std::string> getPathParam(size_t index) const = 0;
 
+    /**
+     * @brief Get path parameter by name
+     * @param name Parameter name (from :paramName in pattern)
+     * @return Parameter value or nullopt if not found
+     */
+    virtual std::optional<std::string> getPathParam(const std::string& name) const = 0;
+
     // =========================================================================
     // QUERY PARAMETERS
     // =========================================================================

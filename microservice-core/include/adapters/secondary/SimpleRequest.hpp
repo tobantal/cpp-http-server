@@ -94,6 +94,11 @@ struct SimpleRequest : IRequest
         return PathParamExtractor::getByIndex(path_, pathPattern_, index);
     }
 
+    std::optional<std::string> getPathParam(const std::string& name) const override
+    {
+        return PathParamExtractor::getByName(path_, pathPattern_, name);
+    }
+
     std::map<std::string, std::string> getQueryParams() const override
     {
         return queryParams_;

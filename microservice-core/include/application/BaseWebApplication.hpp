@@ -83,4 +83,6 @@ private:
     bool pathExists(const std::string &path);
     /** @brief Collect HTTP methods allowed for the given path (for 405 Allow header) */
     std::vector<std::string> getAllowedMethods(const std::string &path);
+    /** @brief Check if pattern contains dynamic segments (* or :param) */
+    static bool hasParameters(const std::string &pattern);
 };

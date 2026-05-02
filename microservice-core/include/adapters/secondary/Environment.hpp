@@ -28,6 +28,13 @@ public:
     std::any getProperty(const std::string& key) const override;
 
     /**
+     * @brief Check if property exists
+     * @param key Property key
+     * @return true if property exists
+     */
+    bool hasProperty(const std::string& key) const override;
+
+    /**
      * @brief Set property value
      * @param key Property key
      * @param value New value

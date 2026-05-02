@@ -1,5 +1,25 @@
 # Changelog
 
+## [v0.5.0] (2026-05-02)
+
+### Breaking Changes
+
+- **IEnvironment API redesign** (#356) — `get(key, defaultValue)` removed (masked errors); use `get_optional(key).value_or(default)` instead
+- `getProperty(key)` now throws `ConvertError(400)` instead of `std::runtime_error` — propagates as HTTP 400 via ChainHandler
+- `get<T>(key)` now throws `ConvertError` on missing key or type mismatch (was `std::runtime_error` + `std::bad_any_cast`)
+
+### New Features
+
+- **IEnvironment::get_optional\<T\>(key)** — returns `std::optional<T>`: `nullopt` if key absent, `ConvertError(400)` if type mismatch
+- **IEnvironment::hasProperty(key)** — check if key exists without throwing
+- **ConvertError(400)** thrown by `getProperty`, `get`, and `get_optional` on type mismatch — automatic HTTP 400 via ChainHandler
+
+### Improvements
+
+- **JsonToEnvConverter** — null JSON values are now skipped (not stored as empty `std::any`), so `get_optional<T>("key")` returns `nullopt` for null
+
+---
+
 ## [v0.4.0](https://github.com/tobantal/cpp-http-server/releases/tag/v0.4.0) (2026-04-30)
 
 ### New Features

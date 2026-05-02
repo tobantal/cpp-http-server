@@ -1,31 +1,42 @@
 #pragma once
 
 #include "ports/input/IHttpHandler.hpp"
+#include "ports/output/IHealthCheck.hpp"
 #include <string>
+#include <vector>
+#include <memory>
 
 /**
  * @file HealthHandler.hpp
- * @brief Health check handler
+ * @brief Health check handler with dependency checks
  * @author Anton Tobolkin
  */
 
 /**
  * @class HealthHandler
- * @brief Returns health status as JSON
+ * @brief Aggregated health check endpoint (Spring Boot Actuator analog)
  *
- * Returns HTTP 200 with body:
- *   {"status":"healthy","service":"<serviceName>"}
+ * Registers IHealthCheck providers and checks all on /health request.
  *
- * If no service name is provided, defaults to "unknown".
+ * Response when all checks pass (HTTP 200):
+ *   {"status":"UP","service":"<name>","checks":{"database":{"status":"UP"},"rabbitmq":{"status":"UP"}}}
+ *
+ * Response when any check fails (HTTP 503):
+ *   {"status":"DOWN","service":"<name>","checks":{"database":{"status":"DOWN","message":"..."}"}}
+ *
+ * If no IHealthCheck providers registered, returns simple:
+ *   {"status":"UP","service":"<name>"}
  */
 class HealthHandler : public IHttpHandler
 {
 public:
     /**
-     * @brief Construct HealthHandler with service name
+     * @brief Construct HealthHandler with service name and optional health checks
      * @param serviceName Name of the service for health response
+     * @param checks Vector of health check providers
      */
-    explicit HealthHandler(const std::string& serviceName = "unknown");
+    HealthHandler(const std::string& serviceName = "unknown",
+                  std::vector<std::shared_ptr<IHealthCheck>> checks = {});
 
     /**
      * @brief Handle health check request
@@ -34,6 +45,13 @@ public:
      */
     void handle(IRequest &req, IResponse &res) override;
 
+    /**
+     * @brief Get handler name
+     * @return Handler name
+     */
+    std::string name() const override;
+
 private:
     std::string serviceName_;
+    std::vector<std::shared_ptr<IHealthCheck>> checks_;
 };

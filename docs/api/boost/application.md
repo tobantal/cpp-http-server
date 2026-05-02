@@ -46,14 +46,29 @@ static std::string getVersion();  // Returns CPP_HTTP_SERVER_VERSION
 
 ### Configuration
 
-Load from config.json:
-```cpp
-app->loadEnvironment(argc, argv);  // Looks for config.json in current directory
+Load from config file (path resolved by CLI, ENV, or default):
+
+```bash
+# CLI argument (highest priority)
+./my_service --config /etc/myapp/config.json
+./my_service -c /etc/myapp/config.json
+
+# Environment variable
+CONFIG_PATH=/etc/myapp/config.json ./my_service
+
+# Default: config.json in current directory
+./my_service
 ```
 
-Or pass custom path:
+Config path priority: `--config/-c` > `CONFIG_PATH` env > `config.json` in CWD.
+
 ```cpp
-// Modify loadEnvironment to accept path, or set WORKING_DIR env
+// loadEnvironment(argc, argv) called automatically by run()
+// No need to call manually
+int main(int argc, char* argv[]) {
+    MyWebApp app;
+    return app.run(argc, argv);
+}
 ```
 
 ---

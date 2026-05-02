@@ -245,17 +245,59 @@ HTTP client for outgoing requests.
 ```cpp
 class IHttpClient {
 public:
-    virtual bool send(
-        std::shared_ptr<IRequest> req,
-        std::shared_ptr<IResponse> res) = 0;
+    virtual ~IHttpClient() = default;
+    virtual HttpClientResult send(const IRequest& request, IResponse& response) = 0;
 };
 ```
 
-Usage:
+Decorators: `RetryingHttpClient` (retry logic), `CircuitBreakingHttpClient` (circuit breaker).
+
+---
+
+## ICircuitBreaker
+
+Circuit breaker interface with CLOSED/OPEN/HALF_OPEN states.
+
 ```cpp
-auto httpClient = std::make_shared<HttpClient>();
-httpClient->send(request, response);
+#include "ICircuitBreaker.hpp"
 ```
+
+```cpp
+enum class CircuitState : uint8_t { Closed, Open, HalfOpen };
+
+class ICircuitBreaker {
+public:
+    virtual ~ICircuitBreaker() = default;
+    virtual bool allowsCall() = 0;
+    virtual void recordSuccess() = 0;
+    virtual void recordFailure() = 0;
+    virtual void recordFailure(HttpClientError error) = 0;
+    virtual CircuitState state() const = 0;
+};
+```
+
+Implementation: `CircuitBreaker` — thread-safe state machine with configurable thresholds.
+
+---
+
+## ICircuitBreakerSettings
+
+Circuit breaker configuration interface.
+
+```cpp
+#include "ICircuitBreakerSettings.hpp"
+```
+
+```cpp
+class ICircuitBreakerSettings {
+public:
+    virtual int getFailureThreshold() const = 0;
+    virtual std::chrono::milliseconds getResetTimeout() const = 0;
+    virtual int getHalfOpenMaxCalls() const = 0;
+};
+```
+
+Implementation: `CircuitBreakerSettings` — reads from `<PREFIX>_CB_*` environment variables.
 
 ---
 

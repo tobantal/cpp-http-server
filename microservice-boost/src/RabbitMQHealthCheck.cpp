@@ -1,5 +1,12 @@
 #include "adapters/primary/RabbitMQHealthCheck.hpp"
 
+const std::map<RabbitMQConnectionState, std::string> RabbitMQHealthCheck::stateNames_ = {
+    {RabbitMQConnectionState::Idle, "Idle"},
+    {RabbitMQConnectionState::Connecting, "Connecting"},
+    {RabbitMQConnectionState::Connected, "Connected"},
+    {RabbitMQConnectionState::Reconnecting, "Reconnecting"},
+};
+
 RabbitMQHealthCheck::RabbitMQHealthCheck(std::function<RabbitMQConnectionState()> stateAccessor)
     : stateAccessor_(std::move(stateAccessor))
 {
@@ -13,22 +20,8 @@ HealthStatus RabbitMQHealthCheck::check() const
     auto state = stateAccessor_();
     status.healthy = (state == RabbitMQConnectionState::Connected);
 
-    switch (state)
-    {
-    case RabbitMQConnectionState::Connected:
-        status.message = "Connected";
-        break;
-    case RabbitMQConnectionState::Connecting:
-        status.message = "Connecting";
-        break;
-    case RabbitMQConnectionState::Reconnecting:
-        status.message = "Reconnecting";
-        break;
-    case RabbitMQConnectionState::Idle:
-    default:
-        status.message = "Idle";
-        break;
-    }
+    auto it = stateNames_.find(state);
+    status.message = (it != stateNames_.end()) ? it->second : "Unknown";
 
     return status;
 }

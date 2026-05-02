@@ -3,6 +3,7 @@
 #include "ports/output/IHealthCheck.hpp"
 #include "messaging/RabbitMQConnectionState.hpp"
 #include <functional>
+#include <map>
 #include <string>
 
 /**
@@ -17,6 +18,7 @@
  *
  * Checks connection state via a provided state accessor function.
  * Reports UP only when state is Connected.
+ * Uses internal state-to-string map for status messages.
  */
 class RabbitMQHealthCheck : public IHealthCheck
 {
@@ -35,4 +37,6 @@ public:
 
 private:
     std::function<RabbitMQConnectionState()> stateAccessor_;
+
+    static const std::map<RabbitMQConnectionState, std::string> stateNames_;
 };

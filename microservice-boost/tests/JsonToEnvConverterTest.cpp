@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include "adapters/primary/JsonToEnvConverter.hpp"
 #include "ports/output/IEnvironment.hpp"
+#include "domain/error/ConvertError.hpp"
 
 TEST(JsonToEnvConverterTest, ParseValidJson)
 {
@@ -28,19 +29,21 @@ TEST(JsonToEnvConverterTest, ParseBoolean)
     EXPECT_EQ(env->get<bool>("deleted"), false);
 }
 
-TEST(JsonToEnvConverterTest, ParseNull)
+TEST(JsonToEnvConverterTest, ParseNullGetThrowsConvertError)
 {
     JsonToEnvConverter converter;
     auto env = converter.convert(R"({"value": null})");
 
-    try
-    {
-        env->get<std::string>("value");
-        FAIL() << "Expected exception";
-    }
-    catch (const std::exception&)
-    {
-    }
+    EXPECT_THROW(env->get<std::string>("value"), ConvertError);
+}
+
+TEST(JsonToEnvConverterTest, ParseNullOptionalReturnsNullopt)
+{
+    JsonToEnvConverter converter;
+    auto env = converter.convert(R"({"value": null})");
+
+    auto result = env->get_optional<std::string>("value");
+    EXPECT_EQ(result, std::nullopt);
 }
 
 TEST(JsonToEnvConverterTest, ParseNestedObject)
@@ -51,12 +54,12 @@ TEST(JsonToEnvConverterTest, ParseNestedObject)
     EXPECT_TRUE(env->getProperty("data").has_value());
 }
 
-TEST(JsonToEnvConverterTest, ParseEmptyObject)
+TEST(JsonToEnvConverterTest, ParseEmptyObjectGetOptionalReturnsDefault)
 {
     JsonToEnvConverter converter;
     auto env = converter.convert(R"({})");
 
-    EXPECT_EQ(env->get<std::string>("any", std::string("default")), "default");
+    EXPECT_EQ(env->get_optional<std::string>("any").value_or("default"), "default");
 }
 
 TEST(JsonToEnvConverterTest, ParseInvalidJsonThrows)
@@ -71,12 +74,12 @@ TEST(JsonToEnvConverterTest, ParseEmptyStringThrows)
     EXPECT_THROW(converter.convert(""), ConvertError);
 }
 
-TEST(JsonToEnvConverterTest, MissingPropertyReturnsDefault)
+TEST(JsonToEnvConverterTest, MissingPropertyGetOptionalReturnsDefault)
 {
     JsonToEnvConverter converter;
     auto env = converter.convert(R"({"name": "admin"})");
 
-    EXPECT_EQ(env->get<std::string>("missing", std::string("default")), "default");
+    EXPECT_EQ(env->get_optional<std::string>("missing").value_or("default"), "default");
 }
 
 TEST(JsonToEnvConverterTest, MultipleFields)

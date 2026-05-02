@@ -36,12 +36,32 @@ void BeastRequestAdapter::setPathPattern(const std::string& pattern)
 
 std::optional<std::string> BeastRequestAdapter::getPathParam(size_t index) const
 {
+    if (!pathParams_.empty())
+    {
+        size_t i = 0;
+        for (const auto &[key, value] : pathParams_)
+        {
+            if (i == index) return value;
+            ++i;
+        }
+        return std::nullopt;
+    }
     return PathParamExtractor::getByIndex(getPath(), pathPattern_, index);
 }
 
 std::optional<std::string> BeastRequestAdapter::getPathParam(const std::string& name) const
 {
+    if (!pathParams_.empty())
+    {
+        auto it = pathParams_.find(name);
+        if (it != pathParams_.end()) return it->second;
+    }
     return PathParamExtractor::getByName(getPath(), pathPattern_, name);
+}
+
+void BeastRequestAdapter::setPathParams(const std::map<std::string, std::string>& params)
+{
+    pathParams_ = params;
 }
 
 std::map<std::string, std::string> BeastRequestAdapter::getQueryParams() const

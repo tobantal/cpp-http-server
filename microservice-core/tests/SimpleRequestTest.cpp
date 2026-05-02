@@ -255,3 +255,52 @@ TEST(SimpleRequestTest, TestSetters)
     EXPECT_EQ(req.getIp(), "10.0.0.1");
     EXPECT_EQ(req.getPort(), 9000);
 }
+
+TEST(SimpleRequestTest, GetPathParamByName)
+{
+    SimpleRequest req("GET", "/api/orders/ord-123", "", "127.0.0.1", 80);
+    req.setPathPattern("/api/orders/:orderId");
+
+    auto param = req.getPathParam("orderId");
+    ASSERT_TRUE(param.has_value());
+    EXPECT_EQ(*param, "ord-123");
+}
+
+TEST(SimpleRequestTest, GetPathParamByNameMultiple)
+{
+    SimpleRequest req("GET", "/api/v1/users/42", "", "127.0.0.1", 80);
+    req.setPathPattern("/api/:version/users/:id");
+
+    EXPECT_EQ(*req.getPathParam("version"), "v1");
+    EXPECT_EQ(*req.getPathParam("id"), "42");
+    EXPECT_FALSE(req.getPathParam("missing").has_value());
+}
+
+TEST(SimpleRequestTest, GetPathParamByNameNoPattern)
+{
+    SimpleRequest req("GET", "/api/orders/123", "", "127.0.0.1", 80);
+
+    EXPECT_FALSE(req.getPathParam("id").has_value());
+}
+
+TEST(SimpleRequestTest, GetPathParamByIndexWithNamedParam)
+{
+    SimpleRequest req("GET", "/api/v1/users/42", "", "127.0.0.1", 80);
+    req.setPathPattern("/api/:version/users/:id");
+
+    EXPECT_EQ(*req.getPathParam(0), "v1");
+    EXPECT_EQ(*req.getPathParam(1), "42");
+    EXPECT_FALSE(req.getPathParam(2).has_value());
+}
+
+TEST(SimpleRequestTest, GetPathParamMixedWildcardAndNamed)
+{
+    SimpleRequest req("GET", "/api/v1/orders/ord-123/items/item-456", "", "127.0.0.1", 80);
+    req.setPathPattern("/api/:version/orders/*/items/:itemId");
+
+    EXPECT_EQ(*req.getPathParam(0), "v1");
+    EXPECT_EQ(*req.getPathParam(1), "ord-123");
+    EXPECT_EQ(*req.getPathParam(2), "item-456");
+    EXPECT_EQ(*req.getPathParam("version"), "v1");
+    EXPECT_EQ(*req.getPathParam("itemId"), "item-456");
+}

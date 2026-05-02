@@ -60,12 +60,29 @@ std::optional<BaseWebApplication::HandlerMatch> BaseWebApplication::findHandler(
 
     for (const auto &[pattern, methodHandlers] : handlers_)
     {
-        if (pattern.find('*') == std::string::npos)
+        if (!hasParameters(pattern))
         {
             continue;
         }
 
-        if (RouteMatcher::matches(pattern, path))
+        if (pattern.find(':') != std::string::npos && RouteMatcher::matches(pattern, path))
+        {
+            auto methodIt = methodHandlers.find(method);
+            if (methodIt != methodHandlers.end())
+            {
+                return HandlerMatch{methodIt->second, pattern};
+            }
+        }
+    }
+
+    for (const auto &[pattern, methodHandlers] : handlers_)
+    {
+        if (!hasParameters(pattern))
+        {
+            continue;
+        }
+
+        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
         {
             auto methodIt = methodHandlers.find(method);
             if (methodIt != methodHandlers.end())
@@ -87,7 +104,7 @@ bool BaseWebApplication::pathExists(const std::string &path)
 
     for (const auto &[pattern, methodHandlers] : handlers_)
     {
-        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
+        if (hasParameters(pattern) && RouteMatcher::matches(pattern, path))
         {
             return true;
         }
@@ -109,7 +126,7 @@ std::vector<std::string> BaseWebApplication::getAllowedMethods(const std::string
 
     for (const auto &[pattern, methodHandlers] : handlers_)
     {
-        if (pattern.find('*') != std::string::npos && RouteMatcher::matches(pattern, path))
+        if (hasParameters(pattern) && RouteMatcher::matches(pattern, path))
         {
             std::vector<std::string> methods;
             for (const auto &[method, _] : methodHandlers)
@@ -119,6 +136,11 @@ std::vector<std::string> BaseWebApplication::getAllowedMethods(const std::string
     }
 
     return {};
+}
+
+bool BaseWebApplication::hasParameters(const std::string &pattern)
+{
+    return pattern.find('*') != std::string::npos || pattern.find(':') != std::string::npos;
 }
 
 void BaseWebApplication::handleRequest(IRequest &req, IResponse &res)

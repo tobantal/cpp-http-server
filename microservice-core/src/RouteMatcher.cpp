@@ -24,7 +24,7 @@ bool RouteMatcher::matches(const std::string& pattern, const std::string& path)
     
     for (size_t i = 0; i < patternSegments.size(); ++i)
     {
-        if (patternSegments[i] == "*")
+        if (isWildcard(patternSegments[i]))
         {
             continue;
         }
@@ -36,6 +36,25 @@ bool RouteMatcher::matches(const std::string& pattern, const std::string& path)
     }
     
     return true;
+}
+
+bool RouteMatcher::isWildcard(const std::string& segment)
+{
+    return segment == "*" || isNamedParam(segment);
+}
+
+bool RouteMatcher::isNamedParam(const std::string& segment)
+{
+    return segment.size() > 1 && segment[0] == ':';
+}
+
+std::string RouteMatcher::paramName(const std::string& segment)
+{
+    if (!isNamedParam(segment))
+    {
+        return "";
+    }
+    return segment.substr(1);
 }
 
 std::vector<std::string> RouteMatcher::split(const std::string& str, char delimiter)

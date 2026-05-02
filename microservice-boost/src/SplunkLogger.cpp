@@ -130,6 +130,7 @@ void SplunkLogger::sendBatch(const std::vector<LogEntry>& entries)
         std::string getPathPattern() const override { return {}; }
         void setPathPattern(const std::string&) override {}
         std::optional<std::string> getPathParam(size_t) const override { return std::nullopt; }
+        std::optional<std::string> getPathParam(const std::string&) const override { return std::nullopt; }
         std::map<std::string, std::string> getQueryParams() const override { return {}; }
         std::optional<std::string> getQueryParam(const std::string&) const override { return std::nullopt; }
         void setQueryParam(const std::string&, const std::string&) override {}

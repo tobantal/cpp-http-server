@@ -39,6 +39,11 @@ std::optional<std::string> BeastRequestAdapter::getPathParam(size_t index) const
     return PathParamExtractor::getByIndex(getPath(), pathPattern_, index);
 }
 
+std::optional<std::string> BeastRequestAdapter::getPathParam(const std::string& name) const
+{
+    return PathParamExtractor::getByName(getPath(), pathPattern_, name);
+}
+
 std::map<std::string, std::string> BeastRequestAdapter::getQueryParams() const
 {
     if (cachedQueryParams_.has_value())

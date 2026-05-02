@@ -299,3 +299,73 @@ TEST_F(BaseWebApplicationTest, Name_ReturnsOverriddenValue)
 {
     EXPECT_EQ(app.name(), "TestableApp");
 }
+
+TEST_F(BaseWebApplicationTest, HandleRequest_NamedParamMatch)
+{
+    app.registerHandler("GET", "/users/:id", std::make_shared<OkHandler>());
+
+    SimpleRequest req{"GET", "/users/42", "", "127.0.0.1", 80};
+    SimpleResponse res;
+    app.handleRequest(req, res);
+
+    EXPECT_EQ(res.getStatus(), 200);
+    EXPECT_EQ(req.getPathPattern(), "/users/:id");
+}
+
+TEST_F(BaseWebApplicationTest, HandleRequest_NamedParamSetsPathPattern)
+{
+    app.registerHandler("GET", "/api/:version/users/:id", std::make_shared<OkHandler>());
+
+    SimpleRequest req{"GET", "/api/v1/users/42", "", "127.0.0.1", 80};
+    SimpleResponse res;
+    app.handleRequest(req, res);
+
+    EXPECT_EQ(res.getStatus(), 200);
+    EXPECT_EQ(req.getPathPattern(), "/api/:version/users/:id");
+    EXPECT_EQ(*req.getPathParam("version"), "v1");
+    EXPECT_EQ(*req.getPathParam("id"), "42");
+}
+
+TEST_F(BaseWebApplicationTest, HandleRequest_StaticPreferredOverNamedParam)
+{
+    auto namedHandler = std::make_shared<CreatedHandler>();
+    auto staticHandler = std::make_shared<OkHandler>();
+    app.registerHandler("GET", "/users/:id", namedHandler);
+    app.registerHandler("GET", "/users/me", staticHandler);
+
+    SimpleRequest req{"GET", "/users/me", "", "127.0.0.1", 80};
+    SimpleResponse res;
+    app.handleRequest(req, res);
+
+    EXPECT_EQ(res.getStatus(), 200);
+    EXPECT_EQ(res.getBody(), R"({"status":"ok"})");
+}
+
+TEST_F(BaseWebApplicationTest, HandleRequest_NamedParamPreferredOverWildcard)
+{
+    auto wildcardHandler = std::make_shared<CreatedHandler>();
+    auto namedHandler = std::make_shared<OkHandler>();
+    app.registerHandler("GET", "/users/*", wildcardHandler);
+    app.registerHandler("GET", "/users/:id", namedHandler);
+
+    SimpleRequest req{"GET", "/users/42", "", "127.0.0.1", 80};
+    SimpleResponse res;
+    app.handleRequest(req, res);
+
+    EXPECT_EQ(res.getStatus(), 200);
+    EXPECT_EQ(res.getBody(), R"({"status":"ok"})");
+}
+
+TEST_F(BaseWebApplicationTest, HandleRequest_405NamedParamPath)
+{
+    app.registerHandler("GET", "/users/:id", std::make_shared<OkHandler>());
+
+    SimpleRequest req{"POST", "/users/123", "", "127.0.0.1", 80};
+    SimpleResponse res;
+    app.handleRequest(req, res);
+
+    EXPECT_EQ(res.getStatus(), 405);
+    auto allow = res.getHeader("Allow");
+    ASSERT_TRUE(allow.has_value());
+    EXPECT_TRUE(allow->find("GET") != std::string::npos);
+}

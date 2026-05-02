@@ -19,6 +19,12 @@
   - `SchemaValidator` adapter: validates `IEnvironment` fields, throws `BadRequestError(400)` with all violations
   - Supports: `required`/`optional`, type checks (string/int/double/bool), `min`/`max`, `minLength`/`maxLength`
   - Place in `ChainHandler` after `JsonProcessor`, before business handler
+- **CircuitBreaker** (#359, MSG-03) — circuit breaker pattern for outgoing HTTP calls
+  - `ICircuitBreaker` port with states: CLOSED, OPEN, HALF_OPEN
+  - `CircuitBreaker` domain model: thread-safe transitions, DNS failures not counted
+  - `ICircuitBreakerSettings` + `CircuitBreakerSettings` (env config: `<PREFIX>_CB_FAILURE_THRESHOLD`, `<PREFIX>_CB_RESET_TIMEOUT_MS`, `<PREFIX>_CB_HALF_OPEN_MAX_CALLS`)
+  - `CircuitBreakingHttpClient` decorator over `IHttpClient` (returns `ConnectionRefused` when open)
+  - 23 unit tests
 
 ### Improvements
 

@@ -10,6 +10,7 @@ add_executable(microservice-boost-test
     JsonValidatorTest.cpp
     PostgresHealthCheckTest.cpp
     RabbitMQHealthCheckTest.cpp
+    SchemaValidatorTest.cpp
     ServerSettingsTest.cpp
     SplunkLoggerTest.cpp
 )

@@ -17,6 +17,7 @@ add_library(microservice-boost
     src/RabbitMQHealthCheck.cpp
     src/RabbitMQSettings.cpp
     src/RetryingHttpClient.cpp
+    src/SchemaValidator.cpp
     src/ServerSettings.cpp
     src/SplunkLogger.cpp
     src/SplunkLogSettings.cpp

@@ -29,6 +29,8 @@
 | `IIdGenerator` / `UuidGenerator` | Thread-safe генератор ID (DIP: mockable в тестах) |
 | `Uuid7Generator` | UUID v7 (RFC 9562) — time-ordered, k-sortable IDs |
 | `IEnvironment` / `Environment` | Type-safe конфигурация (ENV → config.json → default) |
+| `Schema` / `FieldDef` / `FieldBuilder` | Fluent DSL for request schema definitions |
+| `ISchemaValidator` | Port for schema validation (inherits `IHttpHandler`) |
 | `IHttpClient` | HTTP-клиент для межсервисной коммуникации |
 | `ICircuitBreaker` | Circuit breaker pattern: CLOSED/OPEN/HALF_OPEN states, threshold-based transition |
 | `CircuitBreaker` | Implementation: failure counting, timeout-based half-open transition |
@@ -65,6 +67,7 @@ Production-ready HTTP-сервер на Boost.Beast/Asio.
 | `DbSettings` | Конфигурация БД: ENV → config.json → default (prefix support) |
 | `DatabaseHealthHandler` | /health/db endpoint: isAlive, available, size → JSON |
 | `PostgresKeyValueRepository` | Example IRepository<KeyValueEntity> with ensureSchema(), upsert, parameterized queries |
+| `SchemaValidator` | Validates IEnvironment fields against Schema: required, type, min/max, minLength/maxLength → BadRequestError(400) |
 | `ServerSettings` | Конфигурация сервера: ENV → config.json → default |
 
 ---
@@ -82,7 +85,7 @@ include(FetchContent)
 FetchContent_Declare(
     cpp-http-server
     GIT_REPOSITORY https://github.com/tobantal/cpp-http-server.git
-    GIT_TAG v0.4.0
+    GIT_TAG v0.5.0
 )
 
 # Если ваш проект уже подтягивает Boost/nlohmann_json:
@@ -249,6 +252,31 @@ class XmlErrorHandler : public IHttpErrorHandler {
 };
 ```
 
+### Schema Validation (SchemaValidator)
+
+```cpp
+// 1. Define schema per endpoint (subclass Schema)
+class OrderSchema : public Schema {
+public:
+    OrderSchema() {
+        field<std::string>("symbol").required().minLength(1).maxLength(10);
+        field<int>("amount").required().min(1);
+        field<double>("price").optional().max(1000000);
+    }
+};
+
+// 2. Wire into ChainHandler (after JsonProcessor, before business handler)
+auto orderValidator = std::make_shared<SchemaValidator>(
+    std::make_shared<OrderSchema>());
+
+registerEndpoint("POST", "/orders",
+    ChainHandler(logger, errorHandler,
+        jsonProcessor,
+        orderValidator,    // validates required fields, types, constraints
+        createOrderHandler // guaranteed valid data — no try/catch needed
+    ));
+```
+
 ### Trace ID + Handler Names in Logs
 
 ```
@@ -285,7 +313,8 @@ class XmlErrorHandler : public IHttpErrorHandler {
 cpp-http-server/
 ├── microservice-core/               # Нулевые зависимости
 │   ├── include/
-│   │   ├── domain/                 # Доменные типы: HttpError, INameable, IResponse
+│   │   ├── domain/                 # Доменные типы: HttpError, INameable, IResponse, Schema
+│   │   ├── schema/                 # Schema, FieldDef, FieldBuilder
 │   │   ├── error/                   # NotFoundError, BadRequestError, MethodNotAllowedError
 │   │   ├── ports/input/             # IHttpHandler, IHttpErrorHandler, IWebApplication
 │   │   ├── ports/output/            # ILogger, IShutdown, IEnvironment, IMetricsCollector, IEventPublisher, IEventConsumer, IConnectionPool, ITransactionExecutor
@@ -306,7 +335,7 @@ cpp-http-server/
 │   │   ├── HttpClient.hpp
 │   │   ├── RabbitMQAdapter.hpp
 │   │   ├── ReconnectBoostAsioHandler.hpp
-│   │   ├── adapters/primary/       # DatabaseHealthHandler
+│   │   ├── adapters/primary/       # DatabaseHealthHandler, SchemaValidator
 │   │   ├── adapters/secondary/    # ConnectionPool, PostgresTransactionExecutor, SplunkLogger
 │   │   ├── settings/ServerSettings.hpp
 │   │   ├── settings/RabbitMQSettings.hpp
@@ -335,7 +364,7 @@ cpp-http-server/
 
 ## Покрытие тестами
 
-448+ тестов. Покрытие по модулям:
+448+ тестов (core: 341, boost: 174+). Покрытие по модулям:
 
 - **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, InMemoryKeyValueRepository, Version
 - **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient, ConnectionPool (RAII, thread safety, schema), PostgresTransactionExecutor, DbSettings

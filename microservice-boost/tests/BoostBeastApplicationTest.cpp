@@ -123,3 +123,45 @@ TEST_F(LoadEnvironmentTest, ConfigPathEnvFallbackWhenNoCli)
     ASSERT_TRUE(port.has_value());
     EXPECT_EQ(port.value(), 4444);
 }
+
+TEST_F(LoadEnvironmentTest, StringArrayBecomesCommaSeparated)
+{
+    writeConfig("config.json", R"({"server":{"allowedOrigins":["http://a.com","http://b.com"]}})");
+
+    char arg0[] = {"app"};
+    char *argv[] = {arg0, nullptr};
+    TestApp app;
+    app.loadEnvironment(1, argv);
+
+    auto origins = app.env()->get_optional<std::string>("server.allowedOrigins");
+    ASSERT_TRUE(origins.has_value());
+    EXPECT_EQ(origins.value(), "http://a.com,http://b.com");
+}
+
+TEST_F(LoadEnvironmentTest, EmptyArrayBecomesEmptyString)
+{
+    writeConfig("config.json", R"({"server":{"tags":[]}})");
+
+    char arg0[] = {"app"};
+    char *argv[] = {arg0, nullptr};
+    TestApp app;
+    app.loadEnvironment(1, argv);
+
+    auto tags = app.env()->get_optional<std::string>("server.tags");
+    ASSERT_TRUE(tags.has_value());
+    EXPECT_EQ(tags.value(), "");
+}
+
+TEST_F(LoadEnvironmentTest, MixedArrayBecomesCommaSeparatedJson)
+{
+    writeConfig("config.json", R"({"data":{"values":[1,"two",true]}})");
+
+    char arg0[] = {"app"};
+    char *argv[] = {arg0, nullptr};
+    TestApp app;
+    app.loadEnvironment(1, argv);
+
+    auto values = app.env()->get_optional<std::string>("data.values");
+    ASSERT_TRUE(values.has_value());
+    EXPECT_EQ(values.value(), "1,\"two\",true");
+}

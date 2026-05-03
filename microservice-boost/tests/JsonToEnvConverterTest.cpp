@@ -97,3 +97,35 @@ TEST(JsonToEnvConverterTest, MultipleFields)
     EXPECT_EQ(env->get<double>("balance"), 100.50);
     EXPECT_EQ(env->get<bool>("active"), true);
 }
+
+TEST(JsonToEnvConverterTest, StringArrayBecomesCommaSeparated)
+{
+    JsonToEnvConverter converter;
+    auto env = converter.convert(R"({"origins": ["http://a.com", "http://b.com"]})");
+
+    EXPECT_EQ(env->get<std::string>("origins"), "http://a.com,http://b.com");
+}
+
+TEST(JsonToEnvConverterTest, EmptyArrayBecomesEmptyString)
+{
+    JsonToEnvConverter converter;
+    auto env = converter.convert(R"({"tags": []})");
+
+    EXPECT_EQ(env->get<std::string>("tags"), "");
+}
+
+TEST(JsonToEnvConverterTest, NumberArrayBecomesCommaSeparated)
+{
+    JsonToEnvConverter converter;
+    auto env = converter.convert(R"({"ports": [8080, 8081, 8082]})");
+
+    EXPECT_EQ(env->get<std::string>("ports"), "8080,8081,8082");
+}
+
+TEST(JsonToEnvConverterTest, MixedArrayBecomesCommaSeparatedJson)
+{
+    JsonToEnvConverter converter;
+    auto env = converter.convert(R"({"values": [1, "two", true]})");
+
+    EXPECT_EQ(env->get<std::string>("values"), "1,\"two\",true");
+}

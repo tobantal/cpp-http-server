@@ -32,4 +32,5 @@ public:
 
 private:
     std::any toAny(const nlohmann::json& value) const;
+    std::string arrayToString(const nlohmann::json& arr) const;
 };

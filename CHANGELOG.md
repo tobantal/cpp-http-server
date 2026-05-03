@@ -29,6 +29,8 @@
 ### Improvements
 
 - **JsonToEnvConverter** — null JSON values are now skipped (not stored as empty `std::any`), so `get_optional<T>("key")` returns `nullopt` for null
+- **JsonToEnvConverter / loadJsonToEnvironment** — JSON arrays of strings now produce comma-separated values (`["a","b"]` → `"a,b"`), mixed/number arrays also supported (#140, SRV-24)
+- **BoostBeastApplication::loadEnvironment** — config path now resolves via `--config`/`-c` CLI arg > `CONFIG_PATH` env var > `config.json` default (#135, SRV-10)
 
 ---
 

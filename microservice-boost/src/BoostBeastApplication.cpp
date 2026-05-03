@@ -375,7 +375,32 @@ void BoostBeastApplication::loadJsonToEnvironment(const json &j, const std::stri
         }
         else if (it->is_array())
         {
-            logger_->log(LogLevel::Debug, "App", "Skipping array: " + key);
+            if (it->empty())
+            {
+                env_->setProperty(key, std::string(""));
+            }
+            else if (std::all_of(it->begin(), it->end(), [](const json &el) { return el.is_string(); }))
+            {
+                std::string joined;
+                for (auto arrIt = it->begin(); arrIt != it->end(); ++arrIt)
+                {
+                    if (arrIt != it->begin()) joined += ",";
+                    joined += arrIt->get<std::string>();
+                }
+                logger_->log(LogLevel::Debug, "App", "Setting: " + key + " = " + joined);
+                env_->setProperty(key, joined);
+            }
+            else
+            {
+                std::string joined;
+                for (auto arrIt = it->begin(); arrIt != it->end(); ++arrIt)
+                {
+                    if (arrIt != it->begin()) joined += ",";
+                    joined += arrIt->dump();
+                }
+                logger_->log(LogLevel::Debug, "App", "Setting: " + key + " = " + joined);
+                env_->setProperty(key, joined);
+            }
         }
     }
 }

@@ -5,6 +5,8 @@
 #include <string>
 #include <memory>
 #include <type_traits>
+#include <cctype>
+#include <algorithm>
 
 /**
  * @file CircuitBreakerSettings.hpp

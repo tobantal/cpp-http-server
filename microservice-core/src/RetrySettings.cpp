@@ -18,6 +18,13 @@ std::string RetrySettings::toEnvName(const std::string& configKey)
     return result;
 }
 
+std::string RetrySettings::toLower(const std::string& s)
+{
+    std::string result = s;
+    for (auto& c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return result;
+}
+
 int RetrySettings::getMaxAttempts() const
 {
     return resolve<int>("retry.maxAttempts", 3);

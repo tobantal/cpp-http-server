@@ -47,13 +47,14 @@ private:
     T resolve(const std::string& configKey, T defaultValue) const;
 
     static std::string toEnvName(const std::string& configKey);
+    static std::string toLower(const std::string& s);
     void parseStatuses(const std::string& statusStr);
 };
 
 template<typename T>
 T HttpRetrySettings::resolve(const std::string& configKey, T defaultValue) const
 {
-    std::string fullKey = prefix_ + "." + configKey;
+    std::string fullKey = toLower(prefix_) + "." + configKey;
     std::string envVarName;
 
     if (configKey == "retry.maxAttempts")

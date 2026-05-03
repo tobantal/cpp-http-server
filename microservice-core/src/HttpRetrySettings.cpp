@@ -20,6 +20,13 @@ std::string HttpRetrySettings::toEnvName(const std::string& configKey)
     return result;
 }
 
+std::string HttpRetrySettings::toLower(const std::string& s)
+{
+    std::string result = s;
+    for (auto& c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return result;
+}
+
 void HttpRetrySettings::parseStatuses(const std::string& statusStr)
 {
     std::stringstream ss(statusStr);

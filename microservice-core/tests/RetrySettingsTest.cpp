@@ -73,3 +73,14 @@ TEST_F(RetrySettingsTest, EnvOverridesConfigJson)
     RetrySettings settings(env, "TEST");
     EXPECT_EQ(settings.getMaxAttempts(), 5);
 }
+
+TEST_F(RetrySettingsTest, ConfigJsonOverridesDefaults_WhenNoEnv)
+{
+    auto env = std::make_shared<Environment>();
+    env->setProperty("test.retry.maxAttempts", 7);
+    env->setProperty("test.retry.baseDelayMs", 2000);
+
+    RetrySettings settings(env, "TEST");
+    EXPECT_EQ(settings.getMaxAttempts(), 7);
+    EXPECT_EQ(settings.getBaseDelay().count(), 2000);
+}

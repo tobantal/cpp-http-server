@@ -80,3 +80,14 @@ TEST_F(HttpRetrySettingsTest, EnvOverridesConfigJson)
     HttpRetrySettings settings(env, "HTTP");
     EXPECT_EQ(settings.getMaxAttempts(), 5);
 }
+
+TEST_F(HttpRetrySettingsTest, ConfigJsonOverridesDefaults_WhenNoEnv)
+{
+    auto env = std::make_shared<Environment>();
+    env->setProperty("http.retry.maxAttempts", 7);
+    env->setProperty("http.retry.baseDelayMs", 2000);
+
+    HttpRetrySettings settings(env, "HTTP");
+    EXPECT_EQ(settings.getMaxAttempts(), 7);
+    EXPECT_EQ(settings.getBaseDelay().count(), 2000);
+}

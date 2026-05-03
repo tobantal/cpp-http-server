@@ -69,3 +69,14 @@ TEST_F(CircuitBreakerSettingsTest, EnvOverridesConfigJson)
     CircuitBreakerSettings settings(env, "HTTP");
     EXPECT_EQ(settings.getFailureThreshold(), 10);
 }
+
+TEST_F(CircuitBreakerSettingsTest, ConfigJsonOverridesDefaults_WhenNoEnv)
+{
+    auto env = std::make_shared<Environment>();
+    env->setProperty("http.cb.failureThreshold", 15);
+    env->setProperty("http.cb.resetTimeoutMs", 60000);
+
+    CircuitBreakerSettings settings(env, "HTTP");
+    EXPECT_EQ(settings.getFailureThreshold(), 15);
+    EXPECT_EQ(settings.getResetTimeout(), std::chrono::milliseconds(60000));
+}

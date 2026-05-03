@@ -65,10 +65,23 @@ std::chrono::seconds SplunkLogSettings::getFlushInterval() const
 template<typename T>
 T SplunkLogSettings::resolve(const std::string& configKey, T defaultValue) const
 {
-    std::string fullKey = "splunk." + configKey;
-    std::string envVarName = prefix_.empty()
-        ? toEnvName(configKey)
-        : prefix_ + "_" + toEnvName(configKey);
+    std::string fullKey = configKey;
+    std::string envVarName;
+
+    if (configKey == "splunk.url")
+        envVarName = prefix_ + "_SPLUNK_URL";
+    else if (configKey == "splunk.token")
+        envVarName = prefix_ + "_SPLUNK_TOKEN";
+    else if (configKey == "splunk.index")
+        envVarName = prefix_ + "_SPLUNK_INDEX";
+    else if (configKey == "splunk.sourcetype")
+        envVarName = prefix_ + "_SPLUNK_SOURCETYPE";
+    else if (configKey == "splunk.buffer_size")
+        envVarName = prefix_ + "_SPLUNK_BUFFER_SIZE";
+    else if (configKey == "splunk.flush_interval_sec")
+        envVarName = prefix_ + "_SPLUNK_FLUSH_INTERVAL_SEC";
+    else
+        envVarName = prefix_.empty() ? toEnvName(configKey) : prefix_ + "_" + toEnvName(configKey);
 
     const char* envValue = std::getenv(envVarName.c_str());
     if (envValue)

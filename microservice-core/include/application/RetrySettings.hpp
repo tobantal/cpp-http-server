@@ -39,12 +39,13 @@ private:
     T resolve(const std::string& configKey, T defaultValue) const;
 
     static std::string toEnvName(const std::string& configKey);
+    static std::string toLower(const std::string& s);
 };
 
 template<typename T>
 T RetrySettings::resolve(const std::string& configKey, T defaultValue) const
 {
-    std::string fullKey = prefix_ + "." + configKey;
+    std::string fullKey = toLower(prefix_) + "." + configKey;
     std::string envVarName;
 
     if (configKey == "retry.maxAttempts")

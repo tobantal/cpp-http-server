@@ -1,45 +1,23 @@
 #include "application/HttpRetrySettings.hpp"
 #include <sstream>
+#include <algorithm>
+#include <cctype>
 
-HttpRetrySettings::HttpRetrySettings(const std::string& prefix)
-    : prefix_(prefix)
+HttpRetrySettings::HttpRetrySettings(std::shared_ptr<IEnvironment> env, const std::string& prefix)
+    : env_(env), prefix_(prefix), retryOnNetworkError_(true)
 {
-    maxAttempts_ = getEnvInt(prefix + "_RETRY_MAX_ATTEMPTS", 3);
-    baseDelayMs_ = getEnvInt(prefix + "_RETRY_BASE_DELAY_MS", 1000);
-    multiplier_ = getEnvDouble(prefix + "_RETRY_MULTIPLIER", 2.0);
-    maxDelayMs_ = getEnvInt(prefix + "_RETRY_MAX_DELAY_MS", 30000);
-    retryOnNetworkError_ = getEnvBool(prefix + "_RETRY_ON_NETWORK_ERROR", true);
-    parseStatuses(getEnvString(prefix + "_RETRY_STATUSES", "500,502,503,504"));
+    parseStatuses(resolve<std::string>("retry.statuses", "500,502,503,504"));
 }
 
-int HttpRetrySettings::getMaxAttempts() const
+std::string HttpRetrySettings::toEnvName(const std::string& configKey)
 {
-    return maxAttempts_;
-}
-
-std::chrono::milliseconds HttpRetrySettings::getBaseDelay() const
-{
-    return std::chrono::milliseconds(baseDelayMs_);
-}
-
-double HttpRetrySettings::getMultiplier() const
-{
-    return multiplier_;
-}
-
-std::chrono::milliseconds HttpRetrySettings::getMaxDelay() const
-{
-    return std::chrono::milliseconds(maxDelayMs_);
-}
-
-const std::set<int>& HttpRetrySettings::getRetryableStatuses() const
-{
-    return retryableStatuses_;
-}
-
-bool HttpRetrySettings::isRetryOnNetworkErrorEnabled() const
-{
-    return retryOnNetworkError_;
+    std::string result;
+    for (char c : configKey)
+    {
+        if (c == '.') result += '_';
+        else result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    return result;
 }
 
 void HttpRetrySettings::parseStatuses(const std::string& statusStr)
@@ -51,31 +29,32 @@ void HttpRetrySettings::parseStatuses(const std::string& statusStr)
     }
 }
 
-int HttpRetrySettings::getEnvInt(const std::string& name, int defaultValue)
+int HttpRetrySettings::getMaxAttempts() const
 {
-    const char* value = std::getenv(name.c_str());
-    return value ? std::stoi(value) : defaultValue;
+    return resolve<int>("retry.maxAttempts", 3);
 }
 
-double HttpRetrySettings::getEnvDouble(const std::string& name, double defaultValue)
+std::chrono::milliseconds HttpRetrySettings::getBaseDelay() const
 {
-    const char* value = std::getenv(name.c_str());
-    return value ? std::stod(value) : defaultValue;
+    return std::chrono::milliseconds(resolve<int>("retry.baseDelayMs", 1000));
 }
 
-bool HttpRetrySettings::getEnvBool(const std::string& name, bool defaultValue)
+double HttpRetrySettings::getMultiplier() const
 {
-    const char* value = std::getenv(name.c_str());
-    if (!value) return defaultValue;
-    std::string lower;
-    for (const char* p = value; *p; ++p) {
-        lower += static_cast<char>(std::tolower(static_cast<unsigned char>(*p)));
-    }
-    return lower == "true" || lower == "1" || lower == "yes";
+    return resolve<double>("retry.multiplier", 2.0);
 }
 
-std::string HttpRetrySettings::getEnvString(const std::string& name, const std::string& defaultValue)
+std::chrono::milliseconds HttpRetrySettings::getMaxDelay() const
 {
-    const char* value = std::getenv(name.c_str());
-    return value ? std::string(value) : defaultValue;
+    return std::chrono::milliseconds(resolve<int>("retry.maxDelayMs", 30000));
+}
+
+const std::set<int>& HttpRetrySettings::getRetryableStatuses() const
+{
+    return retryableStatuses_;
+}
+
+bool HttpRetrySettings::isRetryOnNetworkErrorEnabled() const
+{
+    return resolve<bool>("retry.onNetworkError", true);
 }

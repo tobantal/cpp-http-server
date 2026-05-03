@@ -1,54 +1,34 @@
 #include "application/CircuitBreakerSettings.hpp"
+#include <algorithm>
+#include <cctype>
 
-CircuitBreakerSettings::CircuitBreakerSettings(const std::string& prefix)
-    : prefix_(prefix)
+CircuitBreakerSettings::CircuitBreakerSettings(std::shared_ptr<IEnvironment> env, const std::string& prefix)
+    : env_(env), prefix_(prefix)
 {
-    failureThreshold_ = getEnvInt(prefix + "_CB_FAILURE_THRESHOLD", 5);
-    resetTimeoutMs_ = getEnvInt(prefix + "_CB_RESET_TIMEOUT_MS", 30000);
-    halfOpenMaxCalls_ = getEnvInt(prefix + "_CB_HALF_OPEN_MAX_CALLS", 3);
+}
+
+std::string CircuitBreakerSettings::toEnvName(const std::string& configKey)
+{
+    std::string result;
+    for (char c : configKey)
+    {
+        if (c == '.') result += '_';
+        else result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    return result;
 }
 
 int CircuitBreakerSettings::getFailureThreshold() const
 {
-    return failureThreshold_;
+    return resolve<int>("cb.failureThreshold", 5);
 }
 
 std::chrono::milliseconds CircuitBreakerSettings::getResetTimeout() const
 {
-    return std::chrono::milliseconds(resetTimeoutMs_);
+    return std::chrono::milliseconds(resolve<int>("cb.resetTimeoutMs", 30000));
 }
 
 int CircuitBreakerSettings::getHalfOpenMaxCalls() const
 {
-    return halfOpenMaxCalls_;
-}
-
-int CircuitBreakerSettings::getEnvInt(const std::string& name, int defaultValue)
-{
-    const char* value = std::getenv(name.c_str());
-    return value ? std::stoi(value) : defaultValue;
-}
-
-double CircuitBreakerSettings::getEnvDouble(const std::string& name, double defaultValue)
-{
-    const char* value = std::getenv(name.c_str());
-    return value ? std::stod(value) : defaultValue;
-}
-
-bool CircuitBreakerSettings::getEnvBool(const std::string& name, bool defaultValue)
-{
-    const char* value = std::getenv(name.c_str());
-    if (!value) return defaultValue;
-    std::string lower;
-    for (const char* p = value; *p; ++p)
-    {
-        lower += static_cast<char>(std::tolower(static_cast<unsigned char>(*p)));
-    }
-    return lower == "true" || lower == "1" || lower == "yes";
-}
-
-std::string CircuitBreakerSettings::getEnvString(const std::string& name, const std::string& defaultValue)
-{
-    const char* value = std::getenv(name.c_str());
-    return value ? std::string(value) : defaultValue;
+    return resolve<int>("cb.halfOpenMaxCalls", 3);
 }

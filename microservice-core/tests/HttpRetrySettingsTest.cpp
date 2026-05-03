@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "application/HttpRetrySettings.hpp"
+#include "adapters/secondary/Environment.hpp"
 
 /**
  * @file HttpRetrySettingsTest.cpp
@@ -25,7 +26,7 @@ protected:
 
 TEST_F(HttpRetrySettingsTest, DefaultRetryableStatuses)
 {
-    HttpRetrySettings settings("HTTP");
+    HttpRetrySettings settings(nullptr, "HTTP");
     const auto& statuses = settings.getRetryableStatuses();
 
     EXPECT_TRUE(statuses.count(500) > 0);
@@ -39,7 +40,7 @@ TEST_F(HttpRetrySettingsTest, DefaultRetryableStatuses)
 TEST_F(HttpRetrySettingsTest, CustomRetryableStatuses)
 {
     setEnv("HTTP_RETRY_STATUSES", "500,502,503");
-    HttpRetrySettings settings("HTTP");
+    HttpRetrySettings settings(nullptr, "HTTP");
     const auto& statuses = settings.getRetryableStatuses();
 
     EXPECT_TRUE(statuses.count(500) > 0);
@@ -50,21 +51,32 @@ TEST_F(HttpRetrySettingsTest, CustomRetryableStatuses)
 
 TEST_F(HttpRetrySettingsTest, DefaultRetryOnNetworkError)
 {
-    HttpRetrySettings settings("HTTP");
+    HttpRetrySettings settings(nullptr, "HTTP");
     EXPECT_TRUE(settings.isRetryOnNetworkErrorEnabled());
 }
 
 TEST_F(HttpRetrySettingsTest, OverrideRetryOnNetworkError)
 {
     setEnv("HTTP_RETRY_ON_NETWORK_ERROR", "false");
-    HttpRetrySettings settings("HTTP");
+    HttpRetrySettings settings(nullptr, "HTTP");
     EXPECT_FALSE(settings.isRetryOnNetworkErrorEnabled());
 }
 
 TEST_F(HttpRetrySettingsTest, InheritsBaseSettings)
 {
     setEnv("HTTP_RETRY_MAX_ATTEMPTS", "5");
-    HttpRetrySettings settings("HTTP");
+    HttpRetrySettings settings(nullptr, "HTTP");
 
+    EXPECT_EQ(settings.getMaxAttempts(), 5);
+}
+
+TEST_F(HttpRetrySettingsTest, EnvOverridesConfigJson)
+{
+    auto env = std::make_shared<Environment>();
+    env->setProperty("http.retry.maxAttempts", 10);
+
+    setEnv("HTTP_RETRY_MAX_ATTEMPTS", "5");
+
+    HttpRetrySettings settings(env, "HTTP");
     EXPECT_EQ(settings.getMaxAttempts(), 5);
 }

@@ -287,28 +287,45 @@ void BoostBeastApplication::loadEnvironment(int argc, char *argv[])
 {
     logger_->log(LogLevel::Info, "App", "Loading environment...");
 
-    (void)argc;
-    (void)argv;
+    std::string configPath = "config.json";
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg(argv[i]);
+        if ((arg == "--config" || arg == "-c") && i + 1 < argc)
+        {
+            configPath = argv[++i];
+        }
+    }
+
+    if (configPath == "config.json")
+    {
+        const char *envPath = std::getenv("CONFIG_PATH");
+        if (envPath && envPath[0] != '\0')
+        {
+            configPath = envPath;
+        }
+    }
 
     env_ = std::make_shared<Environment>();
 
     try
     {
-        std::ifstream configFile("config.json");
+        std::ifstream configFile(configPath);
 
         if (!configFile.is_open())
         {
-            logger_->log(LogLevel::Info, "App", "config.json not found");
+            logger_->log(LogLevel::Info, "App", configPath + " not found");
             return;
         }
 
-        logger_->log(LogLevel::Info, "App", "Reading config.json...");
+        logger_->log(LogLevel::Info, "App", "Reading " + configPath + "...");
 
         json config = json::parse(configFile);
 
         loadJsonToEnvironment(config);
 
-        logger_->log(LogLevel::Info, "App", "Configuration loaded from config.json");
+        logger_->log(LogLevel::Info, "App", "Configuration loaded from " + configPath);
     }
     catch (const json::parse_error &e)
     {

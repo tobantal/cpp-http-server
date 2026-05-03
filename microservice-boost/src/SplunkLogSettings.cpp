@@ -1,120 +1,47 @@
 #include "settings/SplunkLogSettings.hpp"
 #include <cstdlib>
 #include <string>
-#include <type_traits>
-#include <algorithm>
-#include <cctype>
-
-SplunkLogSettings::SplunkLogSettings(std::shared_ptr<IEnvironment> env, const std::string& prefix)
-    : env_(env), prefix_(prefix)
-{
-}
 
 SplunkLogSettings::SplunkLogSettings(const std::string& prefix)
-    : env_(nullptr), prefix_(prefix)
+    : prefix_(prefix)
 {
+    url_ = getEnvOrDefault((prefix + "_SPLUNK_URL").c_str(),
+                           "http://localhost:8088/services/collector");
+    token_ = getEnvOrDefault((prefix + "_SPLUNK_TOKEN").c_str(), "");
+    index_ = getEnvOrDefault((prefix + "_SPLUNK_INDEX").c_str(), "main");
+    sourcetype_ = getEnvOrDefault((prefix + "_SPLUNK_SOURCETYPE").c_str(), "_json");
+
+    bufferSize_ = std::stoul(getEnvOrDefault(
+        (prefix + "_SPLUNK_BUFFER_SIZE").c_str(), "100"));
+    flushIntervalSec_ = std::stoi(getEnvOrDefault(
+        (prefix + "_SPLUNK_FLUSH_INTERVAL_SEC").c_str(), "5"));
 }
 
-std::string SplunkLogSettings::toEnvName(const std::string& configKey)
-{
-    std::string result;
-    for (char c : configKey)
-    {
-        if (c == '.')
-        {
-            result += '_';
-        }
-        else
-        {
-            result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-        }
-    }
-    return result;
+std::string SplunkLogSettings::getUrl() const {
+    return url_;
 }
 
-std::string SplunkLogSettings::getUrl() const
-{
-    return resolve<std::string>("splunk.url", "http://localhost:8088/services/collector");
+std::string SplunkLogSettings::getToken() const {
+    return token_;
 }
 
-std::string SplunkLogSettings::getToken() const
-{
-    return resolve<std::string>("splunk.token", "");
+std::string SplunkLogSettings::getIndex() const {
+    return index_;
 }
 
-std::string SplunkLogSettings::getIndex() const
-{
-    return resolve<std::string>("splunk.index", "main");
+std::string SplunkLogSettings::getSourceType() const {
+    return sourcetype_;
 }
 
-std::string SplunkLogSettings::getSourceType() const
-{
-    return resolve<std::string>("splunk.sourcetype", "_json");
+size_t SplunkLogSettings::getBufferSize() const {
+    return bufferSize_;
 }
 
-size_t SplunkLogSettings::getBufferSize() const
-{
-    return resolve<size_t>("splunk.buffer_size", 100);
+std::chrono::seconds SplunkLogSettings::getFlushInterval() const {
+    return std::chrono::seconds(flushIntervalSec_);
 }
 
-std::chrono::seconds SplunkLogSettings::getFlushInterval() const
-{
-    return std::chrono::seconds(resolve<int>("splunk.flush_interval_sec", 5));
-}
-
-template<typename T>
-T SplunkLogSettings::resolve(const std::string& configKey, T defaultValue) const
-{
-    std::string fullKey = configKey;
-    std::string envVarName;
-
-    if (configKey == "splunk.url")
-        envVarName = prefix_ + "_SPLUNK_URL";
-    else if (configKey == "splunk.token")
-        envVarName = prefix_ + "_SPLUNK_TOKEN";
-    else if (configKey == "splunk.index")
-        envVarName = prefix_ + "_SPLUNK_INDEX";
-    else if (configKey == "splunk.sourcetype")
-        envVarName = prefix_ + "_SPLUNK_SOURCETYPE";
-    else if (configKey == "splunk.buffer_size")
-        envVarName = prefix_ + "_SPLUNK_BUFFER_SIZE";
-    else if (configKey == "splunk.flush_interval_sec")
-        envVarName = prefix_ + "_SPLUNK_FLUSH_INTERVAL_SEC";
-    else
-        envVarName = prefix_.empty() ? toEnvName(configKey) : prefix_ + "_" + toEnvName(configKey);
-
-    const char* envValue = std::getenv(envVarName.c_str());
-    if (envValue)
-    {
-        if constexpr (std::is_same_v<T, std::string>)
-        {
-            return std::string(envValue);
-        }
-        else if constexpr (std::is_same_v<T, int>)
-        {
-            return std::stoi(envValue);
-        }
-        else if constexpr (std::is_same_v<T, size_t>)
-        {
-            return std::stoul(envValue);
-        }
-        else
-        {
-            return T();
-        }
-    }
-
-    if (env_)
-    {
-        try
-        {
-            return env_->get<T>(fullKey);
-        }
-        catch (...)
-        {
-            return defaultValue;
-        }
-    }
-
-    return defaultValue;
+std::string SplunkLogSettings::getEnvOrDefault(const char* name, const std::string& defaultValue) {
+    const char* value = std::getenv(name);
+    return value ? std::string(value) : defaultValue;
 }

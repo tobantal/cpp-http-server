@@ -1,46 +1,42 @@
 #include "application/RetrySettings.hpp"
-#include <algorithm>
-#include <cctype>
 
-RetrySettings::RetrySettings(std::shared_ptr<IEnvironment> env, const std::string& prefix)
-    : env_(env), prefix_(prefix)
+RetrySettings::RetrySettings(const std::string& prefix)
+    : prefix_(prefix)
 {
-}
-
-std::string RetrySettings::toEnvName(const std::string& configKey)
-{
-    std::string result;
-    for (char c : configKey)
-    {
-        if (c == '.') result += '_';
-        else result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    }
-    return result;
-}
-
-std::string RetrySettings::toLower(const std::string& s)
-{
-    std::string result = s;
-    for (auto& c : result) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return result;
+    maxAttempts_ = getEnvInt(prefix + "_RETRY_MAX_ATTEMPTS", 3);
+    baseDelayMs_ = getEnvInt(prefix + "_RETRY_BASE_DELAY_MS", 1000);
+    multiplier_ = getEnvDouble(prefix + "_RETRY_MULTIPLIER", 2.0);
+    maxDelayMs_ = getEnvInt(prefix + "_RETRY_MAX_DELAY_MS", 30000);
 }
 
 int RetrySettings::getMaxAttempts() const
 {
-    return resolve<int>("retry.maxAttempts", 3);
+    return maxAttempts_;
 }
 
 std::chrono::milliseconds RetrySettings::getBaseDelay() const
 {
-    return std::chrono::milliseconds(resolve<int>("retry.baseDelayMs", 1000));
+    return std::chrono::milliseconds(baseDelayMs_);
 }
 
 double RetrySettings::getMultiplier() const
 {
-    return resolve<double>("retry.multiplier", 2.0);
+    return multiplier_;
 }
 
 std::chrono::milliseconds RetrySettings::getMaxDelay() const
 {
-    return std::chrono::milliseconds(resolve<int>("retry.maxDelayMs", 30000));
+    return std::chrono::milliseconds(maxDelayMs_);
+}
+
+int RetrySettings::getEnvInt(const std::string& name, int defaultValue)
+{
+    const char* value = std::getenv(name.c_str());
+    return value ? std::stoi(value) : defaultValue;
+}
+
+double RetrySettings::getEnvDouble(const std::string& name, double defaultValue)
+{
+    const char* value = std::getenv(name.c_str());
+    return value ? std::stod(value) : defaultValue;
 }

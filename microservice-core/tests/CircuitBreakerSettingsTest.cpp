@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 #include "application/CircuitBreakerSettings.hpp"
-#include "adapters/secondary/Environment.hpp"
 
 class CircuitBreakerSettingsTest : public ::testing::Test
 {
 protected:
-    void SetUp() override
+    void TearDown() override
     {
         unsetEnv("HTTP_CB_FAILURE_THRESHOLD");
         unsetEnv("HTTP_CB_RESET_TIMEOUT_MS");
@@ -25,7 +24,7 @@ protected:
 
 TEST_F(CircuitBreakerSettingsTest, DefaultValues)
 {
-    CircuitBreakerSettings settings(nullptr, "HTTP");
+    CircuitBreakerSettings settings("HTTP");
     EXPECT_EQ(settings.getFailureThreshold(), 5);
     EXPECT_EQ(settings.getResetTimeout(), std::chrono::milliseconds(30000));
     EXPECT_EQ(settings.getHalfOpenMaxCalls(), 3);
@@ -34,49 +33,27 @@ TEST_F(CircuitBreakerSettingsTest, DefaultValues)
 TEST_F(CircuitBreakerSettingsTest, CustomFailureThreshold)
 {
     setEnv("HTTP_CB_FAILURE_THRESHOLD", "10");
-    CircuitBreakerSettings settings(nullptr, "HTTP");
+    CircuitBreakerSettings settings("HTTP");
     EXPECT_EQ(settings.getFailureThreshold(), 10);
 }
 
 TEST_F(CircuitBreakerSettingsTest, CustomResetTimeout)
 {
     setEnv("HTTP_CB_RESET_TIMEOUT_MS", "60000");
-    CircuitBreakerSettings settings(nullptr, "HTTP");
+    CircuitBreakerSettings settings("HTTP");
     EXPECT_EQ(settings.getResetTimeout(), std::chrono::milliseconds(60000));
 }
 
 TEST_F(CircuitBreakerSettingsTest, CustomHalfOpenMaxCalls)
 {
     setEnv("HTTP_CB_HALF_OPEN_MAX_CALLS", "5");
-    CircuitBreakerSettings settings(nullptr, "HTTP");
+    CircuitBreakerSettings settings("HTTP");
     EXPECT_EQ(settings.getHalfOpenMaxCalls(), 5);
 }
 
 TEST_F(CircuitBreakerSettingsTest, DifferentPrefix)
 {
     setEnv("SERVICE_CB_FAILURE_THRESHOLD", "7");
-    CircuitBreakerSettings settings(nullptr, "SERVICE");
+    CircuitBreakerSettings settings("SERVICE");
     EXPECT_EQ(settings.getFailureThreshold(), 7);
-}
-
-TEST_F(CircuitBreakerSettingsTest, EnvOverridesConfigJson)
-{
-    auto env = std::make_shared<Environment>();
-    env->setProperty("http.cb.failureThreshold", 20);
-
-    setEnv("HTTP_CB_FAILURE_THRESHOLD", "10");
-
-    CircuitBreakerSettings settings(env, "HTTP");
-    EXPECT_EQ(settings.getFailureThreshold(), 10);
-}
-
-TEST_F(CircuitBreakerSettingsTest, ConfigJsonOverridesDefaults_WhenNoEnv)
-{
-    auto env = std::make_shared<Environment>();
-    env->setProperty("http.cb.failureThreshold", 15);
-    env->setProperty("http.cb.resetTimeoutMs", 60000);
-
-    CircuitBreakerSettings settings(env, "HTTP");
-    EXPECT_EQ(settings.getFailureThreshold(), 15);
-    EXPECT_EQ(settings.getResetTimeout(), std::chrono::milliseconds(60000));
 }

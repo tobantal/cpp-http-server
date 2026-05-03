@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "application/RetrySettings.hpp"
-#include "adapters/secondary/Environment.hpp"
 
 /**
  * @file RetrySettingsTest.cpp
@@ -28,7 +27,7 @@ protected:
 
 TEST_F(RetrySettingsTest, DefaultValues)
 {
-    RetrySettings settings(nullptr, "TEST");
+    RetrySettings settings("TEST");
     EXPECT_EQ(settings.getMaxAttempts(), 3);
     EXPECT_EQ(settings.getBaseDelay().count(), 1000);
     EXPECT_EQ(settings.getMultiplier(), 2.0);
@@ -38,49 +37,27 @@ TEST_F(RetrySettingsTest, DefaultValues)
 TEST_F(RetrySettingsTest, OverrideMaxAttempts)
 {
     setEnv("TEST_RETRY_MAX_ATTEMPTS", "5");
-    RetrySettings settings(nullptr, "TEST");
+    RetrySettings settings("TEST");
     EXPECT_EQ(settings.getMaxAttempts(), 5);
 }
 
 TEST_F(RetrySettingsTest, OverrideBaseDelay)
 {
     setEnv("TEST_RETRY_BASE_DELAY_MS", "500");
-    RetrySettings settings(nullptr, "TEST");
+    RetrySettings settings("TEST");
     EXPECT_EQ(settings.getBaseDelay().count(), 500);
 }
 
 TEST_F(RetrySettingsTest, OverrideMultiplier)
 {
     setEnv("TEST_RETRY_MULTIPLIER", "1.5");
-    RetrySettings settings(nullptr, "TEST");
+    RetrySettings settings("TEST");
     EXPECT_EQ(settings.getMultiplier(), 1.5);
 }
 
 TEST_F(RetrySettingsTest, OverrideMaxDelay)
 {
     setEnv("TEST_RETRY_MAX_DELAY_MS", "60000");
-    RetrySettings settings(nullptr, "TEST");
+    RetrySettings settings("TEST");
     EXPECT_EQ(settings.getMaxDelay().count(), 60000);
-}
-
-TEST_F(RetrySettingsTest, EnvOverridesConfigJson)
-{
-    auto env = std::make_shared<Environment>();
-    env->setProperty("test.retry.maxAttempts", 10);
-
-    setEnv("TEST_RETRY_MAX_ATTEMPTS", "5");
-
-    RetrySettings settings(env, "TEST");
-    EXPECT_EQ(settings.getMaxAttempts(), 5);
-}
-
-TEST_F(RetrySettingsTest, ConfigJsonOverridesDefaults_WhenNoEnv)
-{
-    auto env = std::make_shared<Environment>();
-    env->setProperty("test.retry.maxAttempts", 7);
-    env->setProperty("test.retry.baseDelayMs", 2000);
-
-    RetrySettings settings(env, "TEST");
-    EXPECT_EQ(settings.getMaxAttempts(), 7);
-    EXPECT_EQ(settings.getBaseDelay().count(), 2000);
 }

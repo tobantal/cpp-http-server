@@ -11,6 +11,7 @@
  * @author Anton Tobolkin
  */
 
+namespace {
 class MockHttpClient : public IHttpClient
 {
 public:
@@ -29,6 +30,7 @@ public:
         return {HttpClientError::None, ""};
     }
 };
+} // namespace
 
 TEST(SplunkLoggerTest, DoesNotCrashOnLog)
 {

@@ -97,7 +97,23 @@ curl http://localhost:8080/health
 
 ## Configuration
 
-Default settings can be overridden via ENV variables or `config.json`.
+Default settings can be overridden via CLI arguments, ENV variables, or `config.json`.
+
+### Config File Path
+
+Priority: `--config/-c` CLI argument > `CONFIG_PATH` env variable > `config.json` in CWD.
+
+```bash
+# CLI argument
+./my_service --config /etc/myapp/config.json
+./my_service -c /etc/myapp/config.json
+
+# Environment variable
+CONFIG_PATH=/etc/myapp/config.json ./my_service
+
+# Default: config.json in current directory
+./my_service
+```
 
 ### ENV Variables
 
@@ -117,15 +133,6 @@ Create `config.json`:
     "host": "127.0.0.1",
     "port": 9090
   }
-}
-```
-
-Pass path to application:
-```cpp
-int main(int argc, char* argv[]) {
-    MyWebApp app;
-    app.loadConfig("config.json");
-    return app.run(argc, argv);
 }
 ```
 

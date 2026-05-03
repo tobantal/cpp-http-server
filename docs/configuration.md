@@ -5,11 +5,41 @@ cpp-http-server supports two configuration sources: **environment variables** (h
 ## Priority
 
 ```
+CLI argument (--config/-c) > ENV variable > config.json key > default value
+```
+
+For configuration file path:
+```
+--config <path> > CONFIG_PATH env var > config.json in CWD
+```
+
+For individual settings:
+```
 ENV variable > config.json key > default value
 ```
 
 - `ServerSettings` checks ENV first, falls back to `env->get("server.*")` from config.json, then uses hardcoded defaults.
 - `HttpClient` reads only ENV variables for timeouts (no config.json fallback).
+
+## Config File Path
+
+The config file path is resolved in this order:
+
+1. **`--config <path>`** or **`-c <path>`** CLI argument (highest priority)
+2. **`CONFIG_PATH`** environment variable
+3. **`config.json`** in the current working directory (default)
+
+Example:
+```bash
+# CLI argument
+./my_service --config /etc/myapp/config.json
+
+# Environment variable
+CONFIG_PATH=/etc/myapp/config.json ./my_service
+
+# Default: looks for config.json in CWD
+./my_service
+```
 
 ## Server Settings
 

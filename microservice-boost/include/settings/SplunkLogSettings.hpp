@@ -1,37 +1,36 @@
 #pragma once
 
 #include "settings/ISplunkLogSettings.hpp"
-#include <cstdlib>
+#include "ports/output/IEnvironment.hpp"
 #include <string>
+#include <memory>
 
 /**
  * @file SplunkLogSettings.hpp
- * @brief Splunk logger settings loaded from environment variables
+ * @brief Splunk logger settings with 3-tier fallback: ENV - config.json - default
  * @author Anton Tobolkin
  */
 
 /**
  * @class SplunkLogSettings
- * @brief Splunk HTTP Event Collector settings
+ * @brief Splunk HTTP Event Collector settings with ENV → config.json → default fallback
  *
- * Reads settings from environment variables with the given prefix:
- * - <PREFIX>_SPLUNK_URL (default: http://localhost:8088/services/collector)
- * - <PREFIX>_SPLUNK_TOKEN
- * - <PREFIX>_SPLUNK_INDEX (default: main)
- * - <PREFIX>_SPLUNK_SOURCETYPE (default: _json)
- * - <PREFIX>_SPLUNK_BUFFER_SIZE (default: 100)
- * - <PREFIX>_SPLUNK_FLUSH_INTERVAL_SEC (default: 5)
+ * Naming: config key "splunk.url" → ENV var "SPLUNK_URL" (uppercase, dots → underscores)
+ *
+ * resolve() method:
+ * 1. Check ENV via std::getenv(envVarName)
+ * 2. If not set, check config.json via env_->get<T>(configKey)
+ * 3. If not set, use default value
  *
  * @example
- *   SplunkLogSettings settings("APP");
+ *   SplunkLogSettings settings(env, "APP");
  *   // reads APP_SPLUNK_URL, APP_SPLUNK_TOKEN, etc.
+ *   // config keys: splunk.url, splunk.token, splunk.index...
  */
 class SplunkLogSettings : public ISplunkLogSettings {
 public:
-    /**
-     * @brief Construct SplunkLogSettings with prefix
-     * @param prefix ENV prefix (e.g., "APP", "SERVICE")
-     */
+    SplunkLogSettings(std::shared_ptr<IEnvironment> env, const std::string& prefix);
+
     explicit SplunkLogSettings(const std::string& prefix);
 
     ~SplunkLogSettings() override = default;
@@ -44,13 +43,11 @@ public:
     std::chrono::seconds getFlushInterval() const override;
 
 private:
+    std::shared_ptr<IEnvironment> env_;
     std::string prefix_;
-    std::string url_;
-    std::string token_;
-    std::string index_;
-    std::string sourcetype_;
-    size_t bufferSize_;
-    int flushIntervalSec_;
 
-    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue);
+    template<typename T>
+    T resolve(const std::string& configKey, T defaultValue) const;
+
+    static std::string toEnvName(const std::string& configKey);
 };

@@ -1,52 +1,42 @@
 #pragma once
 
 #include "settings/IDbSettings.hpp"
+#include "ports/output/IEnvironment.hpp"
 #include <cstdlib>
 #include <string>
+#include <memory>
+#include <type_traits>
 
 /**
  * @file DbSettings.hpp
- * @brief PostgreSQL connection settings from environment variables
+ * @brief PostgreSQL connection settings with 3-tier fallback: ENV - config.json - default
  * @author Anton Tobolkin
  */
 
 /**
  * @class DbSettings
- * @brief Database settings loaded from ENV with parameterized prefix
+ * @brief Database settings with ENV → config.json → default fallback
  *
- * Reads <PREFIX>_DB_HOST, <PREFIX>_DB_PORT, <PREFIX>_DB_NAME,
- * <PREFIX>_DB_USER, <PREFIX>_DB_PASSWORD, <PREFIX>_DB_POOL_MIN,
- * <PREFIX>_DB_POOL_MAX. Falls back to reasonable defaults.
+ * Naming: config key "auth.db.host" → ENV var "AUTH_DB_HOST" (uppercase, dots → underscores)
  *
- * Follows the same pattern as ServerSettings.
+ * resolve() method:
+ * 1. Check ENV via std::getenv(envVarName)
+ * 2. If not set, check config.json via env_->get<T>(configKey)
+ * 3. If not set, use default value
  *
  * @example
- *   DbSettings settings("AUTH");
+ *   DbSettings settings(env, "auth");
  *   // reads AUTH_DB_HOST, AUTH_DB_PORT, etc.
- *   // defaults: AUTH-postgres:5432/auth_db/auth_user
+ *   // config keys: auth.db.host, auth.db.port, auth.db.name...
+ *   // defaults: auth-postgres:5432/auth_db/auth_user
  */
 class DbSettings : public IDbSettings {
 public:
     /**
+     * @param env IEnvironment pointer (may be nullptr)
      * @param prefix ENV prefix (AUTH, BROKER, TRADING)
-     * @param defaultHost Default host (for K8s: "<prefix>-postgres")
      */
-    explicit DbSettings(const std::string& prefix,
-                        const std::string& defaultHost = "")
-        : prefix_(prefix)
-    {
-        std::string hostDefault = defaultHost.empty()
-            ? (prefix + "-postgres") : defaultHost;
-
-        host_ = getEnvOrDefault((prefix + "_DB_HOST").c_str(), hostDefault);
-        port_ = std::stoi(getEnvOrDefault((prefix + "_DB_PORT").c_str(), "5432"));
-        name_ = getEnvOrDefault((prefix + "_DB_NAME").c_str(), toLower(prefix) + "_db");
-        user_ = getEnvOrDefault((prefix + "_DB_USER").c_str(), toLower(prefix) + "_user");
-        password_ = getEnvOrDefault((prefix + "_DB_PASSWORD").c_str(),
-                                    toLower(prefix) + "_secret_password");
-        minConnections_ = std::stoul(getEnvOrDefault((prefix + "_DB_POOL_MIN").c_str(), "2"));
-        maxConnections_ = std::stoul(getEnvOrDefault((prefix + "_DB_POOL_MAX").c_str(), "10"));
-    }
+    DbSettings(std::shared_ptr<IEnvironment> env, const std::string& prefix);
 
     ~DbSettings() override = default;
 
@@ -61,15 +51,56 @@ public:
     std::string getConnectionString() const override;
 
 private:
+    std::shared_ptr<IEnvironment> env_;
     std::string prefix_;
-    std::string host_;
-    int port_;
-    std::string name_;
-    std::string user_;
-    std::string password_;
-    size_t minConnections_;
-    size_t maxConnections_;
 
-    static std::string getEnvOrDefault(const char* name, const std::string& defaultValue);
+    template<typename T>
+    T resolve(const std::string& configKey, T defaultValue) const;
+
+    static std::string toEnvName(const std::string& configKey);
     static std::string toLower(const std::string& s);
 };
+
+template<typename T>
+T DbSettings::resolve(const std::string& configKey, T defaultValue) const
+{
+    std::string fullKey = prefix_.empty() ? configKey : toLower(prefix_) + "." + configKey;
+    std::string envVarName = prefix_.empty()
+        ? toEnvName(configKey)
+        : prefix_ + "_" + toEnvName(configKey);
+
+    const char* envValue = std::getenv(envVarName.c_str());
+    if (envValue)
+    {
+        if constexpr (std::is_same_v<T, std::string>)
+        {
+            return std::string(envValue);
+        }
+        else if constexpr (std::is_same_v<T, int>)
+        {
+            return std::stoi(envValue);
+        }
+        else if constexpr (std::is_same_v<T, size_t>)
+        {
+            return std::stoul(envValue);
+        }
+        else
+        {
+            return T();
+        }
+    }
+
+    if (env_)
+    {
+        try
+        {
+            return env_->get<T>(fullKey);
+        }
+        catch (...)
+        {
+            return defaultValue;
+        }
+    }
+
+    return defaultValue;
+}

@@ -42,7 +42,33 @@ std::any JsonToEnvConverter::toAny(const nlohmann::json& value) const {
             return std::any(value.get<bool>());
         case nlohmann::json::value_t::null:
             return std::any();
+        case nlohmann::json::value_t::array:
+            return std::any(arrayToString(value));
         default:
             return std::any(value.dump());
     }
+}
+
+std::string JsonToEnvConverter::arrayToString(const nlohmann::json& arr) const
+{
+    if (arr.empty())
+    {
+        return "";
+    }
+    bool allStrings = std::all_of(arr.begin(), arr.end(),
+        [](const nlohmann::json& el) { return el.is_string(); });
+    std::string result;
+    for (auto it = arr.begin(); it != arr.end(); ++it)
+    {
+        if (it != arr.begin()) result += ",";
+        if (allStrings)
+        {
+            result += it->get<std::string>();
+        }
+        else
+        {
+            result += it->dump();
+        }
+    }
+    return result;
 }

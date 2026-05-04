@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.5.0] (2026-05-02)
+## [v0.5.0] (2026-05-04)
 
 ### Breaking Changes
 
@@ -31,6 +31,8 @@
 - **JsonToEnvConverter** — null JSON values are now skipped (not stored as empty `std::any`), so `get_optional<T>("key")` returns `nullopt` for null
 - **JsonToEnvConverter / loadJsonToEnvironment** — JSON arrays of strings now produce comma-separated values (`["a","b"]` → `"a,b"`), mixed/number arrays also supported (#140, SRV-24)
 - **BoostBeastApplication::loadEnvironment** — config path now resolves via `--config`/`-c` CLI arg > `CONFIG_PATH` env var > `config.json` default (#135, SRV-10)
+- **Settings 3-tier fallback** (#365) — All Settings classes (DbSettings, CircuitBreakerSettings, RetrySettings, HttpRetrySettings) now support full ENV → config.json → default resolution with explicit prefix-per-key naming
+- **SplunkLogger test fix** — Fixed ODR violation in test MockHttpClient (two classes with different layout in global namespace) causing heap-buffer-overflow, wrapped in anonymous namespaces
 
 ---
 

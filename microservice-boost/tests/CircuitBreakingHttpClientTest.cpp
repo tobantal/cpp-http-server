@@ -21,6 +21,7 @@ public:
     int getHalfOpenMaxCalls() const override { return halfOpenMaxCalls_; }
 };
 
+namespace {
 class MockHttpClient : public IHttpClient
 {
 public:
@@ -33,6 +34,7 @@ public:
         return sendResult;
     }
 };
+} // namespace
 
 class CircuitBreakingHttpClientTest : public ::testing::Test
 {

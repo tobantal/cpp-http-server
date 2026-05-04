@@ -170,7 +170,7 @@ Signal handling (SIGINT/SIGTERM) встроен в `IWebApplication::run()`. Try
 
 ---
 
-## Ключевые возможности v0.4.0
+## Ключевые возможности v0.5.0
 
 ### Messaging (RabbitMQ)
 
@@ -197,17 +197,13 @@ Metrics: `amqp_published_total`, `amqp_received_total`, `amqp_errors_total`.
 ### Database (PostgreSQL)
 
 ```cpp
-auto dbSettings = std::make_shared<DbSettings>(env);
+auto dbSettings = std::make_shared<DbSettings>(env, "app");
 auto pool = std::make_shared<ConnectionPool>(
     dbSettings->getConnectionString(),
     ConnectionPool::Config{dbSettings->getMinConnections(), dbSettings->getMaxConnections()},
     logger);
 
 shutdownMgr->registerComponent(pool);  // implements IShutdown
-
-// Health check endpoint
-registerEndpoint("GET", "/health/db",
-    std::make_shared<DatabaseHealthHandler>(pool));
 
 // Repository pattern
 auto repo = std::make_shared<PostgresKeyValueRepository>(pool, logger);
@@ -217,6 +213,20 @@ auto entity = repo->findById("user:1");
 ```
 
 Connection pool: thread-safe, PooledConnection RAII, min/max sizing, blocking checkout.
+
+### CircuitBreaker + Retry (Outgoing HTTP)
+
+```cpp
+auto cbSettings = std::make_shared<CircuitBreakerSettings>(env, "HTTP");
+auto circuitBreaker = std::make_shared<CircuitBreaker>(cbSettings, logger);
+auto httpClient = std::make_shared<HttpClient>(logger, metrics);
+auto cbClient = std::make_shared<CircuitBreakingHttpClient>(
+    httpClient, circuitBreaker, logger);
+
+auto retrySettings = std::make_shared<RetrySettings>(env, "HTTP");
+auto retryClient = std::make_shared<RetryingHttpClient>(
+    cbClient, retrySettings, logger);
+```
 Repository: generic `IRepository<T>` interface, parameterized queries, upsert support.
 
 ### Graceful Shutdown
@@ -366,8 +376,8 @@ cpp-http-server/
 
 448+ тестов (core: 341, boost: 174+). Покрытие по модулям:
 
-- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, InMemoryKeyValueRepository, Version
-- **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient, ConnectionPool (RAII, thread safety, schema), PostgresTransactionExecutor, DbSettings
+- **Core:** ChainHandler, RouteMatcher, Environment, HttpError, MetricsCollector, MetricsObserverHandler, MetricsHandler, HttpErrorSender, ShutdownManager, Timer, UuidGenerator, InMemoryEventBus, InMemoryKeyValueRepository, Version, CircuitBreakerSettings, RetrySettings, HttpRetrySettings
+- **Boost:** BeastRequestAdapter (path params, query params, headers, trace ID, keep-alive), BeastResponseAdapter, ServerSettings, HttpClient, ConnectionPool (RAII, thread safety, schema), PostgresTransactionExecutor, DbSettings, RabbitMQHealthCheck, PostgresHealthCheck, CircuitBreakingHttpClient, SplunkLogger
 
 ---
 
